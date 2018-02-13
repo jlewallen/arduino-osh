@@ -1,0 +1,7 @@
+#+TITLE:	README for arduino-osh
+#+AUTHOR:	Jacob Lewallen
+#+EMAIL:	jacob@conservify.org
+
+* Overview
+
+This is a version of os.h (https://github.com/adamheinrich/os.h) that works on ATSAMD21 based Arduino devices.
