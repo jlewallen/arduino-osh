@@ -9,7 +9,7 @@ static void task_handler(void *arg) {
     while (1) {
         __disable_irq();
         Serial.print("Waiting ");
-        Serial.print(delay_time);
+        Serial.print(time);
         Serial.print(" ");
         Serial.print(millis() - lastTick);
         Serial.println("");
