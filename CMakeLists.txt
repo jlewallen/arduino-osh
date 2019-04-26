@@ -7,14 +7,10 @@ include(Arduino)
 
 enable_arduino_toolchain()
 
-# enable_m4()
-
 enable_language(ASM)
-
-enable_small_bootloader()
 
 file(GLOB sources *.cpp)
 
+enable_m4()
 add_arduino_library(osh-test "${sources}")
-
 add_arduino_firmware(osh-test)

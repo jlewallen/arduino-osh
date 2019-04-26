@@ -183,8 +183,13 @@ int sysTickHook(void) {
 void PendSV_Handler() {
     asm(
         ".syntax unified\n"
+        #if defined(__SAMD21__)
         ".cpu cortex-m0\n"
         ".fpu softvfp\n"
+        #endif
+        #if defined(__SAMD51__)
+        ".cpu cortex-m4\n"
+        #endif
 
         ".thumb\n"
 
