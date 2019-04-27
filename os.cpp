@@ -17,6 +17,7 @@
  * along with os.h.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cinttypes>
 #include <Arduino.h>
 
 #include "os.h"
@@ -178,6 +179,10 @@ int sysTickHook(void) {
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 
     return 1;
+}
+
+void HardFault_Handler() {
+    Serial.println("HF");
 }
 
 void PendSV_Handler() {

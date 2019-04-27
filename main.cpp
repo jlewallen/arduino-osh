@@ -3,9 +3,10 @@
 #include "os.h"
 
 static void task_handler(void *arg) {
-    uint32_t time = (uint32_t)arg;
-    uint32_t lastTick = 0;
-    uint32_t now = 0;
+    auto time = (uint32_t)arg;
+    auto lastTick = (uint32_t)0;
+    auto now = (uint32_t)0;
+    auto faulted = false;
 
     while (true) {
         // __disable_irq();
@@ -20,6 +21,11 @@ static void task_handler(void *arg) {
         delay(time);
 
         now = millis();
+
+        if (!faulted && now > 5000) {
+            *((uint32_t *)0xdeadbeef) = 0;
+            faulted = true;
+        }
     }
 }
 
