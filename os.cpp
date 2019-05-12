@@ -18,68 +18,54 @@
  */
 
 #include <cinttypes>
+#include <cassert>
 #include <Arduino.h>
 
 #include "os.h"
 
-enum os_task_status {
-    OS_TASK_STATUS_IDLE = 1,
-    OS_TASK_STATUS_ACTIVE,
-};
-
-struct os_task {
-    /* The stack pointer (sp) has to be the first element as it is located
-       at the same address as the structure itself (which makes it possible
-       to locate it safely from assembly implementation of PendSV_Handler).
-       The compiler might add padding between other structure elements. */
-    volatile uint32_t sp;
-    void (*handler)(void *p_params);
-    void *p_params;
-    volatile enum os_task_status status;
-};
-
-static enum {
+typedef enum {
     OS_STATE_DEFAULT = 1,
     OS_STATE_INITIALIZED,
     OS_STATE_TASKS_INITIALIZED,
     OS_STATE_STARTED,
-} m_state = OS_STATE_DEFAULT;
+} os_state;
 
-static struct {
-    struct os_task tasks[OS_CONFIG_MAX_TASKS];
-    volatile uint32_t current_task;
-    uint32_t size;
-} m_task_table;
+typedef struct os_system_t {
+    os_state state;
+    os_task_t *tasks;
+    bool initialized;
+} os_system_t;
 
-volatile struct os_task *os_curr_task;
-volatile struct os_task *os_next_task;
-volatile bool os_initialized = false;
+os_system_t oss{
+    OS_STATE_DEFAULT,
+    nullptr,
+    false
+};
 
-static void task_finished(void) {
+volatile os_task_t *running_task;
+volatile os_task_t *scheduled_task;
+
+static void task_finished() {
     /* This function is called when some task handler returns. */
     volatile uint32_t i = 0;
+
     while (1) {
         i++;
     }
 }
 
-bool os_initialize(void) {
-    if (m_state != OS_STATE_DEFAULT) {
+bool os_initialize() {
+    if (oss.state != OS_STATE_DEFAULT) {
         return false;
     }
 
-    memset(&m_task_table, 0, sizeof(m_task_table));
-    m_state = OS_STATE_INITIALIZED;
+    oss.state = OS_STATE_INITIALIZED;
 
     return true;
 }
 
-bool os_task_initialize(void (*handler)(void *p_params), void *p_task_params, uint32_t *p_stack, size_t stack_size) {
-    if (m_state != OS_STATE_INITIALIZED && m_state != OS_STATE_TASKS_INITIALIZED) {
-        return false;
-    }
-
-    if (m_task_table.size >= OS_CONFIG_MAX_TASKS - 1) {
+bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
+    if (oss.state != OS_STATE_INITIALIZED && oss.state != OS_STATE_TASKS_INITIALIZED) {
         return false;
     }
 
@@ -91,63 +77,69 @@ bool os_task_initialize(void (*handler)(void *p_params), void *p_task_params, ui
 
     /* Initialize the task structure and set SP to the top of the stack
        minus 16 words (64 bytes) to leave space for storing 16 registers: */
-    struct os_task *p_task = &m_task_table.tasks[m_task_table.size];
-    p_task->handler = handler;
-    p_task->p_params = p_task_params;
-    p_task->sp = (uint32_t)(p_stack + stack_offset - 16);
-    p_task->status = OS_TASK_STATUS_IDLE;
+    task->handler = handler;
+    task->np = nullptr;
+    task->params = params;
+    task->sp = (uint32_t)(stack + stack_offset - 16);
+    task->status = OS_TASK_STATUS_IDLE;
 
     /* Save init. values of registers which will be restored on exc. return:
        - XPSR: Default value (0x01000000)
        - PC: Point to the handler function
        - LR: Point to a function to be called when the handler returns
        - R0: Point to the handler function's parameter */
-    p_stack[stack_offset - 1] = 0x01000000;
-    p_stack[stack_offset - 2] = (uint32_t)handler;
-    p_stack[stack_offset - 3] = (uint32_t)&task_finished;
-    p_stack[stack_offset - 8] = (uint32_t)p_task_params;
+    stack[stack_offset - 1] = 0x01000000;
+    stack[stack_offset - 2] = (uint32_t)handler;
+    stack[stack_offset - 3] = (uint32_t)&task_finished;
+    stack[stack_offset - 8] = (uint32_t)params;
 
-#ifdef OS_CONFIG_DEBUG
-    uint32_t base = (m_task_table.size + 1) * 1000;
-    p_stack[stack_offset - 4] = base + 12;  /* R12 */
-    p_stack[stack_offset - 5] = base + 3;   /* R3  */
-    p_stack[stack_offset - 6] = base + 2;   /* R2  */
-    p_stack[stack_offset - 7] = base + 1;   /* R1  */
+    #ifdef OS_CONFIG_DEBUG
+    uint32_t base = 1000;
+    stack[stack_offset - 4] = base + 12;  /* R12 */
+    stack[stack_offset - 5] = base + 3;   /* R3  */
+    stack[stack_offset - 6] = base + 2;   /* R2  */
+    stack[stack_offset - 7] = base + 1;   /* R1  */
     /* p_stack[stack_offset-8] is R0 */
-    p_stack[stack_offset - 9] = base + 7;   /* R7  */
-    p_stack[stack_offset - 10] = base + 6;  /* R6  */
-    p_stack[stack_offset - 11] = base + 5;  /* R5  */
-    p_stack[stack_offset - 12] = base + 4;  /* R4  */
-    p_stack[stack_offset - 13] = base + 11; /* R11 */
-    p_stack[stack_offset - 14] = base + 10; /* R10 */
-    p_stack[stack_offset - 15] = base + 9;  /* R9  */
-    p_stack[stack_offset - 16] = base + 8;  /* R8  */
-#endif /* OS_CONFIG_DEBUG */
+    stack[stack_offset - 9] = base + 7;   /* R7  */
+    stack[stack_offset - 10] = base + 6;  /* R6  */
+    stack[stack_offset - 11] = base + 5;  /* R5  */
+    stack[stack_offset - 12] = base + 4;  /* R4  */
+    stack[stack_offset - 13] = base + 11; /* R11 */
+    stack[stack_offset - 14] = base + 10; /* R10 */
+    stack[stack_offset - 15] = base + 9;  /* R9  */
+    stack[stack_offset - 16] = base + 8;  /* R8  */
+    #endif /* OS_CONFIG_DEBUG */
 
-    m_state = OS_STATE_TASKS_INITIALIZED;
-    m_task_table.size++;
+    task->np = oss.tasks;
+    oss.tasks = task;
+
+    if (running_task == nullptr) {
+        running_task = oss.tasks;
+        scheduled_task = nullptr;
+    }
+
+    oss.state = OS_STATE_TASKS_INITIALIZED;
 
     return true;
 }
 
 bool os_start(void) {
-    if (m_state != OS_STATE_TASKS_INITIALIZED) {
+    if (oss.state != OS_STATE_TASKS_INITIALIZED) {
         return false;
     }
 
     NVIC_SetPriority(PendSV_IRQn, 0xff);
     NVIC_SetPriority(SysTick_IRQn, 0x00);
 
-    os_curr_task = &m_task_table.tasks[m_task_table.current_task];
-    m_state = OS_STATE_STARTED;
+    oss.state = OS_STATE_STARTED;
 
-    __set_PSP(os_curr_task->sp + 64); /* Set PSP to the top of task's stack */
+    __set_PSP(running_task->sp + 64); /* Set PSP to the top of task's stack */
     __set_CONTROL(0x03); /* Switch to Unprivilleged Thread Mode with PSP */
     __ISB(); /* Execute ISB after changing CONTORL (recommended) */
 
-    os_initialized = true;
+    oss.initialized = true;
 
-    os_curr_task->handler(os_curr_task->p_params);
+    running_task->handler(running_task->params);
 
     return true;
 }
@@ -156,26 +148,26 @@ extern "C" {
 
 extern void SysTick_DefaultHandler(void);
 
-int sysTickHook(void) {
+int sysTickHook() {
     SysTick_DefaultHandler();
 
-    if (!os_initialized) {
+    if (!oss.initialized) {
         return 1;
     }
 
-    os_curr_task = &m_task_table.tasks[m_task_table.current_task];
-    os_curr_task->status = OS_TASK_STATUS_IDLE;
-
-    /* Select next task: */
-    m_task_table.current_task++;
-    if (m_task_table.current_task >= m_task_table.size) {
-        m_task_table.current_task = 0;
+    // Select next task.. pretty straightforward.
+    if (running_task->np != nullptr) {
+        scheduled_task = running_task->np;
+    }
+    else {
+        scheduled_task = oss.tasks;
     }
 
-    os_next_task = &m_task_table.tasks[m_task_table.current_task];
-    os_next_task->status = OS_TASK_STATUS_ACTIVE;
+    // Should this happen in the PendSV?
+    running_task->status = OS_TASK_STATUS_IDLE;
+    scheduled_task->status = OS_TASK_STATUS_ACTIVE;
 
-    /* Trigger PendSV which performs the actual context switch: */
+    // Trigger PendSV!
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 
     return 1;
@@ -183,6 +175,9 @@ int sysTickHook(void) {
 
 void HardFault_Handler() {
     Serial.println("HF");
+
+    while (true) {
+    }
 }
 
 void PendSV_Handler() {
@@ -234,37 +229,46 @@ void PendSV_Handler() {
            - The STMIA inscruction can only save low registers (R0-R7), it is
            therefore necesary to copy registers R8-R11 into R4-R7 and call
            STMIA twice. */
-        "mrs	r0, psp\n"
-        "subs	r0, #16\n"
-        "stmia	r0!,{r4-r7}\n"
-        "mov	r4, r8\n"
-        "mov	r5, r9\n"
-        "mov	r6, r10\n"
-        "mov	r7, r11\n"
-        "subs	r0, #32\n"
-        "stmia	r0!,{r4-r7}\n"
-        "subs	r0, #16\n"
+        "mrs	  r0, psp\n"
+        "subs	  r0, #16\n"
+        "stmia	r0!, {r4-r7}\n"
+        "mov	  r4, r8\n"
+        "mov	  r5, r9\n"
+        "mov	  r6, r10\n"
+        "mov	  r7, r11\n"
+        "subs	  r0, #32\n"
+        "stmia	r0!, {r4-r7}\n"
+        "subs	  r0, #16\n"
 
         /* Save current task's SP: */
-        "ldr	r2, =os_curr_task\n"
+        "ldr	r2, =running_task\n"
         "ldr	r1, [r2]\n"
         "str	r0, [r1]\n"
 
+        /* running_task = scheduled_task; */
+        "ldr	r2, =scheduled_task\n"
+        "ldr  r2, [r2]\n"
+        "ldr	r3, =running_task\n"
+        "str  r2, [r3]\n"
+
         /* Load next task's SP: */
-        "ldr	r2, =os_next_task\n"
+        "ldr	r2, =scheduled_task\n"
         "ldr	r1, [r2]\n"
         "ldr	r0, [r1]\n"
+        /* scheduled_task = 0; */
+        "mov  r3, #0\n"
+        "str  r3, [r2]\n"
 
         /* Load registers R4-R11 (32 bytes) from the new PSP and make the PSP
            point to the end of the exception stack frame. The NVIC hardware
            will restore remaining registers after returning from exception): */
-        "ldmia	r0!,{r4-r7}\n"
-        "mov	r8, r4\n"
-        "mov	r9, r5\n"
-        "mov	r10, r6\n"
-        "mov	r11, r7\n"
-        "ldmia	r0!,{r4-r7}\n"
-        "msr	psp, r0\n"
+        "ldmia	r0!, {r4-r7}\n"
+        "mov	  r8, r4\n"
+        "mov	  r9, r5\n"
+        "mov	  r10, r6\n"
+        "mov  	r11, r7\n"
+        "ldmia	r0!, {r4-r7}\n"
+        "msr	  psp, r0\n"
 
         /* EXC_RETURN - Thread mode with PSP: */
         "ldr r0, =0xFFFFFFFD\n"

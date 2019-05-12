@@ -26,10 +26,27 @@
 
 #include "os_config.h"
 
-bool os_initialize(void);
+enum os_task_status {
+    OS_TASK_STATUS_IDLE = 1,
+    OS_TASK_STATUS_ACTIVE,
+};
 
-bool os_task_initialize(void (*handler)(void *p_params), void *p_task_params, uint32_t *p_stack, size_t stack_size);
+typedef struct os_task_t {
+    /* The stack pointer (sp) has to be the first element as it is located
+       at the same address as the structure itself (which makes it possible
+       to locate it safely from assembly implementation of PendSV_Handler).
+       The compiler might add padding between other structure elements. */
+    volatile uint32_t sp;
+    volatile enum os_task_status status;
+    void (*handler)(void *params);
+    void *params;
+    struct os_task_t *np;
+} os_task_t;
 
-bool os_start(void);
+bool os_initialize();
+
+bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size);
+
+bool os_start();
 
 #endif /* OS_H */
