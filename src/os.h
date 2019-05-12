@@ -24,8 +24,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "os_config.h"
-
 enum os_task_status {
     OS_TASK_STATUS_IDLE = 1,
     OS_TASK_STATUS_ACTIVE,

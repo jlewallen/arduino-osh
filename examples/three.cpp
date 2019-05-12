@@ -37,6 +37,8 @@ static uint32_t stack1[64];
 static uint32_t stack2[64];
 static uint32_t stack3[64];
 
+extern "C" {
+
 void setup() {
     Serial.begin(115200);
     #if defined(__SAMD21__)
@@ -85,4 +87,6 @@ void setup() {
 }
 
 void loop() {
+}
+
 }
