@@ -69,9 +69,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
         return false;
     }
 
-    if ((stack_size % sizeof(uint32_t)) != 0) /* TODO: Use assert? */ {
-        return false;
-    }
+    assert((stack_size % sizeof(uint32_t)) == 0);
 
     uint32_t stack_offset = (stack_size / sizeof(uint32_t));
 
@@ -123,6 +121,26 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     return true;
 }
 
+bool os_task_suspend(os_task_t *task) {
+    assert(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
+
+    task->status = OS_TASK_STATUS_SUSPENDED;
+
+    return true;
+}
+
+bool os_task_resume(os_task_t *task) {
+    assert(task->status == OS_TASK_STATUS_SUSPENDED);
+
+    task->status = OS_TASK_STATUS_IDLE;
+
+    return true;
+}
+
+os_task_status os_task_get_status(os_task_t *task) {
+    return task->status;
+}
+
 bool os_start(void) {
     if (oss.state != OS_STATE_TASKS_INITIALIZED) {
         return false;
@@ -155,12 +173,28 @@ int sysTickHook() {
         return 1;
     }
 
-    // Select next task.. pretty straightforward.
-    if (running_task->np != nullptr) {
-        scheduled_task = running_task->np;
-    }
-    else {
-        scheduled_task = oss.tasks;
+    // Schedule a new task to run...
+    volatile os_task_t *iter = running_task;
+
+    while (true) {
+        if (iter->np != nullptr) {
+            iter = iter->np;
+        }
+        else {
+            iter = oss.tasks;
+        }
+
+        // If no other tasks can run but the one that just did, go ahead.
+        if (iter == running_task) {
+            scheduled_task = iter;
+            break;
+        }
+
+        // Only run tasks that are idle.
+        if (iter->status == OS_TASK_STATUS_IDLE) {
+            scheduled_task = iter;
+            break;
+        }
     }
 
     // Should this happen in the PendSV?

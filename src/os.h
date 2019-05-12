@@ -27,6 +27,8 @@
 enum os_task_status {
     OS_TASK_STATUS_IDLE = 1,
     OS_TASK_STATUS_ACTIVE,
+    OS_TASK_STATUS_SUSPENDED,
+    OS_TASK_STATUS_FINISHED
 };
 
 typedef struct os_task_t {
@@ -44,6 +46,12 @@ typedef struct os_task_t {
 bool os_initialize();
 
 bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size);
+
+bool os_task_suspend(os_task_t *task);
+
+bool os_task_resume(os_task_t *task);
+
+os_task_status os_task_get_status(os_task_t *task);
 
 bool os_start();
 
