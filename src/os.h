@@ -23,13 +23,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <sam.h>
 
-enum os_task_status {
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+typedef enum os_task_status {
     OS_TASK_STATUS_IDLE = 1,
     OS_TASK_STATUS_ACTIVE,
     OS_TASK_STATUS_SUSPENDED,
     OS_TASK_STATUS_FINISHED
-};
+} os_task_status;
 
 typedef struct os_task_t {
     /* The stack pointer (sp) has to be the first element as it is located
@@ -54,5 +59,9 @@ bool os_task_resume(os_task_t *task);
 os_task_status os_task_get_status(os_task_t *task);
 
 bool os_start();
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* OS_H */

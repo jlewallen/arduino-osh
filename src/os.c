@@ -17,11 +17,13 @@
  * along with os.h.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cinttypes>
-#include <cassert>
+#include <inttypes.h>
 #include <Arduino.h>
+#include <sam.h>
 
 #include "os.h"
+
+#define ASSERT(condition)  do { if (!(condition)) { assertion(); } } while (0)
 
 typedef enum {
     OS_STATE_DEFAULT = 1,
@@ -33,23 +35,26 @@ typedef enum {
 typedef struct os_system_t {
     os_state state;
     os_task_t *tasks;
-    bool initialized;
 } os_system_t;
 
-os_system_t oss{
+os_system_t oss = {
     OS_STATE_DEFAULT,
-    nullptr,
-    false
+    NULL
 };
 
-volatile os_task_t *running_task;
-volatile os_task_t *scheduled_task;
+volatile os_task_t *running_task = NULL;
+volatile os_task_t *scheduled_task = NULL;
+
+static void assertion() {
+    volatile uint32_t i = 0;
+    while (true) {
+        i++;
+    }
+}
 
 static void task_finished() {
-    /* This function is called when some task handler returns. */
     volatile uint32_t i = 0;
-
-    while (1) {
+    while (true) {
         i++;
     }
 }
@@ -69,25 +74,25 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
         return false;
     }
 
-    assert((stack_size % sizeof(uint32_t)) == 0);
+    ASSERT((stack_size % sizeof(uint32_t)) == 0);
 
     uint32_t stack_offset = (stack_size / sizeof(uint32_t));
 
     /* Initialize the task structure and set SP to the top of the stack
        minus 16 words (64 bytes) to leave space for storing 16 registers: */
     task->handler = handler;
-    task->np = nullptr;
+    task->np = NULL;
     task->params = params;
     task->sp = (uint32_t)(stack + stack_offset - 16);
     task->status = OS_TASK_STATUS_IDLE;
 
-    /* Save init. values of registers which will be restored on exc. return:
+    /* Save values of registers which will be restored on exc. return:
        - XPSR: Default value (0x01000000)
        - PC: Point to the handler function
        - LR: Point to a function to be called when the handler returns
        - R0: Point to the handler function's parameter */
     stack[stack_offset - 1] = 0x01000000;
-    stack[stack_offset - 2] = (uint32_t)handler;
+    stack[stack_offset - 2] = (uint32_t)handler & ~0x01UL;
     stack[stack_offset - 3] = (uint32_t)&task_finished;
     stack[stack_offset - 8] = (uint32_t)params;
 
@@ -97,7 +102,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     stack[stack_offset - 5] = base + 3;   /* R3  */
     stack[stack_offset - 6] = base + 2;   /* R2  */
     stack[stack_offset - 7] = base + 1;   /* R1  */
-    /* p_stack[stack_offset-8] is R0 */
+    /* stack[stack_offset - 8] is R0 */
     stack[stack_offset - 9] = base + 7;   /* R7  */
     stack[stack_offset - 10] = base + 6;  /* R6  */
     stack[stack_offset - 11] = base + 5;  /* R5  */
@@ -111,9 +116,9 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     task->np = oss.tasks;
     oss.tasks = task;
 
-    if (running_task == nullptr) {
+    if (running_task == NULL) {
         running_task = oss.tasks;
-        scheduled_task = nullptr;
+        scheduled_task = NULL;
     }
 
     oss.state = OS_STATE_TASKS_INITIALIZED;
@@ -122,7 +127,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
 }
 
 bool os_task_suspend(os_task_t *task) {
-    assert(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
+    ASSERT(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
 
     task->status = OS_TASK_STATUS_SUSPENDED;
 
@@ -130,7 +135,7 @@ bool os_task_suspend(os_task_t *task) {
 }
 
 bool os_task_resume(os_task_t *task) {
-    assert(task->status == OS_TASK_STATUS_SUSPENDED);
+    ASSERT(task->status == OS_TASK_STATUS_SUSPENDED);
 
     task->status = OS_TASK_STATUS_IDLE;
 
@@ -146,38 +151,40 @@ bool os_start(void) {
         return false;
     }
 
+    ASSERT(running_task != NULL);
+
     NVIC_SetPriority(PendSV_IRQn, 0xff);
     NVIC_SetPriority(SysTick_IRQn, 0x00);
 
+    // uint32_t stack[8];
+    // __set_PSP((uint32_t)(stack + 8));
+
+    /* Set PSP to the top of task's stack */
+    __set_PSP(running_task->sp + 64);
+    /* Switch to Unprivilleged Thread Mode with PSP */
+    __set_CONTROL(0x02);
+    /* Execute DSB/ISB after changing CONTORL (recommended) */
+    __DSB();
+    __ISB();
+
     oss.state = OS_STATE_STARTED;
 
-    __set_PSP(running_task->sp + 64); /* Set PSP to the top of task's stack */
-    __set_CONTROL(0x03); /* Switch to Unprivilleged Thread Mode with PSP */
-    __ISB(); /* Execute ISB after changing CONTORL (recommended) */
-
-    oss.initialized = true;
-
     running_task->handler(running_task->params);
+
+    volatile uint32_t i = 0;
+    while (true) {
+        i++;
+    }
 
     return true;
 }
 
-extern "C" {
-
-extern void SysTick_DefaultHandler(void);
-
-int sysTickHook() {
-    SysTick_DefaultHandler();
-
-    if (!oss.initialized) {
-        return 1;
-    }
-
+static void os_schedule() {
     // Schedule a new task to run...
     volatile os_task_t *iter = running_task;
 
     while (true) {
-        if (iter->np != nullptr) {
+        if (iter->np != NULL) {
             iter = iter->np;
         }
         else {
@@ -197,20 +204,34 @@ int sysTickHook() {
         }
     }
 
+    ASSERT(running_task != NULL);
+    ASSERT(scheduled_task != NULL);
+
     // Should this happen in the PendSV?
     running_task->status = OS_TASK_STATUS_IDLE;
     scheduled_task->status = OS_TASK_STATUS_ACTIVE;
 
     // Trigger PendSV!
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+}
+
+extern void SysTick_DefaultHandler(void);
+
+int sysTickHook() {
+    SysTick_DefaultHandler();
+
+    if (oss.state != OS_STATE_STARTED) {
+        return 1;
+    }
+
+    os_schedule();
 
     return 1;
 }
 
 void HardFault_Handler() {
-    Serial.println("HF");
-
     while (true) {
+        delay(10);
     }
 }
 
@@ -229,6 +250,14 @@ void PendSV_Handler() {
 
         /* Disable interrupts: */
         "cpsid	i\n"
+
+        /* Check to see if we're switching to the same task. */
+        "ldr     r1, =running_task\n"
+        "ldr     r1, [r1]\n"
+        "ldr     r2, =scheduled_task\n"
+        "ldr     r2, [r2]\n"
+        "cmp     r1, r2\n"
+        "beq     pendsv_done\n"
 
         /*
           Exception frame saved by the NVIC hardware onto stack:
@@ -290,7 +319,7 @@ void PendSV_Handler() {
         "ldr	r1, [r2]\n"
         "ldr	r0, [r1]\n"
         /* scheduled_task = 0; */
-        "mov  r3, #0\n"
+        "movs r3, #0\n"
         "str  r3, [r2]\n"
 
         /* Load registers R4-R11 (32 bytes) from the new PSP and make the PSP
@@ -304,6 +333,7 @@ void PendSV_Handler() {
         "ldmia	r0!, {r4-r7}\n"
         "msr	  psp, r0\n"
 
+        "pendsv_done:\n"
         /* EXC_RETURN - Thread mode with PSP: */
         "ldr r0, =0xFFFFFFFD\n"
 
@@ -312,6 +342,4 @@ void PendSV_Handler() {
 
         "bx	r0\n"
         );
-}
-
 }
