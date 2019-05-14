@@ -25,6 +25,8 @@
 #include <string.h>
 #include <sam.h>
 
+#include "arduino.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -83,13 +85,9 @@ os_task_status os_task_get_status(os_task_t *task);
 
 bool os_start();
 
-void os_irs_systick();
-
-void os_irs_pendv();
-
-void os_irs_hard_fault();
-
 void os_log(const char *f, ...);
+
+void os_irs_systick();
 
 #if defined(__cplusplus)
 }

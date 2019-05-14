@@ -250,14 +250,11 @@ void os_irs_systick() {
     }
 }
 
-void os_irs_hard_fault() {
+OS_DECLARE_HARD_FAULT_HANDLER() {
     infinite_loop();
 }
 
-void os_log(const char *f, ...) {
-}
-
-void os_irs_pendv() {
+OS_DECLARE_PENDSV_HANDLER() {
     asm(
         ".syntax unified\n"
         #if defined(__SAMD21__)

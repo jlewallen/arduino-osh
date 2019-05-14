@@ -21,12 +21,4 @@ int sysTickHook(void) {
     return 1;
 }
 
-void HardFault_Handler() {
-    os_irs_hard_fault();
-}
-
-void PendSV_Handler() {
-    os_irs_pendv();
-}
-
 #endif
