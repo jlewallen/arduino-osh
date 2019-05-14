@@ -30,14 +30,19 @@ extern "C" {
 #endif
 
 /**
- * Minimum number of bytes for a stack.
- */
-#define OSDOTH_STACK_MINIMUM_SIZE                     (16 * 4)
-
-/**
  *
  */
 // #define OSDOTH_CONFIG_DEBUG
+
+/**
+ * Minimum number of bytes for a stack.
+ */
+#if defined(OSDOTH_CONFIG_DEBUG)
+#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (16)
+#else
+#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (8)
+#endif
+#define OSDOTH_STACK_MINIMUM_SIZE                     (OSDOTH_STACK_MINIMUM_SIZE_WORDS * 4)
 
 /**
  *

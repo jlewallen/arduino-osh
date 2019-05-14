@@ -31,46 +31,30 @@ typedef enum {
 
 typedef struct os_system_t {
     os_state state;
+    uint8_t ntasks;
     os_task_t *tasks;
 } os_system_t;
 
 os_system_t oss = {
     OS_STATE_DEFAULT,
+    0,
     NULL
 };
 
+// TODO: Move these to os_system_t, need to work on my assembly first, though.
 volatile os_task_t *running_task = NULL;
 volatile os_task_t *scheduled_task = NULL;
 
+/* Allocate minimum stack . */
+static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
+
 static os_task_t idle_task;
 
-/* Allocate minimum stack plus some for our loop variable. */
-static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE];
-
 static void infinite_loop()  __attribute__ ((noreturn));
+
 static void task_idle()  __attribute__ ((noreturn));
+
 static void task_finished()  __attribute__ ((noreturn));
-
-inline static void infinite_loop() {
-    while (true) {
-        asm(
-            "1:\n"
-            "b 1b\n"
-        );
-    }
-}
-
-static void task_idle() {
-    infinite_loop();
-}
-
-static void task_finished() {
-    OSDOTH_ASSERT(running_task != NULL);
-
-    running_task->status = OS_TASK_STATUS_FINISHED;
-
-    infinite_loop();
-}
 
 bool os_initialize() {
     if (oss.state != OS_STATE_DEFAULT) {
@@ -96,11 +80,12 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     uint32_t stack_offset = (stack_size / sizeof(uint32_t));
 
     /* Initialize the task structure and set SP to the top of the stack
-       minus 16 words (64 bytes) to leave space for storing 16 registers: */
+       minus OSDOTH_STACK_MINIMUM_SIZE_WORDS words (OSDOTH_STACK_MINIMUM_SIZE
+       bytes) to leave space for storing 16 registers: */
+    task->sp = (uint32_t)(stack + stack_offset - OSDOTH_STACK_MINIMUM_SIZE_WORDS);
+    task->params = params;
     task->handler = handler;
     task->np = NULL;
-    task->params = params;
-    task->sp = (uint32_t)(stack + stack_offset - 16);
     task->status = OS_TASK_STATUS_IDLE;
 
     /* Save values of registers which will be restored on exc. return:
@@ -114,13 +99,13 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     stack[stack_offset - 8] = (uint32_t)params;
 
     #if defined(OSDOTH_CONFIG_DEBUG)
-    uint32_t base = 1000;
-    stack[stack_offset - 4] = base + 12;  /* R12 */
-    stack[stack_offset - 5] = base + 3;   /* R3  */
-    stack[stack_offset - 6] = base + 2;   /* R2  */
-    stack[stack_offset - 7] = base + 1;   /* R1  */
+    uint32_t base = 1000 * (oss.ntasks + 1);
+    stack[stack_offset -  4] = base + 12; /* R12 */
+    stack[stack_offset -  5] = base + 3;  /* R3  */
+    stack[stack_offset -  6] = base + 2;  /* R2  */
+    stack[stack_offset -  7] = base + 1;  /* R1  */
     /* stack[stack_offset - 8] is R0 */
-    stack[stack_offset - 9] = base + 7;   /* R7  */
+    stack[stack_offset -  9] = base + 7;  /* R7  */
     stack[stack_offset - 10] = base + 6;  /* R6  */
     stack[stack_offset - 11] = base + 5;  /* R5  */
     stack[stack_offset - 12] = base + 4;  /* R4  */
@@ -132,6 +117,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
 
     task->np = oss.tasks;
     oss.tasks = task;
+    oss.ntasks++;
 
     /* This will always initialize the initial task to be the idle task, this
      * that's the first call to this. */
@@ -179,7 +165,7 @@ bool os_start(void) {
     // __set_PSP((uint32_t)(stack + 8));
 
     /* Set PSP to the top of task's stack */
-    __set_PSP(running_task->sp + 64);
+    __set_PSP(running_task->sp + OSDOTH_STACK_MINIMUM_SIZE);
     /* Switch to Unprivilleged Thread Mode with PSP */
     __set_CONTROL(0x02);
     /* Execute DSB/ISB after changing CONTORL (recommended) */
@@ -362,4 +348,27 @@ void PendSV_Handler() {
 
         "bx	r0\n"
     );
+}
+
+inline static void infinite_loop() {
+    while (true) {
+        asm(
+            "1:\n"
+            "b 1b\n"
+        );
+    }
+}
+
+static void task_finished() {
+    OSDOTH_ASSERT(running_task != NULL);
+    OSDOTH_ASSERT(running_task->status == OS_TASK_STATUS_ACTIVE);
+
+    running_task->status = OS_TASK_STATUS_FINISHED;
+    oss.ntasks--;
+
+    infinite_loop();
+}
+
+static void task_idle() {
+    infinite_loop();
 }
