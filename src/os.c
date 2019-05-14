@@ -18,7 +18,6 @@
  */
 
 #include <inttypes.h>
-#include <Arduino.h>
 #include <sam.h>
 
 #include "os.h"
@@ -242,18 +241,10 @@ static void os_schedule() {
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
-extern void SysTick_DefaultHandler(void);
-
-int sysTickHook() {
-    SysTick_DefaultHandler();
-
-    if (oss.state != OS_STATE_STARTED) {
-        return 1;
+void os_systick() {
+    if (oss.state == OS_STATE_STARTED) {
+        os_schedule();
     }
-
-    os_schedule();
-
-    return 1;
 }
 
 void HardFault_Handler() {

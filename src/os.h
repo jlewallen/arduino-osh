@@ -75,6 +75,8 @@ os_task_status os_task_get_status(os_task_t *task);
 
 bool os_start();
 
+void os_systick();
+
 #if defined(__cplusplus)
 }
 #endif
