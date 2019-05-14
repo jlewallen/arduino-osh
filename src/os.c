@@ -46,7 +46,7 @@ volatile os_task_t *running_task = NULL;
 volatile os_task_t *scheduled_task = NULL;
 
 /* Allocate minimum stack . */
-static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
+static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS + OSDOTH_STACK_FUNCTION_OVERHEAD_WORDS];
 
 static os_task_t idle_task;
 
@@ -156,6 +156,8 @@ bool os_start(void) {
         return false;
     }
 
+    OSDOTH_ASSERT(os_platform_setup());
+
     OSDOTH_ASSERT(running_task != NULL);
 
     NVIC_SetPriority(PendSV_IRQn, 0xff);
@@ -178,13 +180,23 @@ bool os_start(void) {
 
     OSDOTH_ASSERT(0);
 
-    volatile uint32_t i = 0;
-    // REG_MTB_MASTER = 0x00000000;
-    while (true) {
-        i++;
-    }
+    infinite_loop();
 
     return true;
+}
+
+static void task_finished() {
+    OSDOTH_ASSERT(running_task != NULL);
+    OSDOTH_ASSERT(running_task->status == OS_TASK_STATUS_ACTIVE);
+
+    running_task->status = OS_TASK_STATUS_FINISHED;
+    oss.ntasks--;
+
+    infinite_loop();
+}
+
+static void task_idle() {
+    infinite_loop();
 }
 
 static void os_schedule() {
@@ -227,21 +239,17 @@ static void os_schedule() {
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
-void os_systick() {
+void os_irs_systick() {
     if (oss.state == OS_STATE_STARTED) {
         os_schedule();
     }
 }
 
-void HardFault_Handler() {
-    volatile uint32_t i = 0;
-    // REG_MTB_MASTER = 0x00000000;
-    while (true) {
-        i++;
-    }
+void os_irs_hard_fault() {
+    infinite_loop();
 }
 
-void PendSV_Handler() {
+void os_irs_pendv() {
     asm(
         ".syntax unified\n"
         #if defined(__SAMD21__)
@@ -352,23 +360,21 @@ void PendSV_Handler() {
 
 inline static void infinite_loop() {
     while (true) {
+        #if defined(REG_MTB_MASTER)
+        REG_MTB_MASTER = 0x00000000;
+        #endif
         asm(
+            #if defined(__SAMD21__)
+            ".cpu cortex-m0\n"
+            ".fpu softvfp\n"
+            #endif
+            #if defined(__SAMD51__)
+            ".cpu cortex-m4\n"
+            #endif
+
+            ".thumb\n"
             "1:\n"
             "b 1b\n"
         );
     }
-}
-
-static void task_finished() {
-    OSDOTH_ASSERT(running_task != NULL);
-    OSDOTH_ASSERT(running_task->status == OS_TASK_STATUS_ACTIVE);
-
-    running_task->status = OS_TASK_STATUS_FINISHED;
-    oss.ntasks--;
-
-    infinite_loop();
-}
-
-static void task_idle() {
-    infinite_loop();
 }

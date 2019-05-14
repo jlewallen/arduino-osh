@@ -40,8 +40,9 @@ extern "C" {
 #if defined(OSDOTH_CONFIG_DEBUG)
 #define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (16)
 #else
-#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (8)
+#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (16)
 #endif
+#define OSDOTH_STACK_FUNCTION_OVERHEAD_WORDS          (2)
 #define OSDOTH_STACK_MINIMUM_SIZE                     (OSDOTH_STACK_MINIMUM_SIZE_WORDS * 4)
 
 /**
@@ -68,6 +69,8 @@ typedef struct os_task_t {
     struct os_task_t *np;
 } os_task_t;
 
+bool os_platform_setup();
+
 bool os_initialize();
 
 bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size);
@@ -80,7 +83,11 @@ os_task_status os_task_get_status(os_task_t *task);
 
 bool os_start();
 
-void os_systick();
+void os_irs_systick();
+
+void os_irs_pendv();
+
+void os_irs_hard_fault();
 
 #if defined(__cplusplus)
 }
