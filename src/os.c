@@ -43,11 +43,34 @@ os_system_t oss = {
 volatile os_task_t *running_task = NULL;
 volatile os_task_t *scheduled_task = NULL;
 
+static os_task_t idle_task;
+
+/* Allocate minimum stack plus some for our loop variable. */
+static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE];
+
+static void infinite_loop()  __attribute__ ((noreturn));
+static void task_idle()  __attribute__ ((noreturn));
+static void task_finished()  __attribute__ ((noreturn));
+
+inline static void infinite_loop() {
     while (true) {
+        asm(
+            "1:\n"
+            "b 1b\n"
+        );
     }
 }
 
+static void task_idle() {
+    infinite_loop();
+}
+
 static void task_finished() {
+    OSDOTH_ASSERT(running_task != NULL);
+
+    running_task->status = OS_TASK_STATUS_FINISHED;
+
+    infinite_loop();
 }
 
 bool os_initialize() {
@@ -56,6 +79,8 @@ bool os_initialize() {
     }
 
     oss.state = OS_STATE_INITIALIZED;
+
+    OSDOTH_ASSERT(os_task_initialize(&idle_task, &task_idle, NULL, idle_stack, sizeof(idle_stack)));
 
     return true;
 }
@@ -207,8 +232,10 @@ static void os_schedule() {
     OSDOTH_ASSERT(running_task != NULL);
     OSDOTH_ASSERT(scheduled_task != NULL);
 
-    // Should this happen in the PendSV?
-    running_task->status = OS_TASK_STATUS_IDLE;
+    // NOTE: Should this happen in the PendSV?
+    if (running_task->status != OS_TASK_STATUS_FINISHED) {
+        running_task->status = OS_TASK_STATUS_IDLE;
+    }
     scheduled_task->status = OS_TASK_STATUS_ACTIVE;
 
     // Trigger PendSV!

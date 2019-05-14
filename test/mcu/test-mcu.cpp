@@ -12,10 +12,13 @@ __attribute__((__aligned__(DEBUG_MTB_SIZE * sizeof(uint32_t)))) uint32_t mtb[DEB
 void task_handler_empty(void *) {
     Serial.println("Empty");
 
+    /*
+    volatile uint32_t i = 0;
     while (true) {
-        Serial.println("-");
-        delay(1000);
+        REG_MTB_MASTER = 0x00000000;
+        i++;
     }
+    */
 }
 
 void setup() {
@@ -24,21 +27,17 @@ void setup() {
     while (!Serial && millis() < 2000) {
     }
 
-    REG_MTB_POSITION = ((uint32_t)(mtb - REG_MTB_BASE)) & 0xFFFFFFF8;
-    REG_MTB_FLOW = ((uint32_t)mtb + DEBUG_MTB_SIZE * sizeof(uint32_t)) & 0xFFFFFFF8;
-    REG_MTB_MASTER = 0x80000000 + 6;
+    if (true) {
+        REG_MTB_POSITION = ((uint32_t)(mtb - REG_MTB_BASE)) & 0xFFFFFFF8;
+        REG_MTB_FLOW = ((uint32_t)mtb + DEBUG_MTB_SIZE * sizeof(uint32_t)) & 0xFFFFFFF8;
+        REG_MTB_MASTER = 0x80000000 + 6;
+    }
 
     Serial.println("Starting");
 
     assert(os_initialize());
     assert(os_task_initialize(&tasks[0], &task_handler_empty, nullptr, stack1, sizeof(stack1)));
     assert(os_start());
-
-    REG_MTB_MASTER = 0x00000000;
-    volatile uint32_t i = 0;
-    while (true) {
-        i++;
-    }
 }
 
 void loop() {
