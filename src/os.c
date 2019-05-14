@@ -23,8 +23,6 @@
 
 #include "os.h"
 
-#define ASSERT(condition)  do { if (!(condition)) { assertion(); } } while (0)
-
 typedef enum {
     OS_STATE_DEFAULT = 1,
     OS_STATE_INITIALIZED,
@@ -45,18 +43,11 @@ os_system_t oss = {
 volatile os_task_t *running_task = NULL;
 volatile os_task_t *scheduled_task = NULL;
 
-static void assertion() {
-    volatile uint32_t i = 0;
     while (true) {
-        i++;
     }
 }
 
 static void task_finished() {
-    volatile uint32_t i = 0;
-    while (true) {
-        i++;
-    }
 }
 
 bool os_initialize() {
@@ -74,7 +65,9 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
         return false;
     }
 
-    ASSERT((stack_size % sizeof(uint32_t)) == 0);
+    OSDOTH_ASSERT((stack_size % sizeof(uint32_t)) == 0);
+
+    OSDOTH_ASSERT(stack_size >= OSDOTH_STACK_MINIMUM_SIZE);
 
     uint32_t stack_offset = (stack_size / sizeof(uint32_t));
 
@@ -96,7 +89,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     stack[stack_offset - 3] = (uint32_t)&task_finished;
     stack[stack_offset - 8] = (uint32_t)params;
 
-    #ifdef OS_CONFIG_DEBUG
+    #if defined(OSDOTH_CONFIG_DEBUG)
     uint32_t base = 1000;
     stack[stack_offset - 4] = base + 12;  /* R12 */
     stack[stack_offset - 5] = base + 3;   /* R3  */
@@ -116,6 +109,8 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     task->np = oss.tasks;
     oss.tasks = task;
 
+    /* This will always initialize the initial task to be the idle task, this
+     * that's the first call to this. */
     if (running_task == NULL) {
         running_task = oss.tasks;
         scheduled_task = NULL;
@@ -127,7 +122,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
 }
 
 bool os_task_suspend(os_task_t *task) {
-    ASSERT(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
+    OSDOTH_ASSERT(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
 
     task->status = OS_TASK_STATUS_SUSPENDED;
 
@@ -135,7 +130,7 @@ bool os_task_suspend(os_task_t *task) {
 }
 
 bool os_task_resume(os_task_t *task) {
-    ASSERT(task->status == OS_TASK_STATUS_SUSPENDED);
+    OSDOTH_ASSERT(task->status == OS_TASK_STATUS_SUSPENDED);
 
     task->status = OS_TASK_STATUS_IDLE;
 
@@ -151,7 +146,7 @@ bool os_start(void) {
         return false;
     }
 
-    ASSERT(running_task != NULL);
+    OSDOTH_ASSERT(running_task != NULL);
 
     NVIC_SetPriority(PendSV_IRQn, 0xff);
     NVIC_SetPriority(SysTick_IRQn, 0x00);
@@ -171,7 +166,10 @@ bool os_start(void) {
 
     running_task->handler(running_task->params);
 
+    OSDOTH_ASSERT(0);
+
     volatile uint32_t i = 0;
+    // REG_MTB_MASTER = 0x00000000;
     while (true) {
         i++;
     }
@@ -192,10 +190,12 @@ static void os_schedule() {
         }
 
         // If no other tasks can run but the one that just did, go ahead.
+        #if defined(OSDOTH_DISABLE_IDLE_TASK)
         if (iter == running_task) {
             scheduled_task = iter;
             break;
         }
+        #endif
 
         // Only run tasks that are idle.
         if (iter->status == OS_TASK_STATUS_IDLE) {
@@ -204,8 +204,8 @@ static void os_schedule() {
         }
     }
 
-    ASSERT(running_task != NULL);
-    ASSERT(scheduled_task != NULL);
+    OSDOTH_ASSERT(running_task != NULL);
+    OSDOTH_ASSERT(scheduled_task != NULL);
 
     // Should this happen in the PendSV?
     running_task->status = OS_TASK_STATUS_IDLE;
@@ -230,8 +230,10 @@ int sysTickHook() {
 }
 
 void HardFault_Handler() {
+    volatile uint32_t i = 0;
+    // REG_MTB_MASTER = 0x00000000;
     while (true) {
-        delay(10);
+        i++;
     }
 }
 
@@ -341,5 +343,5 @@ void PendSV_Handler() {
         "cpsie	i\n"
 
         "bx	r0\n"
-        );
+    );
 }

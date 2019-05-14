@@ -29,6 +29,16 @@
 extern "C" {
 #endif
 
+/**
+ *
+ */
+// #define OSDOTH_CONFIG_DEBUG
+
+/**
+ *
+ */
+#define OSDOTH_ASSERT(condition)                      (condition)
+
 typedef enum os_task_status {
     OS_TASK_STATUS_IDLE = 1,
     OS_TASK_STATUS_ACTIVE,
