@@ -89,6 +89,8 @@ void os_irs_pendv();
 
 void os_irs_hard_fault();
 
+void os_log(const char *f, ...);
+
 #if defined(__cplusplus)
 }
 #endif

@@ -189,6 +189,8 @@ static void task_finished() {
     OSDOTH_ASSERT(running_task != NULL);
     OSDOTH_ASSERT(running_task->status == OS_TASK_STATUS_ACTIVE);
 
+    os_log("os: task finished");
+
     running_task->status = OS_TASK_STATUS_FINISHED;
     oss.ntasks--;
 
@@ -239,6 +241,9 @@ static void os_schedule() {
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
+void os_log(const char *f, ...) {
+}
+
 void os_irs_systick() {
     if (oss.state == OS_STATE_STARTED) {
         os_schedule();
@@ -247,6 +252,9 @@ void os_irs_systick() {
 
 void os_irs_hard_fault() {
     infinite_loop();
+}
+
+void os_log(const char *f, ...) {
 }
 
 void os_irs_pendv() {

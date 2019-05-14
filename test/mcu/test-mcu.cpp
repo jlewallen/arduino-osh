@@ -9,16 +9,15 @@ static uint32_t stack1[128];
 #define DEBUG_MTB_SIZE 256
 __attribute__((__aligned__(DEBUG_MTB_SIZE * sizeof(uint32_t)))) uint32_t mtb[DEBUG_MTB_SIZE];
 
-void task_handler_empty(void *) {
-    Serial.println("Empty");
+extern "C" char *sbrk(int32_t i);
 
-    /*
-    volatile uint32_t i = 0;
-    while (true) {
-        REG_MTB_MASTER = 0x00000000;
-        i++;
-    }
-    */
+static uint32_t free_memory() {
+    char stack_dummy = 0;
+    return &stack_dummy - sbrk(0);
+}
+
+static void task_handler_empty(void *) {
+    os_log("Empty");
 }
 
 void setup() {
@@ -27,13 +26,13 @@ void setup() {
     while (!Serial && millis() < 2000) {
     }
 
+    os_log("Starting: %d", free_memory());
+
     if (true) {
         REG_MTB_POSITION = ((uint32_t)(mtb - REG_MTB_BASE)) & 0xFFFFFFF8;
         REG_MTB_FLOW = ((uint32_t)mtb + DEBUG_MTB_SIZE * sizeof(uint32_t)) & 0xFFFFFFF8;
         REG_MTB_MASTER = 0x80000000 + 6;
     }
-
-    Serial.println("Starting");
 
     assert(os_initialize());
     assert(os_task_initialize(&tasks[0], &task_handler_empty, nullptr, stack1, sizeof(stack1)));
