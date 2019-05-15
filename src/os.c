@@ -202,9 +202,11 @@ static void task_idle() {
 }
 
 static void os_schedule() {
+    /* May be unnecessary for us to be here... */
+    scheduled_task = NULL;
+
     // Schedule a new task to run...
     volatile os_task_t *iter = running_task;
-
     while (true) {
         if (iter->np != NULL) {
             iter = iter->np;
@@ -214,12 +216,9 @@ static void os_schedule() {
         }
 
         // If no other tasks can run but the one that just did, go ahead.
-        #if defined(OSDOTH_DISABLE_IDLE_TASK)
         if (iter == running_task) {
-            scheduled_task = iter;
-            break;
+            return;
         }
-        #endif
 
         // Only run tasks that are idle.
         if (iter->status == OS_TASK_STATUS_IDLE) {
