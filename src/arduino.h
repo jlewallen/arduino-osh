@@ -24,6 +24,11 @@ extern "C" {
  */
 bool os_platform_setup();
 
+/**
+ *
+ */
+void os_platform_led(bool on);
+
 #if defined(__cplusplus)
 }
 #endif

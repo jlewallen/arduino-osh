@@ -22,6 +22,11 @@ bool os_platform_setup() {
     return 1;
 }
 
+void os_platform_led(bool on) {
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, on ? HIGH : LOW);
+}
+
 int sysTickHook(void);
 
 extern void SysTick_DefaultHandler(void);

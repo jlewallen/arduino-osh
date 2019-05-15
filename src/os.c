@@ -250,6 +250,17 @@ void os_irs_systick() {
 }
 
 OS_DECLARE_HARD_FAULT_HANDLER() {
+    os_platform_led(1);
+
+    os_printf("os: hard fault!\n");
+
+    while (true) {
+        os_platform_led(1);
+        delay(500);
+        os_platform_led(0);
+        delay(500);
+    }
+
     infinite_loop();
 }
 
