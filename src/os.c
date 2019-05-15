@@ -364,7 +364,7 @@ OS_DECLARE_PENDSV_HANDLER() {
 
 inline static void infinite_loop() {
     while (true) {
-        #if defined(REG_MTB_MASTER)
+        #if defined(OSH_MTB)
         REG_MTB_MASTER = 0x00000000;
         #endif
         asm(
