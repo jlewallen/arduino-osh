@@ -19,6 +19,11 @@ extern "C" {
  */
 #define OS_DECLARE_HARD_FAULT_HANDLER()           void HardFault_Handler()
 
+/**
+ *
+ */
+bool os_platform_setup();
+
 #if defined(__cplusplus)
 }
 #endif

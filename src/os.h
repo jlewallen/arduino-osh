@@ -89,6 +89,8 @@ void os_log(const char *f, ...);
 
 void os_irs_systick();
 
+void os_printf(const char *f, ...);
+
 #if defined(__cplusplus)
 }
 #endif

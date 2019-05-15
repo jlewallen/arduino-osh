@@ -189,7 +189,7 @@ static void task_finished() {
     OSDOTH_ASSERT(running_task != NULL);
     OSDOTH_ASSERT(running_task->status == OS_TASK_STATUS_ACTIVE);
 
-    os_log("os: task finished");
+    os_printf("os: task finished\n");
 
     running_task->status = OS_TASK_STATUS_FINISHED;
     oss.ntasks--;
@@ -364,9 +364,9 @@ OS_DECLARE_PENDSV_HANDLER() {
 
 inline static void infinite_loop() {
     while (true) {
-        // #if defined(REG_MTB_MASTER)
-        // REG_MTB_MASTER = 0x00000000;
-        // #endif
+        #if defined(REG_MTB_MASTER)
+        REG_MTB_MASTER = 0x00000000;
+        #endif
         asm(
             #if defined(__SAMD21__)
             ".cpu cortex-m0\n"
