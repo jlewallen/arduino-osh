@@ -65,6 +65,8 @@ typedef struct os_task_t {
        to locate it safely from assembly implementation of PendSV_Handler).
        The compiler might add padding between other structure elements. */
     volatile uint32_t sp;
+    volatile uint32_t stack;
+    volatile uint32_t stack_size;
     volatile enum os_task_status status;
     void (*handler)(void *params);
     void *params;
@@ -88,6 +90,12 @@ bool os_start();
 void os_log(const char *f, ...);
 
 void os_irs_systick();
+
+void os_delay(uint32_t ms);
+
+void os_error(uint8_t code);
+
+void os_stack_check();
 
 void os_printf(const char *f, ...);
 

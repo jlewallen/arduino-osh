@@ -22,6 +22,9 @@
 
 #include "os.h"
 
+#define OSH_STACK_MAGIC_WORD     0xE25A2EA5U
+#define OSH_STACK_MAGIC_PATTERN  0xCCCCCCCCU
+
 typedef enum {
     OS_STATE_DEFAULT = 1,
     OS_STATE_INITIALIZED,
@@ -83,21 +86,28 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
        minus OSDOTH_STACK_MINIMUM_SIZE_WORDS words (OSDOTH_STACK_MINIMUM_SIZE
        bytes) to leave space for storing 16 registers: */
     task->sp = (uint32_t)(stack + stack_offset - OSDOTH_STACK_MINIMUM_SIZE_WORDS);
+    task->stack = (uint32_t)stack;
+    task->stack_size = stack_size;
     task->params = params;
     task->handler = handler;
     task->np = NULL;
     task->status = OS_TASK_STATUS_IDLE;
+
+    uint32_t i = stack_offset;
+    while (i > 0) {
+        stack[i] = OSH_STACK_MAGIC_PATTERN;
+        i--;
+    }
 
     /* Save values of registers which will be restored on exc. return:
        - XPSR: Default value (0x01000000)
        - PC: Point to the handler function
        - LR: Point to a function to be called when the handler returns
        - R0: Point to the handler function's parameter */
-    stack[stack_offset - 1] = 0x01000000;
-    stack[stack_offset - 2] = (uint32_t)handler & ~0x01UL;
-    stack[stack_offset - 3] = (uint32_t)&task_finished;
-    stack[stack_offset - 8] = (uint32_t)params;
-
+    stack[stack_offset -  1] = 0x01000000;
+    stack[stack_offset -  2] = (uint32_t)handler & ~0x01UL;
+    stack[stack_offset -  3] = (uint32_t)&task_finished;
+    stack[stack_offset -  8] = (uint32_t)params;
     #if defined(OSDOTH_CONFIG_DEBUG)
     uint32_t base = 1000 * (oss.ntasks + 1);
     stack[stack_offset -  4] = base + 12; /* R12 */
@@ -115,6 +125,8 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     stack[stack_offset - 16] = base + 8;  /* R8  */
     #endif /* OS_CONFIG_DEBUG */
 
+    stack[0] = OSH_STACK_MAGIC_WORD;
+
     task->np = oss.tasks;
     oss.tasks = task;
     oss.ntasks++;
@@ -124,6 +136,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     if (running_task == NULL) {
         running_task = oss.tasks;
         scheduled_task = NULL;
+        os_stack_check();
     }
 
     oss.state = OS_STATE_TASKS_INITIALIZED;
@@ -230,6 +243,8 @@ static void os_schedule() {
     OSDOTH_ASSERT(running_task != NULL);
     OSDOTH_ASSERT(scheduled_task != NULL);
 
+    os_stack_check();
+
     // NOTE: Should this happen in the PendSV?
     if (running_task->status != OS_TASK_STATUS_FINISHED) {
         running_task->status = OS_TASK_STATUS_IDLE;
@@ -241,6 +256,16 @@ static void os_schedule() {
 }
 
 void os_log(const char *f, ...) {
+}
+
+void os_error(uint8_t code) {
+    infinite_loop();
+}
+
+void os_stack_check() {
+    if ((running_task->sp < running_task->stack) || (((uint32_t *)running_task->stack)[0] != OSH_STACK_MAGIC_WORD)) {
+        os_error(0);
+    }
 }
 
 void os_irs_systick() {
@@ -256,9 +281,9 @@ OS_DECLARE_HARD_FAULT_HANDLER() {
 
     while (true) {
         os_platform_led(1);
-        delay(500);
+        os_delay(500);
         os_platform_led(0);
-        delay(500);
+        os_delay(500);
     }
 
     infinite_loop();
@@ -342,6 +367,11 @@ OS_DECLARE_PENDSV_HANDLER() {
         "ldr  r2, [r2]\n"
         "ldr	r3, =running_task\n"
         "str  r2, [r3]\n"
+
+        /* check for stack overflow */
+        "push {r2, r3}\n"
+        "bl   os_stack_check\n"
+        "pop  {r2, r3}\n"
 
         /* Load next task's SP: */
         "ldr	r2, =scheduled_task\n"

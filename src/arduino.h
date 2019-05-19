@@ -29,6 +29,11 @@ bool os_platform_setup();
  */
 void os_platform_led(bool on);
 
+/**
+ *
+ */
+#define os_delay(ms)   delay(ms)
+
 #if defined(__cplusplus)
 }
 #endif
