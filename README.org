@@ -5,3 +5,158 @@
 * Overview
 
 This is a version of os.h (https://github.com/adamheinrich/os.h) that works on ATSAMD21 based Arduino devices.
+* Issues
+
+0x0000815a /home/jlewallen/jlewallen/arduino-osh/test/mcu/test-mcu.cpp 23 1 times
+0xfffffffd no symtab symbol and line for <unknown>, line 0           
+0xfffffffc no symtab symbol and line for <unknown>, line 0           
+0x00008564 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/cortex_handlers.c 537 1 times
+0x00009bc4 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 61 2 times
+0x00009ba2 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 1024 2 times
+0x00009b58 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 1002 2 times
+0x00009b4a /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/SAMD21_USBDevice.h 103 1 times
+0x00009afa /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 965 1 times
+0x00009ae8 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/SAMD21_USBDevice.h 80 1 times
+0x00009ac8 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 928 1 times
+0x00009ab4 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 922 1 times
+0x00009bc0 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 60 1 times
+0x00009bbc /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 59 1 times
+0x00008562 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/cortex_handlers.c 536 1 times
+0x00008558 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/cortex_handlers.c 534 1 times
+0x0000815b /home/jlewallen/jlewallen/arduino-osh/test/mcu/test-mcu.cpp 23 1 times
+0x00008158 /home/jlewallen/jlewallen/arduino-osh/test/mcu/test-mcu.cpp 22 1 times
+
+
+─── Registers ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       r0 0x00000000        r1 0xcccccccc        r2 0xcccccccc        r3 0xcccccccc        r4 0xcccccccc        r5 0xcccccccc        r6 0xcccccccc        r7 0xcccccccc        r8 0xcccccccc        r9 0xcccccccc       r10 0xcccccccc
+      r11 0xcccccccc       r12 0xcccccccc        sp 0x20000a28        lr 0x00008275        pc 0x0000815a      xpsr 0x01000000       msp 0x20007fd0       psp 0x20000a28   primask 0x00000000   basepri 0x00000000 faultmask 0x00000000
+  control 0x00000002                                                 
+─── Source ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+18     os_printf("Overflow\n");                                      
+19     overflow();                                                   
+20 }                                                                 
+21                                                                   
+22 static void task_handler_empty(void *) {                          
+23     os_printf("Empty\n");                                         
+24                                                                   
+25     // overflow();                                                
+26                                                                   
+27     volatile int32_t i = 0;                                                                                                       
+28     while (true) {                                                                                                                
+─── Stack ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[0] from 0x0000815a in task_handler_empty+2 at /home/jlewallen/jlewallen/arduino-osh/test/mcu/test-mcu.cpp:23
+(no arguments)                                                       
+[1] from 0x00008274                                                  
+(no arguments)                                                       
+─── Threads ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[1] id 57005 from 0x0000815a in task_handler_empty+2 at /home/jlewallen/jlewallen/arduino-osh/test/mcu/test-mcu.cpp:23
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                     
+Hardware watchpoint 3: stack1[127]                                   
+                                                                           
+Old value = 16777216                                                                                                      
+New value = 33397                                                                                                            
+                                                                                                                             
+Breakpoint 5, task_handler_empty () at /home/jlewallen/jlewallen/arduino-osh/test/mcu/test-mcu.cpp:23                     
+23          os_printf("Empty\n");                                                                                         
+>>> print stack1                                                           
+$25 = {[0] = 3797560997, [1] = 3435973836 <repeats 115 times>, [116] = 0, [117] = 3435973836, [118] = 3435973836, [119] = 3435973836, [120] = 3435973836, [121] = 33397, [122] = 33114, [123] = 16777216, [124] = 0, [125] = 3435973836, [126] = 3435973836, [127] = 33397}
+>>> bt                                                                                                                               
+#0  task_handler_empty () at /home/jlewallen/jlewallen/arduino-osh/test/mcu/test-mcu.cpp:23                                          
+#1  0x00008274 in ?? ()                                              
+Backtrace stopped: previous frame identical to this frame (corrupt stack?)
+>>> mtb                                                              
+0x0000815a /home/jlewallen/jlewallen/arduino-osh/test/mcu/test-mcu.cpp 23 1 times
+0xfffffffd no symtab symbol and line for <unknown>, line 0           
+0xfffffffc no symtab symbol and line for <unknown>, line 0           
+0x00008564 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/cortex_handlers.c 537 1 times
+0x00009bc4 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 61 2 times
+0x00009ba2 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 1024 2 times
+0x00009b58 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 1002 2 times
+0x00009b4a /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/SAMD21_USBDevice.h 103 1 times
+0x00009afa /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 965 1 times
+0x00009ae8 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/SAMD21_USBDevice.h 80 1 times
+0x00009ac8 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 928 1 times
+0x00009ab4 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 922 1 times
+0x00009bc0 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 60 1 times
+0x00009bbc /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/USB/USBCore.cpp 59 1 times
+0x00008562 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/cortex_handlers.c 536 1 times
+0x00008558 /home/jlewallen/conservify/arduino-1.8.3/packages/adafruit/hardware/samd/1.2.9/cores/arduino/cortex_handlers.c 534 1 times
+
+─── Output/messages ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+─── Assembly ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+0x0000b382 memmove+0  push    {r4, r5, r6, lr}
+0x0000b384 memmove+2  cmp    r1, r0
+0x0000b386 memmove+4  bcc.n    0xb38c <memmove+10>
+0x0000b388 memmove+6  movs    r3, #0
+0x0000b38a memmove+8  b.n    0xb3a6 <memmove+36>
+0x0000b38c memmove+10 adds    r4, r1, r2
+0x0000b38e memmove+12 cmp    r0, r4
+0x0000b390 memmove+14 bcs.n    0xb388 <memmove+6>
+0x0000b392 memmove+16 adds    r5, r0, r2
+0x0000b394 memmove+18 adds    r3, r2, #0
+0x0000b396 memmove+20 subs    r3, #1
+0x0000b398 memmove+22 bcc.n    0xb3b2 <memmove+48>
+0x0000b39a memmove+24 negs    r1, r2
+0x0000b39c memmove+26 adds    r6, r4, r1
+0x0000b39e memmove+28 ldrb    r6, [r6, r3]
+0x0000b3a0 memmove+30 adds    r1, r5, r1
+0x0000b3a2 memmove+32 strb    r6, [r1, r3]
+0x0000b3a4 memmove+34 b.n    0xb396 <memmove+20>
+─── Expressions ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+─── History ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+$$2 = 0x200009f8 <stack1+448>
+$$1 = {
+  sp = 536873464,
+  stack = 536873016,
+  stack_size = 512,
+  status = OS_TASK_STATUS_ACTIVE,
+  handler = 0x8159 <task_handler_empty(void*)>,
+  params = 0x200008f8 <stack1+192>,
+  np = 0x6
+}
+$$0 = {
+  sp = 0,
+  stack = 0,
+  stack_size = 0,
+  status = 0,
+  handler = 0x0,
+  params = 0x0,
+  np = 0x0
+}
+─── Memory ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+─── Registers ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+       r0 0x20000990        r1 0x0000b9a5        r2 0x00000006        r3 0x00000006        r4 0x200008f8        r5 0x00000006        r6 0x200008f8        r7 0x2000008c        r8 0x000007d8        r9 0x000007d9       r10 0x000007da
+      r11 0x000007db       r12 0x000007dc        sp 0x20000830        lr 0x0000b5db        pc 0x0000b38c      xpsr 0x81000000       msp 0x20007fd0       psp 0x20000830   primask 0x00000000   basepri 0x00000000 faultmask 0x00000000
+  control 0x00000002
+─── Source ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+─── Stack ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[0] from 0x0000b38c in memmove+10
+(no arguments)
+[1] from 0x0000b5da in __ssputs_r+170
+(no arguments)
+[+]
+─── Threads ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[1] id 57005 from 0x0000b38c in memmove+10
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Hardware watchpoint 4: tasks[0].np
+
+Old value = (os_task_t *) 0x20000ac8 <idle_task>
+New value = (os_task_t *) 0x6
+
+Hardware watchpoint 5: tasks[0].np
+
+Old value = (os_task_t *) 0x20000ac8 <idle_task>
+New value = (os_task_t *) 0x6
+0x0000b38c in memmove ()
+>>> bt
+#0  0x0000b38c in memmove ()
+#1  0x0000b5da in __ssputs_r ()
+#2  0x0000b654 in _svfprintf_r ()
+#3  0x0000ae02 in _vsnprintf_r ()
+#4  0x0000ae30 in vsnprintf ()
+#5  0x00008224 in os_printf (f=0xb9a5 "Empty\n") at /home/jlewallen/jlewallen/arduino-osh/src/arduino.cpp:16
+#6  0x00008160 in task_handler_empty () at /home/jlewallen/jlewallen/arduino-osh/test/mcu/test-mcu.cpp:23
+#7  0x00008274 in ?? ()
+Backtrace stopped: previous frame identical to this frame (corrupt stack?)

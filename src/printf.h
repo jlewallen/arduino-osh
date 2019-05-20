@@ -48,7 +48,7 @@ extern "C" {
  * \param format A string that specifies the format of the output
  * \return The number of characters that are WRITTEN into the buffer, not counting the terminating null character
  */
-int alogging_sprintf(char* buffer, const char* format, ...);
+int os_sprintf(char* buffer, const char* format, ...);
 
 
 /**
@@ -59,8 +59,8 @@ int alogging_sprintf(char* buffer, const char* format, ...);
  * \return The number of characters that are WRITTEN into the buffer, not counting the terminating null character
  *         If the formatted string is truncated the buffer size (count) is returned
  */
-int  alogging_snprintf(char* buffer, size_t count, const char* format, ...);
-int alogging_vsnprintf(char* buffer, size_t count, const char* format, va_list va);
+int  os_snprintf(char* buffer, size_t count, const char* format, ...);
+int os_vsnprintf(char* buffer, size_t count, const char* format, va_list va);
 
 
 /**
@@ -71,7 +71,7 @@ int alogging_vsnprintf(char* buffer, size_t count, const char* format, va_list v
  * \param format A string that specifies the format of the output
  * \return The number of characters that are sent to the output function, not counting the terminating null character
  */
-int alogging_fctprintf(void (*out)(char character, void* arg), void* arg, const char* format, ...);
+int os_fctprintf(void (*out)(char character, void* arg), void* arg, const char* format, ...);
 
 
 #ifdef __cplusplus

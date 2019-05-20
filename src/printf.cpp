@@ -660,7 +660,7 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen, const
 ///////////////////////////////////////////////////////////////////////////////
 
 
-int alogging_sprintf(char* buffer, const char* format, ...)
+int os_sprintf(char* buffer, const char* format, ...)
 {
   va_list va;
   va_start(va, format);
@@ -670,7 +670,7 @@ int alogging_sprintf(char* buffer, const char* format, ...)
 }
 
 
-int alogging_snprintf(char* buffer, size_t count, const char* format, ...)
+int os_snprintf(char* buffer, size_t count, const char* format, ...)
 {
   va_list va;
   va_start(va, format);
@@ -680,13 +680,13 @@ int alogging_snprintf(char* buffer, size_t count, const char* format, ...)
 }
 
 
-int alogging_vsnprintf(char* buffer, size_t count, const char* format, va_list va)
+int os_vsnprintf(char* buffer, size_t count, const char* format, va_list va)
 {
   return _vsnprintf(_out_buffer, buffer, count, format, va);
 }
 
 
-int alogging_fctprintf(void (*out)(char character, void* arg), void* arg, const char* format, ...)
+int os_fctprintf(void (*out)(char character, void* arg), void* arg, const char* format, ...)
 {
   va_list va;
   va_start(va, format);

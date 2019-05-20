@@ -4,6 +4,7 @@
 #include <sam.h>
 
 #include "os.h"
+#include "printf.h"
 
 #if defined(ARDUINO)
 
@@ -13,7 +14,7 @@ void os_printf(const char *f, ...) {
     va_list args;
     va_start(args, f);
     char message[128];
-    vsnprintf(message, sizeof(message), f, args);
+    os_vsnprintf(message, sizeof(message), f, args);
     Serial.print(message);
     va_end(args);
 }
