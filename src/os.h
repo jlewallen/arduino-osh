@@ -36,6 +36,10 @@ extern "C" {
  */
 // #define OSDOTH_CONFIG_DEBUG
 
+#define DEBUG_MTB_MAGNITUDE_PACKETS  7
+#define DEBUG_MTB_SIZE               (1 << (DEBUG_MTB_MAGNITUDE_PACKETS + 1))
+#define DEBUG_MTB_SIZE_BYTES         (DEBUG_MTB_SIZE << 3)
+
 /**
  * Minimum number of bytes for a stack.
  */

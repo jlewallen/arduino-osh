@@ -5,12 +5,7 @@
 #include "printf.h"
 
 static os_task_t tasks[1];
-static uint32_t stack1[128];
-
-#if defined(OSH_MTB)
-#define DEBUG_MTB_SIZE 256
-__attribute__((__aligned__(DEBUG_MTB_SIZE * sizeof(uint32_t)))) uint32_t mtb[DEBUG_MTB_SIZE];
-#endif
+static uint32_t stack1[128] = { 0 };
 
 extern "C" char *sbrk(int32_t i);
 
@@ -34,12 +29,6 @@ void setup() {
     while (!Serial && millis() < 2000) {
         delay(10);
     }
-
-    #if defined(OSH_MTB)
-    REG_MTB_POSITION = ((uint32_t)(mtb - REG_MTB_BASE)) & 0xFFFFFFF8;
-    REG_MTB_FLOW = ((uint32_t)mtb + DEBUG_MTB_SIZE * sizeof(uint32_t)) & 0xFFFFFFF8;
-    REG_MTB_MASTER = 0x80000000 + 6;
-    #endif
 
     os_printf("Starting: %d\n", free_memory());
 

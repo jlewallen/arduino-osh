@@ -22,6 +22,10 @@
 
 #include "os.h"
 
+#if defined(OSH_MTB)
+__attribute__((__aligned__(DEBUG_MTB_SIZE_BYTES))) uint32_t mtb[DEBUG_MTB_SIZE];
+#endif
+
 #define OSH_STACK_MAGIC_WORD     0xE25A2EA5U
 #define OSH_STACK_MAGIC_PATTERN  0xCCCCCCCCU
 
@@ -63,6 +67,12 @@ bool os_initialize() {
     if (oss.state != OS_STATE_DEFAULT) {
         return false;
     }
+
+    #if defined(OSH_MTB)
+    REG_MTB_POSITION = ((uint32_t)(mtb - REG_MTB_BASE)) & 0xFFFFFFF8;
+    REG_MTB_FLOW = (((uint32_t)mtb - REG_MTB_BASE) + DEBUG_MTB_SIZE_BYTES) & 0xFFFFFFF8;
+    REG_MTB_MASTER = 0x80000000 + (DEBUG_MTB_MAGNITUDE_PACKETS - 1);
+    #endif
 
     oss.state = OS_STATE_INITIALIZED;
 
@@ -275,6 +285,10 @@ void os_irs_systick() {
 }
 
 OS_DECLARE_HARD_FAULT_HANDLER() {
+    #if defined(OSH_MTB)
+    REG_MTB_MASTER = 0x00000000;
+    #endif
+
     os_platform_led(1);
 
     os_printf("os: hard fault!\n");
@@ -404,10 +418,10 @@ OS_DECLARE_PENDSV_HANDLER() {
 }
 
 inline static void infinite_loop() {
+    volatile uint32_t i = 0;
     while (true) {
-        #if defined(OSH_MTB)
-        REG_MTB_MASTER = 0x00000000;
-        #endif
+        i++;
+        /*
         asm(
             #if defined(__SAMD21__)
             ".cpu cortex-m0\n"
@@ -421,5 +435,6 @@ inline static void infinite_loop() {
             "1:\n"
             "b 1b\n"
         );
+        */
     }
 }
