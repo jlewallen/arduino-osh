@@ -4,7 +4,13 @@ enable_arduino_toolchain()
 
 enable_language(ASM)
 
-enable_m4()
+if(TARGET_M4)
+  enable_m4()
+endif()
+
+if(TARGET_M0)
+  enable_m0()
+endif()
 
 file(GLOB osh_sources ../src/*.cpp ../src/*.c ../src/*.h)
 

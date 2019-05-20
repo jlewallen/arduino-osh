@@ -4,7 +4,13 @@ enable_arduino_toolchain()
 
 enable_language(ASM)
 
-# enable_m4()
+if(TARGET_M4)
+  enable_m4()
+endif()
+
+if(TARGET_M0)
+  enable_m0()
+endif()
 
 # add_definitions(-DOSH_MTB)
 # add_compile_options("-fstack-usage")
