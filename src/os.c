@@ -103,10 +103,8 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     task->np = NULL;
     task->status = OS_TASK_STATUS_IDLE;
 
-    uint32_t i = stack_offset;
-    while (i > 0) {
+    for (uint32_t i = 0; i < stack_offset; ++i) {
         stack[i] = OSH_STACK_MAGIC_PATTERN;
-        i--;
     }
 
     /* Save values of registers which will be restored on exc. return:
@@ -253,13 +251,13 @@ static void os_schedule() {
     OSDOTH_ASSERT(running_task != NULL);
     OSDOTH_ASSERT(scheduled_task != NULL);
 
-    os_stack_check();
-
     // NOTE: Should this happen in the PendSV?
     if (running_task->status != OS_TASK_STATUS_FINISHED) {
         running_task->status = OS_TASK_STATUS_IDLE;
     }
     scheduled_task->status = OS_TASK_STATUS_ACTIVE;
+
+    os_stack_check();
 
     // Trigger PendSV!
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
@@ -375,6 +373,11 @@ OS_DECLARE_PENDSV_HANDLER() {
         "ldr	r2, =running_task\n"
         "ldr	r1, [r2]\n"
         "str	r0, [r1]\n"
+
+        /* check for stack overflow */
+        "push {r2, r3}\n"
+        "bl   os_stack_check\n"
+        "pop  {r2, r3}\n"
 
         /* running_task = scheduled_task; */
         "ldr	r2, =scheduled_task\n"

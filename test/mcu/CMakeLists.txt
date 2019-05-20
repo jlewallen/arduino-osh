@@ -7,6 +7,7 @@ enable_language(ASM)
 # enable_m4()
 
 # add_definitions(-DOSH_MTB)
+# add_compile_options("-fstack-usage")
 
 file(GLOB osh_sources ../../src/*.cpp ../../src/*.c ../../src/*.h)
 
