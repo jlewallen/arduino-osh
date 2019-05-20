@@ -17,9 +17,11 @@ static uint32_t free_memory() {
 static void task_handler_empty(void *) {
     os_printf("Empty\n");
 
+    volatile int32_t i = 0;
     while (true) {
-        os_printf("Tick\n");
-        delay(1000);
+        i++;
+        // os_printf("Tick\n");
+        // delay(1000);
     }
 }
 

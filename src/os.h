@@ -44,11 +44,10 @@ extern "C" {
  * Minimum number of bytes for a stack.
  */
 #if defined(OSDOTH_CONFIG_DEBUG)
-#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (16)
+#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (16 + 8)
 #else
-#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (16)
+#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (16 + 8)
 #endif
-#define OSDOTH_STACK_FUNCTION_OVERHEAD_WORDS          (2)
 #define OSDOTH_STACK_MINIMUM_SIZE                     (OSDOTH_STACK_MINIMUM_SIZE_WORDS * 4)
 
 /**
