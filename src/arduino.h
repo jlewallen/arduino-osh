@@ -22,6 +22,11 @@ extern "C" {
 /**
  *
  */
+#define OS_DECLARE_USAGE_FAULT_HANDLER()          void UsageFault_Handler()
+
+/**
+ *
+ */
 bool os_platform_setup();
 
 /**

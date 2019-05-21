@@ -81,6 +81,25 @@ bool os_initialize() {
     return true;
 }
 
+typedef struct os_stack_frame_t {
+    uint32_t xpsr;
+    void *pc;
+    void *lr;
+    uint32_t r12;
+    uint32_t r3;
+    uint32_t r2;
+    uint32_t r1;
+    uint32_t r0;
+    uint32_t r7;
+    uint32_t r6;
+    uint32_t r5;
+    uint32_t r4;
+    uint32_t r11;
+    uint32_t r10;
+    uint32_t r9;
+    uint32_t r8;
+} os_stack_frame_t;
+
 bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
     if (oss.state != OS_STATE_INITIALIZED && oss.state != OS_STATE_TASKS_INITIALIZED) {
         return false;
@@ -280,6 +299,10 @@ void os_irs_systick() {
     if (oss.state == OS_STATE_STARTED) {
         os_schedule();
     }
+}
+
+OS_DECLARE_USAGE_FAULT_HANDLER() {
+    infinite_loop();
 }
 
 OS_DECLARE_HARD_FAULT_HANDLER() {
