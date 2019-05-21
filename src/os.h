@@ -36,18 +36,16 @@ extern "C" {
  */
 // #define OSDOTH_CONFIG_DEBUG
 
-#define DEBUG_MTB_MAGNITUDE_PACKETS  7
-#define DEBUG_MTB_SIZE               (1 << (DEBUG_MTB_MAGNITUDE_PACKETS + 1))
-#define DEBUG_MTB_SIZE_BYTES         (DEBUG_MTB_SIZE << 3)
+#define DEBUG_MTB_MAGNITUDE_PACKETS                   (7)
+#define DEBUG_MTB_SIZE                                (1 << (DEBUG_MTB_MAGNITUDE_PACKETS + 1))
+#define DEBUG_MTB_SIZE_BYTES                          (DEBUG_MTB_SIZE << 3)
 
 /**
  * Minimum number of bytes for a stack.
  */
-#if defined(OSDOTH_CONFIG_DEBUG)
-#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (16 + 8)
-#else
-#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (16 + 8)
-#endif
+#define OSDOTH_STACK_BASIC_FRAME_SIZE                 (16)
+#define OSDOTH_STACK_EXTENDED_FRAME_SIZE              (40)
+#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (OSDOTH_STACK_EXTENDED_FRAME_SIZE + 8)
 #define OSDOTH_STACK_MINIMUM_SIZE                     (OSDOTH_STACK_MINIMUM_SIZE_WORDS * 4)
 
 /**
@@ -70,6 +68,7 @@ typedef struct os_task_t {
     volatile void *sp;
     volatile void *stack;
     volatile uint32_t stack_size;
+    volatile uint8_t stack_kind;
     volatile enum os_task_status status;
     void (*handler)(void*);
     void *params;

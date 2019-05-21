@@ -111,51 +111,54 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     OSDOTH_ASSERT(stack_size >= OSDOTH_STACK_MINIMUM_SIZE);
 
     uint32_t stack_offset = (stack_size / sizeof(uint32_t));
-
-    /* Initialize the task structure and set SP to the top of the stack
-       minus OSDOTH_STACK_MINIMUM_SIZE_WORDS words (OSDOTH_STACK_MINIMUM_SIZE
-       bytes) to leave space for storing 16 registers: */
-    task->sp = (stack + stack_offset - OSDOTH_STACK_MINIMUM_SIZE_WORDS);
-    task->stack = stack;
-    task->stack_size = stack_size;
-    task->params = params;
-    task->handler = handler;
-    task->np = NULL;
-    task->status = OS_TASK_STATUS_IDLE;
-
     for (uint32_t i = 0; i < stack_offset; ++i) {
         stack[i] = OSH_STACK_MAGIC_PATTERN;
     }
+
+    // Check alignment. May not be necessary?
+    uint32_t *stk = stack + stack_offset;
+    if ((uint32_t)stk & 0x04U) {
+        stk--;
+    }
+    stk -= OSDOTH_STACK_BASIC_FRAME_SIZE;
 
     /* Save values of registers which will be restored on exc. return:
        - XPSR: Default value (0x01000000)
        - PC: Point to the handler function
        - LR: Point to a function to be called when the handler returns
        - R0: Point to the handler function's parameter */
-    stack[stack_offset -  1] = 0x01000000;
-    stack[stack_offset -  2] = (uint32_t)handler & ~0x01UL;
-    stack[stack_offset -  3] = (uint32_t)&task_finished;
-    stack[stack_offset -  8] = (uint32_t)params;
+    stk[15] = 0x01000000;
+    stk[14] = (uint32_t)handler & ~0x01UL;
+    stk[13] = (uint32_t)&task_finished;
+    stk[ 8] = (uint32_t)params;
     #if defined(OSDOTH_CONFIG_DEBUG)
     uint32_t base = 1000 * (oss.ntasks + 1);
-    stack[stack_offset -  4] = base + 12; /* R12 */
-    stack[stack_offset -  5] = base + 3;  /* R3  */
-    stack[stack_offset -  6] = base + 2;  /* R2  */
-    stack[stack_offset -  7] = base + 1;  /* R1  */
-    /* stack[stack_offset - 8] is R0 */
-    stack[stack_offset -  9] = base + 7;  /* R7  */
-    stack[stack_offset - 10] = base + 6;  /* R6  */
-    stack[stack_offset - 11] = base + 5;  /* R5  */
-    stack[stack_offset - 12] = base + 4;  /* R4  */
-    stack[stack_offset - 13] = base + 11; /* R11 */
-    stack[stack_offset - 14] = base + 10; /* R10 */
-    stack[stack_offset - 15] = base + 9;  /* R9  */
-    stack[stack_offset - 16] = base + 8;  /* R8  */
+    stk[12] = base + 12; /* R12 */
+    stk[11] = base + 3;  /* R3  */
+    stk[10] = base + 2;  /* R2  */
+    stk[ 9] = base + 1;  /* R1  */
+    /* stk[ 8] is R0 */
+    stk[ 7] = base + 7;  /* R7  */
+    stk[ 6] = base + 6;  /* R6  */
+    stk[ 5] = base + 5;  /* R5  */
+    stk[ 4] = base + 4;  /* R4  */
+    stk[ 3] = base + 11; /* R11 */
+    stk[ 2] = base + 10; /* R10 */
+    stk[ 1] = base + 9;  /* R9  */
+    stk[ 0] = base + 8;  /* R8  */
     #endif /* OS_CONFIG_DEBUG */
 
+    // Magic word to check for overflows.
     stack[0] = OSH_STACK_MAGIC_WORD;
 
+    task->sp = stk;
+    task->stack = stack;
+    task->stack_size = stack_size;
+    task->params = params;
+    task->handler = handler;
+    task->status = OS_TASK_STATUS_IDLE;
     task->np = oss.tasks;
+
     oss.tasks = task;
     oss.ntasks++;
 
@@ -304,10 +307,12 @@ void os_irs_systick() {
 
 OS_DECLARE_HARD_FAULT_HANDLER() {
     #if defined(__SAMD21__)
+    /*
     asm(
         ".syntax unified\n"
         ".cpu cortex-m0\n"
         ".fpu softvfp\n"
+        ".thumb\n"
 
         "movs   r0, #4\n"
         "mov    r1, lr\n"
@@ -324,8 +329,10 @@ OS_DECLARE_HARD_FAULT_HANDLER() {
         "ite    EQ\n"
         "mrseq  r0, msp\n"
         "mrsne  r0, psp\n"
+        "mov    r1, lr\n"
         "b      hard_fault_handler\n"
     );
+    */
     #endif
 
     #if defined(__SAMD51__)
@@ -337,12 +344,13 @@ OS_DECLARE_HARD_FAULT_HANDLER() {
         "ite    EQ\n"
         "mrseq  r0, msp\n"
         "mrsne  r0, psp\n"
+        "mov    r1, lr\n"
         "b      hard_fault_handler\n"
     );
     #endif
 }
 
-void hard_fault_handler(uint32_t *stack) {
+void hard_fault_handler(uint32_t *stack, uint32_t lr) {
     if (NVIC_HFSR & (1uL << 31)) {
         NVIC_HFSR |= (1uL << 31);   // Reset Hard Fault status
         *(stack + 6u) += 2u;        // PC is located on stack at SP + 24 bytes; increment PC by 2 to skip break instruction.
@@ -373,6 +381,7 @@ void hard_fault_handler(uint32_t *stack) {
     }
 }
 
+#if 0
 OS_DECLARE_PENDSV_HANDLER() {
     asm(
         ".syntax unified\n"
@@ -491,6 +500,7 @@ OS_DECLARE_PENDSV_HANDLER() {
         "bx	r0\n"
     );
 }
+#endif
 
 inline static void infinite_loop() {
     volatile uint32_t i = 0;

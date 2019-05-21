@@ -15,7 +15,7 @@ endif()
 # add_definitions(-DOSH_MTB)
 # add_compile_options("-fstack-usage")
 
-file(GLOB osh_sources ../../src/*.cpp ../../src/*.c ../../src/*.h)
+file(GLOB osh_sources ../../src/*.cpp ../../src/*.s ../../src/*.c ../../src/*.h)
 
 file(GLOB test_sources *.cpp)
 add_arduino_library(osh-test "${test_sources};${osh_sources}")
