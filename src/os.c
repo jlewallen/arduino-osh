@@ -53,7 +53,7 @@ volatile os_task_t *running_task = NULL;
 volatile os_task_t *scheduled_task = NULL;
 
 /* Allocate minimum stack . */
-static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
+static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS * 4];
 
 static os_task_t idle_task;
 
@@ -95,8 +95,8 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     /* Initialize the task structure and set SP to the top of the stack
        minus OSDOTH_STACK_MINIMUM_SIZE_WORDS words (OSDOTH_STACK_MINIMUM_SIZE
        bytes) to leave space for storing 16 registers: */
-    task->sp = (uint32_t)(stack + stack_offset - OSDOTH_STACK_MINIMUM_SIZE_WORDS);
-    task->stack = (uint32_t)stack;
+    task->sp = (stack + stack_offset - OSDOTH_STACK_MINIMUM_SIZE_WORDS);
+    task->stack = stack;
     task->stack_size = stack_size;
     task->params = params;
     task->handler = handler;
@@ -188,9 +188,9 @@ bool os_start(void) {
     // __set_PSP((uint32_t)(stack + 8));
 
     /* Set PSP to the top of task's stack */
-    __set_PSP(running_task->sp + OSDOTH_STACK_MINIMUM_SIZE);
+    __set_PSP((uint32_t)running_task->sp + OSDOTH_STACK_MINIMUM_SIZE);
     /* Switch to Unprivilleged Thread Mode with PSP */
-    __set_CONTROL(0x02);
+    __set_CONTROL(0x03);
     /* Execute DSB/ISB after changing CONTORL (recommended) */
     __DSB();
     __ISB();
