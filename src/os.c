@@ -21,6 +21,7 @@
 #include <sam.h>
 
 #include "os.h"
+#include "faults.h"
 
 #if defined(OSH_MTB)
 __attribute__((__aligned__(DEBUG_MTB_SIZE_BYTES))) uint32_t mtb[DEBUG_MTB_SIZE];
@@ -301,27 +302,75 @@ void os_irs_systick() {
     }
 }
 
-OS_DECLARE_USAGE_FAULT_HANDLER() {
-    infinite_loop();
-}
-
 OS_DECLARE_HARD_FAULT_HANDLER() {
-    #if defined(OSH_MTB)
-    REG_MTB_MASTER = 0x00000000;
+    #if defined(__SAMD21__)
+    asm(
+        ".syntax unified\n"
+        ".cpu cortex-m0\n"
+        ".fpu softvfp\n"
+
+        "movs   r0, #4\n"
+        "mov    r1, lr\n"
+        "tst    r0, r1\n"
+        "bne    hf_uses_psp\n"
+        "mrs    r0, msp\n"
+        "b      hf_pass_stack_ptr\n"
+
+        "hf_uses_psp:\n"
+        "mrs    r0, psp\n"
+
+        "hf_pass_stack_ptr:\n"
+        "tst    lr, #4\n"
+        "ite    EQ\n"
+        "mrseq  r0, msp\n"
+        "mrsne  r0, psp\n"
+        "b      hard_fault_handler\n"
+    );
     #endif
 
-    os_platform_led(1);
+    #if defined(__SAMD51__)
+    asm(
+        ".syntax unified\n"
+        ".cpu cortex-m4\n"
 
-    os_printf("os: hard fault!\n");
+        "tst    lr, #4\n"
+        "ite    EQ\n"
+        "mrseq  r0, msp\n"
+        "mrsne  r0, psp\n"
+        "b      hard_fault_handler\n"
+    );
+    #endif
+}
 
-    while (true) {
-        os_platform_led(1);
-        os_delay(500);
-        os_platform_led(0);
-        os_delay(500);
+void hard_fault_handler(uint32_t *stack) {
+    if (NVIC_HFSR & (1uL << 31)) {
+        NVIC_HFSR |= (1uL << 31);   // Reset Hard Fault status
+        *(stack + 6u) += 2u;        // PC is located on stack at SP + 24 bytes; increment PC by 2 to skip break instruction.
+        return;                     // Return to application
     }
 
-    infinite_loop();
+    cortex_hard_fault_t hfr;
+    hfr.syshndctrl.byte = SYSHND_CTRL;  // System Handler Control and State Register
+    hfr.mfsr.byte       = NVIC_MFSR;    // Memory Fault Status Register
+    hfr.bfsr.byte       = NVIC_BFSR;    // Bus Fault Status Register
+    hfr.bfar            = NVIC_BFAR;    // Bus Fault Manage Address Register
+    hfr.ufsr.byte       = NVIC_UFSR;    // Usage Fault Status Register
+    hfr.hfsr.byte       = NVIC_HFSR;    // Hard Fault Status Register
+    hfr.dfsr.byte       = NVIC_DFSR;    // Debug Fault Status Register
+    hfr.afsr            = NVIC_AFSR;    // Auxiliary Fault Status Register
+
+    hfr.registers.R0 = stack[0];        // Register R0
+    hfr.registers.R1 = stack[1];        // Register R1
+    hfr.registers.R2 = stack[2];        // Register R2
+    hfr.registers.R3 = stack[3];        // Register R3
+    hfr.registers.R12 = stack[4];       // Register R12
+    hfr.registers.LR = stack[5];        // Link register LR
+    hfr.registers.PC = stack[6];        // Program counter PC
+    hfr.registers.psr.byte = stack[7];  // Program status word PSR
+
+    volatile uint32_t looping = 1;
+    while (looping) {
+    }
 }
 
 OS_DECLARE_PENDSV_HANDLER() {
@@ -447,20 +496,5 @@ inline static void infinite_loop() {
     volatile uint32_t i = 0;
     while (true) {
         i++;
-        /*
-        asm(
-            #if defined(__SAMD21__)
-            ".cpu cortex-m0\n"
-            ".fpu softvfp\n"
-            #endif
-            #if defined(__SAMD51__)
-            ".cpu cortex-m4\n"
-            #endif
-
-            ".thumb\n"
-            "1:\n"
-            "b 1b\n"
-        );
-        */
     }
 }
