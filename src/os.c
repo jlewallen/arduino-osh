@@ -59,7 +59,7 @@ static os_task_t idle_task;
 
 static void infinite_loop()  __attribute__ ((noreturn));
 
-static void task_handler_idle()  __attribute__ ((noreturn));
+static void task_handler_idle(void*)  __attribute__ ((noreturn));
 
 static void task_finished()  __attribute__ ((noreturn));
 
@@ -218,7 +218,7 @@ static void task_finished() {
     infinite_loop();
 }
 
-static void task_handler_idle() {
+static void task_handler_idle(void *params) {
     infinite_loop();
 }
 
