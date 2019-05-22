@@ -44,7 +44,7 @@ extern "C" {
  * Minimum number of bytes for a stack.
  */
 #define OSDOTH_STACK_BASIC_FRAME_SIZE                 (16)
-#define OSDOTH_STACK_EXTENDED_FRAME_SIZE              (40)
+#define OSDOTH_STACK_EXTENDED_FRAME_SIZE              (32)
 #define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (OSDOTH_STACK_EXTENDED_FRAME_SIZE + 8)
 #define OSDOTH_STACK_MINIMUM_SIZE                     (OSDOTH_STACK_MINIMUM_SIZE_WORDS * 4)
 
