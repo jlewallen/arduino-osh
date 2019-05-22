@@ -16,12 +16,15 @@ static uint32_t free_memory() {
 
 static void task_handler_empty(void *) {
     os_printf("Empty\n");
+    delay(100);
 
-    volatile int32_t i = 0;
+    #if defined(TEST_HARD_FAULT_1)
+    *((uint32_t *)(0xdeadbeef)) = 1;
+    #endif
+
     while (true) {
-        i++;
-        // os_printf("Tick\n");
-        // delay(1000);
+        os_printf("Tick\n");
+        delay(1000);
     }
 }
 
