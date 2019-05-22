@@ -22,9 +22,14 @@ static void task_handler_empty(void *) {
     *((uint32_t *)(0xdeadbeef)) = 1;
     #endif
 
+    pinMode(LED_BUILTIN, OUTPUT);
+
     while (true) {
         os_printf("Tick\n");
-        delay(1000);
+        digitalWrite(LED_BUILTIN, LOW);
+        delay(500);
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(500);
     }
 }
 
