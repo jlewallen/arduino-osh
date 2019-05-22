@@ -40,7 +40,11 @@ void setup() {
         delay(10);
     }
 
-    os_printf("Starting: %d\n", free_memory());
+    #if defined(HSRAM_ADDR)
+    os_printf("Starting: %d (0x%p + %lu)\n", free_memory(), HSRAM_ADDR, HSRAM_SIZE);
+    #else
+    os_printf("Starting: %d\n");
+    #endif
 
     assert(os_initialize());
     assert(os_task_initialize(&tasks[0], &task_handler_empty, nullptr, stack1, sizeof(stack1)));
