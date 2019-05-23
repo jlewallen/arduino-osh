@@ -23,7 +23,13 @@
 #include "os.h"
 #include "faults.h"
 
-os_globals_t osg = { NULL, NULL };
+os_globals_t osg = {
+    NULL,
+    NULL,
+    OS_STATE_DEFAULT,
+    0,
+    NULL
+};
 
 #if defined(OSH_MTB)
 __attribute__((__aligned__(DEBUG_MTB_SIZE_BYTES))) uint32_t mtb[DEBUG_MTB_SIZE];
@@ -32,31 +38,12 @@ __attribute__((__aligned__(DEBUG_MTB_SIZE_BYTES))) uint32_t mtb[DEBUG_MTB_SIZE];
 #define OSH_STACK_MAGIC_WORD     0xE25A2EA5U
 #define OSH_STACK_MAGIC_PATTERN  0xCCCCCCCCU
 
-typedef enum {
-    OS_STATE_DEFAULT = 1,
-    OS_STATE_INITIALIZED,
-    OS_STATE_TASKS_INITIALIZED,
-    OS_STATE_STARTED,
-} os_state;
-
-typedef struct os_system_t {
-    os_state state;
-    uint8_t ntasks;
-    os_task_t *tasks;
-} os_system_t;
-
-os_system_t oss = {
-    OS_STATE_DEFAULT,
-    0,
-    NULL
-};
-
 static void infinite_loop()  __attribute__ ((noreturn));
 
 static void task_finished()  __attribute__ ((noreturn));
 
 bool os_initialize() {
-    if (oss.state != OS_STATE_DEFAULT) {
+    if (osg.state != OS_STATE_DEFAULT) {
         return false;
     }
 
@@ -66,7 +53,7 @@ bool os_initialize() {
     REG_MTB_MASTER = 0x80000000 + (DEBUG_MTB_MAGNITUDE_PACKETS - 1);
     #endif
 
-    oss.state = OS_STATE_INITIALIZED;
+    osg.state = OS_STATE_INITIALIZED;
 
     return true;
 }
@@ -91,7 +78,7 @@ typedef struct os_stack_frame_t {
 } os_stack_frame_t;
 
 bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
-    if (oss.state != OS_STATE_INITIALIZED && oss.state != OS_STATE_TASKS_INITIALIZED) {
+    if (osg.state != OS_STATE_INITIALIZED && osg.state != OS_STATE_TASKS_INITIALIZED) {
         return false;
     }
 
@@ -121,7 +108,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     stk[13] = (uint32_t)&task_finished;
     stk[ 8] = (uint32_t)params;
     #if defined(OSDOTH_CONFIG_DEBUG)
-    uint32_t base = 1000 * (oss.ntasks + 1);
+    uint32_t base = 1000 * (osg.ntasks + 1);
     stk[12] = base + 12; /* R12 */
     stk[11] = base + 3;  /* R3  */
     stk[10] = base + 2;  /* R2  */
@@ -147,20 +134,20 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     task->params = params;
     task->handler = handler;
     task->status = OS_TASK_STATUS_IDLE;
-    task->np = oss.tasks;
+    task->np = osg.tasks;
 
-    oss.tasks = task;
-    oss.ntasks++;
+    osg.tasks = task;
+    osg.ntasks++;
 
     /* This will always initialize the initial task to be the idle task, this
      * that's the first call to this. */
     if (osg.running == NULL) {
-        osg.running = oss.tasks;
+        osg.running = osg.tasks;
         osg.scheduled = NULL;
         os_stack_check();
     }
 
-    oss.state = OS_STATE_TASKS_INITIALIZED;
+    osg.state = OS_STATE_TASKS_INITIALIZED;
 
     return true;
 }
@@ -186,7 +173,7 @@ os_task_status os_task_get_status(os_task_t *task) {
 }
 
 bool os_start(void) {
-    if (oss.state != OS_STATE_TASKS_INITIALIZED) {
+    if (osg.state != OS_STATE_TASKS_INITIALIZED) {
         return false;
     }
 
@@ -208,7 +195,7 @@ bool os_start(void) {
     __DSB();
     __ISB();
 
-    oss.state = OS_STATE_STARTED;
+    osg.state = OS_STATE_STARTED;
 
     osg.running->handler(osg.running->params);
 
@@ -226,7 +213,7 @@ static void task_finished() {
     os_printf("os: task finished\n");
 
     osg.running->status = OS_TASK_STATUS_FINISHED;
-    oss.ntasks--;
+    osg.ntasks--;
 
     infinite_loop();
 }
@@ -242,7 +229,7 @@ static void os_schedule() {
             iter = iter->np;
         }
         else {
-            iter = oss.tasks;
+            iter = osg.tasks;
         }
 
         // If no other tasks can run but the one that just did, go ahead.
@@ -290,7 +277,7 @@ void os_delay(uint32_t ms) {
 }
 
 void os_irs_systick() {
-    if (oss.state == OS_STATE_STARTED) {
+    if (osg.state == OS_STATE_STARTED) {
         os_schedule();
     }
 }

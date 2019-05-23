@@ -75,9 +75,19 @@ typedef struct os_task_t {
     struct os_task_t *np;
 } os_task_t;
 
+typedef enum {
+    OS_STATE_DEFAULT = 1,
+    OS_STATE_INITIALIZED,
+    OS_STATE_TASKS_INITIALIZED,
+    OS_STATE_STARTED,
+} os_state;
+
 typedef struct os_globals_t {
     volatile os_task_t *running;
     volatile os_task_t *scheduled;
+    os_state state;
+    uint8_t ntasks;
+    os_task_t *tasks;
 } os_globals_t;
 
 extern os_globals_t osg;
