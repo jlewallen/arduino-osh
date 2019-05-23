@@ -145,6 +145,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     task->sp = stk;
     task->stack = stack;
     task->stack_size = stack_size;
+    task->stack_kind = 0;
     task->params = params;
     task->handler = handler;
     task->status = OS_TASK_STATUS_IDLE;
