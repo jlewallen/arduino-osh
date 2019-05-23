@@ -8,7 +8,7 @@ static os_task_t tasks[1];
 static uint32_t stack1[128] = { 0 };
 
 static os_task_t idle_task;
-static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS * 4];
+static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
 
 extern "C" char *sbrk(int32_t i);
 
