@@ -75,6 +75,13 @@ typedef struct os_task_t {
     struct os_task_t *np;
 } os_task_t;
 
+typedef struct os_globals_t {
+    volatile os_task_t *running;
+    volatile os_task_t *scheduled;
+} os_globals_t;
+
+extern os_globals_t osg;
+
 bool os_platform_setup();
 
 bool os_initialize();

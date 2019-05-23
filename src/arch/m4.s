@@ -27,53 +27,48 @@ PendSV_Handler:
         .cantunwind
 
         /* Check to see if we're switching to the same task. */
-        ldr      r1, =running_task
-        ldr      r1, [r1]
-        ldr      r2, =scheduled_task
-        ldr      r2, [r2]
+        ldr      r3, =osg
+        ldr      r1, [r3, #OSG_RUNNING]
+        ldr      r2, [r3, #OSG_SCHEDULED]
         cmp      r1, r2
         beq      pendsv_done
 
         /* Disable interrupts: */
         cpsid	i
 
-        mrs      r12, psp                   /* Read PSP */
-        tst      lr, #0x10                  /* is it extended frame? */
+        mrs      r12, psp
+        tst      lr, #0x10                     /* Is it extended frame? */
         itte     eq
-        vstmdbeq r12!, {s16 - s31}          /* yes, stack also VFP hi-regs */
-        moveq    r0, #0x01                  /* os_tsk->stack_frame val */
+        vstmdbeq r12!, {s16 - s31}
+        moveq    r0, #0x01
         movne    r0, #0x00
-        strb     r0, [r1, #OS_TASK_STACK_KIND]      /* os_tsk.run->stack_frame = val */
-        stmdb    r12!, {r4 - r11}           /* Save Old context */
-        str      r12, [r1, #OS_TASK_SP]     /* Update os_tsk.run->tsk_stack */
+        strb     r0, [r1, #OS_TASK_STACK_KIND] /* osg.running->stack_kind = val */
+        stmdb    r12!, {r4 - r11}
+        str      r12, [r1, #OS_TASK_SP]        /* Update osg.running->sp */
 
         push     {r2, r3}
         bl       os_stack_check
         pop      {r2, r3}
 
         /* running_task = scheduled_task; */
-        ldr      r2, =scheduled_task
-        ldr      r2, [r2]
-        ldr      r3, =running_task
-        str      r2, [r3]
+        ldr      r3, =osg
+        ldr      r2, [r3, #OSG_SCHEDULED]
+        str      r2, [r3, #OSG_RUNNING]
+
         /* scheduled_task = 0; */
-        ldr      r2, =scheduled_task
-        movs     r3, #0
-        str      r3, [r2]
         movs     r2, #0
+        str      r2, [r3, #OSG_SCHEDULED]
 
-        ldr      r3, =running_task
-        ldr      r3, [r3]
-
-        ldr      r12, [r3, #OS_TASK_SP]     /* os_tsk.next->tsk_stack */
-        ldmia    r12!, {r4 - r11}           /* Restore New Context */
-        ldrb     r0, [r3, #OS_TASK_STACK_KIND]      /* Stack Frame */
-        cmp      r0, #0                     /* Basic/Extended Stack Frame */
+        ldr      r3, [r3, #OSG_RUNNING]
+        ldr      r12, [r3, #OS_TASK_SP]        /* Assign osg.running->sp */
+        ldmia    r12!, {r4 - r11}
+        ldrb     r0, [r3, #OS_TASK_STACK_KIND]
+        cmp      r0, #0                        /* Basic/Extended Stack Frame */
         itee     eq
-        mvneq    lr, #~0xFFFFFFFD           /* set EXC_RETURN value */
+        mvneq    lr, #~0xFFFFFFFD              /* EXC_RETURN value */
         mvnne    lr, #~0xFFFFFFED
-        vldmiane r12!, {s16 - s31}          /* restore VFP hi-registers */
-        msr      psp, r12                   /* Write PSP */
+        vldmiane r12!, {s16 - s31}
+        msr      psp, r12                      /* Write PSP */
 
         /* Enable interrupts: */
         cpsie	i

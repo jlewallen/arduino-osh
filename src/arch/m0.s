@@ -35,10 +35,9 @@ PendSV_Handler:
         cpsid	i
 
         /* Check to see if we're switching to the same task. */
-        ldr     r1, =running_task
-        ldr     r1, [r1]
-        ldr     r2, =scheduled_task
-        ldr     r2, [r2]
+        ldr     r3, =osg
+        ldr     r1, [r3, #OSG_RUNNING]
+        ldr     r2, [r3, #OSG_SCHEDULED]
         cmp     r1, r2
         beq     pendsv_done
 
@@ -87,9 +86,9 @@ PendSV_Handler:
         subs	  r0, #16
 
         /* Save current task's SP: */
-        ldr	    r2, =running_task
-        ldr	    r1, [r2]
-        str	    r0, [r1, #OS_TASK_SP]
+        ldr     r3, =osg
+        ldr     r2, [r3, #OSG_RUNNING]
+        str	    r0, [r2, #OS_TASK_SP]
 
         /* check for stack overflow */
         push    {r2, r3}
@@ -97,10 +96,9 @@ PendSV_Handler:
         pop     {r2, r3}
 
         /* running_task = scheduled_task; */
-        ldr	    r2, =scheduled_task
-        ldr     r2, [r2]
-        ldr	    r3, =running_task
-        str     r2, [r3]
+        ldr     r3, =osg
+        ldr     r2, [r3, #OSG_SCHEDULED]
+        str     r2, [r3, #OSG_RUNNING]
 
         /* check for stack overflow */
         push    {r2, r3}
@@ -108,12 +106,12 @@ PendSV_Handler:
         pop     {r2, r3}
 
         /* Load next task's SP: */
-        ldr	    r2, =scheduled_task
-        ldr	    r1, [r2]
-        ldr	    r0, [r1, #OS_TASK_SP]
+        ldr     r3, =osg
+        ldr     r2, [r3, #OSG_SCHEDULED]
+        ldr	    r0, [r2, #OS_TASK_SP]
         /* scheduled_task = 0; */
-        movs    r3, #0
-        str     r3, [r2]
+        movs    r2, #0
+        str     r2, [r3, #OSG_SCHEDULED]
 
         /* Load registers R4-R11 (32 bytes) from the new PSP and make the PSP
            point to the end of the exception stack frame. The NVIC hardware

@@ -23,6 +23,8 @@
 #include "os.h"
 #include "faults.h"
 
+os_globals_t osg = { NULL, NULL };
+
 #if defined(OSH_MTB)
 __attribute__((__aligned__(DEBUG_MTB_SIZE_BYTES))) uint32_t mtb[DEBUG_MTB_SIZE];
 #endif
@@ -48,10 +50,6 @@ os_system_t oss = {
     0,
     NULL
 };
-
-// TODO: Move these to os_system_t, need to work on my assembly first, though.
-volatile os_task_t *running_task = NULL;
-volatile os_task_t *scheduled_task = NULL;
 
 static void infinite_loop()  __attribute__ ((noreturn));
 
@@ -156,9 +154,9 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
 
     /* This will always initialize the initial task to be the idle task, this
      * that's the first call to this. */
-    if (running_task == NULL) {
-        running_task = oss.tasks;
-        scheduled_task = NULL;
+    if (osg.running == NULL) {
+        osg.running = oss.tasks;
+        osg.scheduled = NULL;
         os_stack_check();
     }
 
@@ -194,7 +192,7 @@ bool os_start(void) {
 
     OSDOTH_ASSERT(os_platform_setup());
 
-    OSDOTH_ASSERT(running_task != NULL);
+    OSDOTH_ASSERT(osg.running != NULL);
 
     NVIC_SetPriority(PendSV_IRQn, 0xff);
     NVIC_SetPriority(SysTick_IRQn, 0x00);
@@ -203,7 +201,7 @@ bool os_start(void) {
     // __set_PSP((uint32_t)(stack + 8));
 
     /* Set PSP to the top of task's stack */
-    __set_PSP((uint32_t)running_task->sp + OSDOTH_STACK_BASIC_FRAME_SIZE);
+    __set_PSP((uint32_t)osg.running->sp + OSDOTH_STACK_BASIC_FRAME_SIZE);
     /* Switch to Unprivilleged Thread Mode with PSP */
     __set_CONTROL(0x03);
     /* Execute DSB/ISB after changing CONTORL (recommended) */
@@ -212,7 +210,7 @@ bool os_start(void) {
 
     oss.state = OS_STATE_STARTED;
 
-    running_task->handler(running_task->params);
+    osg.running->handler(osg.running->params);
 
     OSDOTH_ASSERT(0);
 
@@ -222,12 +220,12 @@ bool os_start(void) {
 }
 
 static void task_finished() {
-    OSDOTH_ASSERT(running_task != NULL);
-    OSDOTH_ASSERT(running_task->status == OS_TASK_STATUS_ACTIVE);
+    OSDOTH_ASSERT(osg.running != NULL);
+    OSDOTH_ASSERT(osg.running->status == OS_TASK_STATUS_ACTIVE);
 
     os_printf("os: task finished\n");
 
-    running_task->status = OS_TASK_STATUS_FINISHED;
+    osg.running->status = OS_TASK_STATUS_FINISHED;
     oss.ntasks--;
 
     infinite_loop();
@@ -235,10 +233,10 @@ static void task_finished() {
 
 static void os_schedule() {
     /* May be unnecessary for us to be here... */
-    scheduled_task = NULL;
+    osg.scheduled = NULL;
 
     // Schedule a new task to run...
-    volatile os_task_t *iter = running_task;
+    volatile os_task_t *iter = osg.running;
     while (true) {
         if (iter->np != NULL) {
             iter = iter->np;
@@ -248,25 +246,25 @@ static void os_schedule() {
         }
 
         // If no other tasks can run but the one that just did, go ahead.
-        if (iter == running_task) {
+        if (iter == osg.running) {
             return;
         }
 
         // Only run tasks that are idle.
         if (iter->status == OS_TASK_STATUS_IDLE) {
-            scheduled_task = iter;
+            osg.scheduled = iter;
             break;
         }
     }
 
-    OSDOTH_ASSERT(running_task != NULL);
-    OSDOTH_ASSERT(scheduled_task != NULL);
+    OSDOTH_ASSERT(osg.running != NULL);
+    OSDOTH_ASSERT(osg.scheduled != NULL);
 
     // NOTE: Should this happen in the PendSV?
-    if (running_task->status != OS_TASK_STATUS_FINISHED) {
-        running_task->status = OS_TASK_STATUS_IDLE;
+    if (osg.running->status != OS_TASK_STATUS_FINISHED) {
+        osg.running->status = OS_TASK_STATUS_IDLE;
     }
-    scheduled_task->status = OS_TASK_STATUS_ACTIVE;
+    osg.scheduled->status = OS_TASK_STATUS_ACTIVE;
 
     os_stack_check();
 
@@ -282,7 +280,7 @@ void os_error(uint8_t code) {
 }
 
 void os_stack_check() {
-    if ((running_task->sp < running_task->stack) || (((uint32_t *)running_task->stack)[0] != OSH_STACK_MAGIC_WORD)) {
+    if ((osg.running->sp < osg.running->stack) || (((uint32_t *)osg.running->stack)[0] != OSH_STACK_MAGIC_WORD)) {
         os_error(0);
     }
 }

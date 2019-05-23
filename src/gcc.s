@@ -5,6 +5,9 @@
 .equ    OS_TASK_STACK_KIND, 12
 .equ    OS_TASK_SP, 0
 
+.equ    OSG_RUNNING, 0
+.equ    OSG_SCHEDULED, 4
+
 .section ".text"
 .align  2
 
