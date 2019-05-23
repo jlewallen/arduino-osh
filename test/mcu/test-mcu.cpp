@@ -19,7 +19,7 @@ static uint32_t free_memory() {
 
 static void task_handler_empty(void *) {
     os_printf("Empty\n");
-    delay(100);
+    os_delay(100);
 
     #if defined(TEST_HARD_FAULT_1)
     *((uint32_t *)(0xdeadbeef)) = 1;
@@ -30,15 +30,15 @@ static void task_handler_empty(void *) {
     while (true) {
         os_printf("Tick\n");
         digitalWrite(LED_BUILTIN, LOW);
-        delay(500);
+        os_delay(500);
         digitalWrite(LED_BUILTIN, HIGH);
-        delay(500);
+        os_delay(500);
     }
 }
 
 static void task_handler_idle(void *params) {
     while (true) {
-        delay(1000);
+        os_delay(1000);
     }
 }
 
@@ -46,7 +46,7 @@ void setup() {
     Serial.begin(115200);
 
     while (!Serial && millis() < 2000) {
-        delay(10);
+        os_delay(10);
     }
 
     #if defined(HSRAM_ADDR)

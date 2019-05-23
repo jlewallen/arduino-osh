@@ -19,7 +19,7 @@ static void task_handler(void *arg) {
 
         lastTick = millis();
 
-        delay(time);
+        os_delay(time);
 
         now = millis();
 
@@ -38,7 +38,7 @@ static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
 
 static void task_handler_idle(void *params) {
     while (true) {
-        delay(1000);
+        os_delay(1000);
     }
 }
 

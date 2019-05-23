@@ -286,6 +286,10 @@ void os_stack_check() {
     }
 }
 
+void os_delay(uint32_t ms) {
+    os_platform_delay(ms);
+}
+
 void os_irs_systick() {
     if (oss.state == OS_STATE_STARTED) {
         os_schedule();

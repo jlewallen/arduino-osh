@@ -28,6 +28,10 @@ void os_platform_led(bool on) {
     digitalWrite(LED_BUILTIN, on ? HIGH : LOW);
 }
 
+void os_platform_delay(uint32_t ms) {
+    delay(ms);
+}
+
 int sysTickHook(void);
 
 extern void SysTick_DefaultHandler(void);

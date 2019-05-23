@@ -37,7 +37,7 @@ void os_platform_led(bool on);
 /**
  *
  */
-#define os_delay(ms)   delay(ms)
+void os_platform_delay(uint32_t ms);
 
 #if defined(__cplusplus)
 }
