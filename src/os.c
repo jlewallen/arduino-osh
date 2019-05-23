@@ -53,14 +53,7 @@ os_system_t oss = {
 volatile os_task_t *running_task = NULL;
 volatile os_task_t *scheduled_task = NULL;
 
-/* Allocate minimum stack . */
-static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS * 4];
-
-static os_task_t idle_task;
-
 static void infinite_loop()  __attribute__ ((noreturn));
-
-static void task_handler_idle(void*)  __attribute__ ((noreturn));
 
 static void task_finished()  __attribute__ ((noreturn));
 
@@ -76,8 +69,6 @@ bool os_initialize() {
     #endif
 
     oss.state = OS_STATE_INITIALIZED;
-
-    OSDOTH_ASSERT(os_task_initialize(&idle_task, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
 
     return true;
 }
@@ -238,10 +229,6 @@ static void task_finished() {
     running_task->status = OS_TASK_STATUS_FINISHED;
     oss.ntasks--;
 
-    infinite_loop();
-}
-
-static void task_handler_idle(void *params) {
     infinite_loop();
 }
 

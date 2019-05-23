@@ -32,6 +32,16 @@ static void task_handler(void *arg) {
     }
 }
 
+static os_task_t idle_task;
+
+static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS * 4];
+
+static void task_handler_idle(void *params) {
+    while (true) {
+        delay(1000);
+    }
+}
+
 static os_task_t tasks[3];
 static uint32_t stack1[64];
 static uint32_t stack2[64];
@@ -54,6 +64,12 @@ void setup() {
     auto status = os_initialize();
     if (!status) {
         Serial.println("Error: os_initialize failed");
+        while (true);
+    }
+
+    status = os_task_initialize(&idle_task, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack));
+    if (!status) {
+        Serial.println("Error: os_task_initialize failed");
         while (true);
     }
 
