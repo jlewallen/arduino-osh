@@ -24,9 +24,7 @@ static void task_handler(void *arg) {
 
         delay(1000);
 
-        if (now == 0) {
-            __os_svc_example();
-        }
+        __os_svc_example();
 
         now = millis();
 

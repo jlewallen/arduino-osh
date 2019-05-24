@@ -2,7 +2,7 @@
 
         .thumb_func
         .type   HardFault_Handler, %function
-
+        .global HardFault_Handler
 HardFault_Handler:
         .fnstart
         .cantunwind
