@@ -28,6 +28,10 @@ void os_platform_led(bool on) {
     digitalWrite(LED_BUILTIN, on ? HIGH : LOW);
 }
 
+uint32_t os_platform_uptime() {
+    return millis();
+}
+
 void os_platform_delay(uint32_t ms) {
     delay(ms);
 }

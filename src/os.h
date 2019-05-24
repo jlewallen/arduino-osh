@@ -110,9 +110,13 @@ os_task_status os_task_get_status(os_task_t *task);
 
 bool os_start();
 
+void os_schedule();
+
 void os_log(const char *f, ...);
 
 void os_irs_systick();
+
+uint32_t os_uptime();
 
 void os_delay(uint32_t ms);
 

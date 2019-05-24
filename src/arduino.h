@@ -37,6 +37,11 @@ void os_platform_led(bool on);
 /**
  *
  */
+uint32_t os_platform_uptime();
+
+/**
+ *
+ */
 void os_platform_delay(uint32_t ms);
 
 #if defined(__cplusplus)

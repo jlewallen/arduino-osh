@@ -220,7 +220,7 @@ static void task_finished() {
     infinite_loop();
 }
 
-static void os_schedule() {
+void os_schedule() {
     /* May be unnecessary for us to be here... */
     osg.scheduled = NULL;
 
@@ -272,6 +272,10 @@ void os_stack_check() {
     if ((osg.running->sp < osg.running->stack) || (((uint32_t *)osg.running->stack)[0] != OSH_STACK_MAGIC_WORD)) {
         os_error(0);
     }
+}
+
+uint32_t os_uptime() {
+    return os_platform_uptime();
 }
 
 void os_delay(uint32_t ms) {
