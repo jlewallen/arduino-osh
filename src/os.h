@@ -52,11 +52,12 @@ extern "C" {
 /**
  *
  */
-#define OSDOTH_ASSERT(condition)                      (condition)
+#define OSDOTH_ASSERT(condition)                      if (!(condition)) os_error(1)
 
 typedef enum os_task_status {
     OS_TASK_STATUS_IDLE = 1,
     OS_TASK_STATUS_ACTIVE,
+    OS_TASK_STATUS_WAIT,
     OS_TASK_STATUS_SUSPENDED,
     OS_TASK_STATUS_FINISHED
 } os_task_status;

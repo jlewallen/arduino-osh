@@ -236,11 +236,13 @@ void os_schedule() {
 
         // If no other tasks can run but the one that just did, go ahead.
         if (iter == osg.running) {
+            OSDOTH_ASSERT(0);
             return;
         }
 
         // Only run tasks that are idle.
-        if (iter->status == OS_TASK_STATUS_IDLE) {
+        if (iter->status != OS_TASK_STATUS_FINISHED) {
+            OSDOTH_ASSERT(iter != osg.running);
             osg.scheduled = iter;
             break;
         }
