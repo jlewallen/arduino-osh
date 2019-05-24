@@ -20,7 +20,9 @@ static void task_handler(void *arg) {
 
         lastTick = millis();
 
-        os_delay(time);
+        __os_svc_delay(time);
+
+        delay(1000);
 
         if (now == 0) {
             __os_svc_example();
