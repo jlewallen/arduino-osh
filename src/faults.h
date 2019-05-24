@@ -12,19 +12,19 @@
 
 typedef struct cortex_hard_fault_t {
     struct {
-        volatile unsigned int R0;              // Register R0
-        volatile unsigned int R1;              // Register R1
-        volatile unsigned int R2;              // Register R2
-        volatile unsigned int R3;              // Register R3
-        volatile unsigned int R12;             // Register R12
-        volatile unsigned int LR;              // Link register
-        volatile unsigned int PC;              // Program counter
+        volatile void *R0;              // Register R0
+        volatile void *R1;              // Register R1
+        volatile void *R2;              // Register R2
+        volatile void *R3;              // Register R3
+        volatile void *R12;             // Register R12
+        volatile void *LR;              // Link register
+        volatile void *PC;              // Program counter
         union {
-            volatile unsigned int byte;
+            volatile uint32_t byte;
             struct {
-                unsigned int IPSR : 8;         // Interrupt Program Status register (IPSR)
-                unsigned int EPSR : 19;        // Execution Program Status register (EPSR)
-                unsigned int APSR : 5;         // Application Program Status register (APSR)
+                uint32_t IPSR : 8;         // Interrupt Program Status register (IPSR)
+                uint32_t EPSR : 19;        // Execution Program Status register (EPSR)
+                uint32_t APSR : 5;         // Application Program Status register (APSR)
             } bits;
         } psr;                                 // Program status register.
     } registers;

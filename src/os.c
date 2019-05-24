@@ -296,6 +296,12 @@ void os_irs_systick() {
     }
 }
 
+void hard_fault_report(uint32_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {
+    volatile uint32_t looping = 1;
+    while (looping) {
+    }
+}
+
 void hard_fault_handler(uint32_t *stack, uint32_t lr) {
     if (NVIC_HFSR & (1uL << 31)) {
         NVIC_HFSR |= (1uL << 31);   // Reset Hard Fault status
@@ -304,27 +310,25 @@ void hard_fault_handler(uint32_t *stack, uint32_t lr) {
     }
 
     cortex_hard_fault_t hfr;
-    hfr.syshndctrl.byte = SYSHND_CTRL;  // System Handler Control and State Register
-    hfr.mfsr.byte       = NVIC_MFSR;    // Memory Fault Status Register
-    hfr.bfsr.byte       = NVIC_BFSR;    // Bus Fault Status Register
-    hfr.bfar            = NVIC_BFAR;    // Bus Fault Manage Address Register
-    hfr.ufsr.byte       = NVIC_UFSR;    // Usage Fault Status Register
-    hfr.hfsr.byte       = NVIC_HFSR;    // Hard Fault Status Register
-    hfr.dfsr.byte       = NVIC_DFSR;    // Debug Fault Status Register
-    hfr.afsr            = NVIC_AFSR;    // Auxiliary Fault Status Register
+    hfr.syshndctrl.byte = SYSHND_CTRL;   // System Handler Control and State Register
+    hfr.mfsr.byte       = NVIC_MFSR;     // Memory Fault Status Register
+    hfr.bfsr.byte       = NVIC_BFSR;     // Bus Fault Status Register
+    hfr.bfar            = NVIC_BFAR;     // Bus Fault Manage Address Register
+    hfr.ufsr.byte       = NVIC_UFSR;     // Usage Fault Status Register
+    hfr.hfsr.byte       = NVIC_HFSR;     // Hard Fault Status Register
+    hfr.dfsr.byte       = NVIC_DFSR;     // Debug Fault Status Register
+    hfr.afsr            = NVIC_AFSR;     // Auxiliary Fault Status Register
 
-    hfr.registers.R0 = stack[0];        // Register R0
-    hfr.registers.R1 = stack[1];        // Register R1
-    hfr.registers.R2 = stack[2];        // Register R2
-    hfr.registers.R3 = stack[3];        // Register R3
-    hfr.registers.R12 = stack[4];       // Register R12
-    hfr.registers.LR = stack[5];        // Link register LR
-    hfr.registers.PC = stack[6];        // Program counter PC
-    hfr.registers.psr.byte = stack[7];  // Program status word PSR
+    hfr.registers.R0 = (void *)stack[0]; // Register R0
+    hfr.registers.R1 = (void *)stack[1]; // Register R1
+    hfr.registers.R2 = (void *)stack[2]; // Register R2
+    hfr.registers.R3 = (void *)stack[3]; // Register R3
+    hfr.registers.R12 = (void *)stack[4];// Register R12
+    hfr.registers.LR = (void *)stack[5]; // Link register LR
+    hfr.registers.PC = (void *)stack[6]; // Program counter PC
+    hfr.registers.psr.byte = stack[7];   // Program status word PSR
 
-    volatile uint32_t looping = 1;
-    while (looping) {
-    }
+    hard_fault_report(stack, lr, &hfr);
 }
 
 inline static void infinite_loop() {
