@@ -166,9 +166,9 @@ SVC_Handler:
         mrs       r3, psp                         /* read psp */
         stmia     r3!, {r0 - r2}                  /* store return values */
 
-        ldr       r3, =osg                        /* osg.running, osg.scheduled */
-        ldr       r1, [r3, #OSG_RUNNING]
-        ldr       r2, [r3, #OSG_SCHEDULED]
+        ldr       r0, =osg                        /* osg.running, osg.scheduled */
+        ldr       r1, [r0, #OSG_RUNNING]
+        ldr       r2, [r0, #OSG_SCHEDULED]
         cmp       r2, #0                          /* scheduled == NULL? */
         beq       svc_done                        /* no task switch */
         cmp       r1, r2
@@ -179,34 +179,35 @@ SVC_Handler:
         beq       svc_switch
 
         mrs       r0, psp                         /* read psp */
-        subs      r0, r0, #32                     /* adjust start address */
-        str       r0, [r1, #OS_TASK_SP]           /* update osg.running->sp */
+        subs      r0, r0, #16                     /* adjust start address */
         stmia     r0!, {r4 - r7}                  /* save (r4 - r7) */
         mov       r4, r8
         mov       r5, r9
         mov       r6, r10
         mov       r7, r11
+        subs      r0, r0, #32                     /* adjust start address */
         stmia     r0!, {r4 - r7}                  /* save (r8 - r11) */
+        subs      r0, r0, #16                     /* adjust start address */
+        str       r0, [r1, #OS_TASK_SP]           /* update osg.running->sp */
 
         push      {r2, r3}
         bl        os_stack_check
         pop       {r2, r3}
 
 svc_switch:
-        str       r2, [r3]                        /* osg.running = osg.scheduled */
-        movs      r0, #0
-        str       r0, [r3, #OSG_SCHEDULED]        /* osg.scheduled = NULL */
+        ldr       r0, =osg
+        str       r2, [r0, #OSG_RUNNING]          /* osg.running = osg.scheduled */
+        movs      r1, #0
+        str       r1, [r0, #OSG_SCHEDULED]        /* osg.scheduled = NULL */
 
         ldr       r0, [r2, #OS_TASK_SP]           /* osg.scheduled->sp */
-        adds      r0, r0, #16                     /* adjust start address */
         ldmia     r0!, {r4 - r7}                  /* restore (r8-r11) */
         mov       r8, r4
         mov       r9, r5
         mov       r10, r6
         mov       r11, r7
-        msr       psp, r0                         /* write psp */
-        subs      r0, r0, #32                     /* adjust start address */
         ldmia     r0!, {r4-r7}                    /* restore r4-r7 */
+        msr       psp, r0                         /* write psp */
 
 svc_done:
         movs      r0, #~0XFFFFFFFD                /* EXC_RETURN value */
