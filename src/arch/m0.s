@@ -40,6 +40,9 @@ PendSV_Handler:
         ldr     r2, [r3, #OSG_SCHEDULED]
         cmp     r1, r2
         beq     pendsv_done
+        movs    r0, #0
+        cmp     r2, r0
+        beq     pendsv_done
 
         /*
           Exception frame saved by the NVIC hardware onto stack:
@@ -191,6 +194,9 @@ SVC_Handler:
 
 svc_switch:
         str       r2, [r3]                        /* osg.running = osg.scheduled */
+        movs      r0, #0
+        str       r0, [r3, #OSG_SCHEDULED]        /* osg.scheduled = NULL */
+
         ldr       r0, [r2, #OS_TASK_SP]           /* osg.scheduled->sp */
         adds      r0, r0, #16                     /* adjust start address */
         ldmia     r0!, {r4 - r7}                  /* restore (r8-r11) */

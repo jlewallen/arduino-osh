@@ -32,6 +32,9 @@ PendSV_Handler:
         ldr      r2, [r3, #OSG_SCHEDULED]
         cmp      r1, r2
         beq      pendsv_done
+        mov      r0, #0
+        cmp      r2, r0
+        beq      pendsv_done
 
         /* Disable interrupts: */
         cpsid	i
@@ -132,7 +135,7 @@ svc_ctx_save:
         moveq     r0, #0x01
         movne     r0, #0x00
         strb      r0, [r1, #OS_TASK_STACK_KIND]   /* osg.running->stack_kind = val */
-        stmdb     r12!, {r4-r11}                  /* save old  */
+        stmdb     r12!, {r4 - r11}                /* save old  */
         str       r12, [r1, #OS_TASK_SP]          /* update osg.running->sp_stack */
 
         push      {r2, r3}
@@ -141,6 +144,9 @@ svc_ctx_save:
 
 svc_ctx_restore:
         str       r2, [r3]                        /* osg.running = osg.scheduled */
+        movs      r0, #0
+        str       r0, [r3, #OSG_SCHEDULED]        /* osg.scheduled = NULL */
+
         ldr       r12, [r2, #OS_TASK_SP]          /* osg.scheduled->sp */
         ldmia     r12!, {r4 - r11}
         ldrb      r0, [r2, #OS_TASK_STACK_KIND]
