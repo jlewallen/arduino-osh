@@ -2,6 +2,7 @@
 
 #include "os.h"
 
+
 static void task_handler(void *arg) {
     auto time = (uint32_t)arg;
     auto lastTick = (uint32_t)0;
@@ -20,6 +21,10 @@ static void task_handler(void *arg) {
         lastTick = millis();
 
         os_delay(time);
+
+        if (now == 0) {
+            __os_svc_example();
+        }
 
         now = millis();
 
@@ -52,7 +57,7 @@ void setup() {
     #if defined(__SAMD21__)
     Serial5.begin(115200);
     #endif
-    while (!Serial && millis() < 10000) {
+    while (!Serial && millis() < 2000) {
     }
 
     uint32_t p1 = 4000;

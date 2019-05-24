@@ -26,6 +26,7 @@
 #include <sam.h>
 
 #include "arduino.h"
+#include "service.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -73,6 +74,8 @@ typedef struct os_task_t {
     void (*handler)(void*);
     void *params;
     struct os_task_t *np;
+    struct os_task_t *delayed;
+    uint32_t delay;
 } os_task_t;
 
 typedef enum {
@@ -88,6 +91,7 @@ typedef struct os_globals_t {
     os_state state;
     uint8_t ntasks;
     os_task_t *tasks;
+    os_task_t *delayed;
 } os_globals_t;
 
 extern os_globals_t osg;

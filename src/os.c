@@ -28,7 +28,8 @@ os_globals_t osg = {
     NULL,
     OS_STATE_DEFAULT,
     0,
-    NULL
+    NULL,
+    NULL,
 };
 
 #if defined(OSH_MTB)
@@ -135,6 +136,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     task->handler = handler;
     task->status = OS_TASK_STATUS_IDLE;
     task->np = osg.tasks;
+    task->delay = 0;
 
     osg.tasks = task;
     osg.ntasks++;
