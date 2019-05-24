@@ -52,7 +52,7 @@ extern "C" {
 /**
  *
  */
-#define OSDOTH_ASSERT(condition)                      if (!(condition)) os_error(1)
+#define OSDOTH_ASSERT(expression)                     (void)((expression) || (os_assert(#expression, __FILE__, __LINE__), 0))
 
 typedef enum os_task_status {
     OS_TASK_STATUS_IDLE = 1,
@@ -120,6 +120,8 @@ void os_irs_systick();
 uint32_t os_uptime();
 
 void os_delay(uint32_t ms);
+
+void os_assert(const char *assertion, const char *file, int line);
 
 void os_error(uint8_t code);
 

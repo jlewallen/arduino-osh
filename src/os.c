@@ -266,6 +266,12 @@ void os_schedule() {
 void os_log(const char *f, ...) {
 }
 
+void os_assert(const char *assertion, const char *file, int line) {
+    os_printf("Assertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
+    os_error(1);
+    /* NOTREACHED */
+}
+
 void os_error(uint8_t code) {
     infinite_loop();
 }
