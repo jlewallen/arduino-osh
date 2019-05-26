@@ -54,6 +54,11 @@ extern "C" {
  */
 #define OSDOTH_ASSERT(expression)                     (void)((expression) || (os_assert(#expression, __FILE__, __LINE__), 0))
 
+typedef enum os_start_status {
+    OS_TASK_START_RUNNING,
+    OS_TASK_START_SUSPENDED,
+} os_start_status;
+
 typedef enum os_task_status {
     OS_TASK_STATUS_IDLE = 1,
     OS_TASK_STATUS_ACTIVE,
@@ -111,6 +116,7 @@ bool os_platform_setup();
 bool os_initialize();
 
 bool os_task_initialize(os_task_t *task, const char *name,
+                        os_start_status status,
                         void (*handler)(void *params), void *params,
                         uint32_t *stack, size_t stack_size);
 

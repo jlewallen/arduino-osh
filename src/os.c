@@ -79,13 +79,12 @@ typedef struct os_stack_frame_t {
     uint32_t r8;
 } os_stack_frame_t;
 
-bool os_task_initialize(os_task_t *task, const char *name, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
+bool os_task_initialize(os_task_t *task, const char *name, os_start_status status, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
     if (osg.state != OS_STATE_INITIALIZED && osg.state != OS_STATE_TASKS_INITIALIZED) {
         return false;
     }
 
     OSDOTH_ASSERT((stack_size % sizeof(uint32_t)) == 0);
-
     OSDOTH_ASSERT(stack_size >= OSDOTH_STACK_MINIMUM_SIZE);
 
     uint32_t stack_offset = (stack_size / sizeof(uint32_t));
@@ -135,7 +134,7 @@ bool os_task_initialize(os_task_t *task, const char *name, void (*handler)(void 
     task->stack_kind = 0;
     task->params = params;
     task->handler = handler;
-    task->status = OS_TASK_STATUS_IDLE;
+    task->status = status == OS_TASK_START_RUNNING ? OS_TASK_STATUS_IDLE : OS_TASK_STATUS_SUSPENDED;
     task->name = name;
     task->delay = 0;
     task->started = os_uptime();
@@ -146,6 +145,7 @@ bool os_task_initialize(os_task_t *task, const char *name, void (*handler)(void 
 
     /* First task initialized is always the idle task. */
     if (osg.idle == NULL) {
+        OSDOTH_ASSERT(task->status != OS_TASK_STATUS_SUSPENDED);
         osg.idle = task;
     }
 

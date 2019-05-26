@@ -62,25 +62,25 @@ void setup() {
         while (true);
     }
 
-    status = os_task_initialize(&idle_task, "idle", &task_handler_idle, NULL, idle_stack, sizeof(idle_stack));
+    status = os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack));
     if (!status) {
         Serial.println("Error: os_task_initialize failed");
         while (true);
     }
 
-    status = os_task_initialize(&tasks[0], "task1", &task_handler, (void*)p1, stack1, sizeof(stack1));
+    status = os_task_initialize(&tasks[0], "task1", OS_TASK_START_RUNNING, &task_handler, (void*)p1, stack1, sizeof(stack1));
     if (!status) {
         Serial.println("Error: os_task_initialize failed");
         while (true);
     }
 
-    status = os_task_initialize(&tasks[1], "task2", &task_handler, (void*)p2, stack2, sizeof(stack2));
+    status = os_task_initialize(&tasks[1], "task2", OS_TASK_START_RUNNING, &task_handler, (void*)p2, stack2, sizeof(stack2));
     if (!status) {
         Serial.println("Error: os_task_initialize failed");
         while (true);
     }
 
-    status = os_task_initialize(&tasks[2], "task3", &task_handler, (void*)p3, stack3, sizeof(stack3));
+    status = os_task_initialize(&tasks[2], "task3", OS_TASK_START_RUNNING, &task_handler, (void*)p3, stack3, sizeof(stack3));
     if (!status) {
         Serial.println("Error: os_task_initialize failed");
         while (true);

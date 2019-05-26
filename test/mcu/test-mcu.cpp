@@ -56,8 +56,8 @@ void setup() {
     #endif
 
     assert(os_initialize());
-    assert(os_task_initialize(&idle_task, "idle", &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
-    assert(os_task_initialize(&tasks[0], "simple", &task_handler_empty, nullptr, stack1, sizeof(stack1)));
+    assert(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
+    assert(os_task_initialize(&tasks[0], "simple", OS_TASK_START_RUNNING, &task_handler_empty, nullptr, stack1, sizeof(stack1)));
     assert(os_start());
 }
 
