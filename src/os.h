@@ -36,7 +36,21 @@ extern "C" {
 /**
  *
  */
-// #define OSDOTH_CONFIG_DEBUG
+/*
+#define OSDOTH_CONFIG_DEBUG
+*/
+
+/**
+ *
+ */
+#define OSDOTH_CONFIG_DEBUG_RTT
+
+/**
+ *
+ */
+/*
+#define DEBUG_MTB
+*/
 
 #define DEBUG_MTB_MAGNITUDE_PACKETS                   (7)
 #define DEBUG_MTB_SIZE                                (1 << (DEBUG_MTB_MAGNITUDE_PACKETS + 1))
@@ -85,7 +99,9 @@ typedef struct os_task_t {
     struct os_task_t *delayed;
     uint32_t started;
     uint32_t delay;
+    #if defined(OSDOTH_CONFIG_DEBUG)
     uint32_t debug_stack_max;
+    #endif
 } os_task_t;
 
 typedef enum {

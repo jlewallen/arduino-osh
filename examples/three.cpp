@@ -8,18 +8,16 @@ static void task_handler(void *arg) {
     auto now = (uint32_t)0;
 
     while (true) {
-        auto usage = os_task_stack_usage((os_task_t *)osg.running);
-
         __disable_irq();
-        os_printf("Waiting %lu (%lu) (%lu) (%lu)\n", now - lastTick, os_free_memory(), osg.running->debug_stack_max, usage);
+        os_printf("Waiting %lu\n", now - lastTick, os_free_memory());
         Serial.flush();
         __enable_irq();
 
-        lastTick = millis();
+        lastTick = os_uptime();
 
         __os_svc_delay(time);
 
-        now = millis();
+        now = os_uptime();
     }
 }
 

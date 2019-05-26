@@ -13,6 +13,9 @@ extern "C" {
 static void serial_putchar(char c, void *arg) {
     if (c != 0) {
         Serial.print(c);
+        #if defined(OSDOTH_CONFIG_DEBUG_RTT)
+        SEGGER_RTT_PutChar(0, c);
+        #endif
     }
 }
 

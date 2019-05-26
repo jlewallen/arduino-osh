@@ -138,7 +138,9 @@ bool os_task_initialize(os_task_t *task, const char *name, os_start_status statu
     task->name = name;
     task->delay = 0;
     task->started = os_uptime();
+    #if defined(OSDOTH_CONFIG_DEBUG)
     task->debug_stack_max = 0;
+    #endif
 
     task->np = osg.tasks;
     osg.tasks = task;
@@ -245,12 +247,14 @@ void os_schedule() {
     /* May be unnecessary for us to be here... */
     osg.scheduled = NULL;
 
+    #if defined(OSDOTH_CONFIG_DEBUG)
     /* Calculate stack usage and update when debugging. */
     volatile os_task_t *running = osg.running;
     uint32_t stack_usage = os_task_stack_usage((os_task_t *)running);
     if (stack_usage > running->debug_stack_max) {
         running->debug_stack_max = stack_usage;
     }
+    #endif
 
     // Schedule a new task to run...
     volatile os_task_t *iter = osg.running;
