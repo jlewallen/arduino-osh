@@ -55,34 +55,34 @@ void setup() {
     }
 
     #if defined(HSRAM_ADDR)
-    os_printf("Starting: %d (0x%p + %lu) (%lu used)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory());
+    os_printf("starting: %d (0x%p + %lu) (%lu used)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory());
     #else
-    os_printf("Starting: %d\n", os_free_memory());
+    os_printf("starting: %d\n", os_free_memory());
     #endif
 
     if (!os_initialize()) {
         os_printf("Error: os_initialize failed\n");
-        while (true);
+        os_error(OS_ERROR_APP);
     }
 
     if (!os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack))) {
         os_printf("Error: os_task_initialize failed\n");
-        while (true);
+        os_error(OS_ERROR_APP);
     }
 
     if (!os_task_initialize(&main_task, "main", OS_TASK_START_RUNNING, &task_handler_main, NULL, main_stack, sizeof(main_stack))) {
         os_printf("Error: os_task_initialize failed\n");
-        while (true);
+        os_error(OS_ERROR_APP);
     }
 
     if (!os_task_initialize(&child_task, "child", OS_TASK_START_SUSPENDED, &task_handler_child, NULL, child_stack, sizeof(child_stack))) {
         os_printf("Error: os_task_initialize failed\n");
-        while (true);
+        os_error(OS_ERROR_APP);
     }
 
     if (!os_start()) {
         os_printf("Error: os_start failed\n");
-        while (true);
+        os_error(OS_ERROR_APP);
     }
 }
 

@@ -114,7 +114,8 @@ typedef enum {
 typedef enum {
     OS_ERROR_NONE,
     OS_ERROR_ASSERTION,
-    OS_ERROR_STACK_OVERFLOW
+    OS_ERROR_STACK_OVERFLOW,
+    OS_ERROR_APP,
 } os_error_kind;
 
 typedef struct os_globals_t {

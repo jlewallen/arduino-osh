@@ -177,6 +177,9 @@ volatile os_task_t *os_task_self() {
 }
 
 bool os_task_start(os_task_t *task) {
+    OSDOTH_ASSERT(task != NULL);
+    OSDOTH_ASSERT(task->status != OS_TASK_STATUS_IDLE && task->status != OS_TASK_STATUS_ACTIVE);
+
     __disable_irq();
     task->sp = initialize_stack(task, (uint32_t *)task->stack, task->stack_size);
     task->status = OS_TASK_STATUS_IDLE;

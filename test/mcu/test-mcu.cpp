@@ -11,7 +11,7 @@ static os_task_t idle_task;
 static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
 
 static void task_handler_empty(void *) {
-    os_printf("Empty\n");
+    os_printf("empty\n");
     os_delay(100);
 
     #if defined(TEST_HARD_FAULT_1)
@@ -21,7 +21,7 @@ static void task_handler_empty(void *) {
     pinMode(LED_BUILTIN, OUTPUT);
 
     while (true) {
-        os_printf("Tick\n");
+        os_printf("tick\n");
         digitalWrite(LED_BUILTIN, LOW);
         os_delay(500);
         digitalWrite(LED_BUILTIN, HIGH);
@@ -43,9 +43,9 @@ void setup() {
     }
 
     #if defined(HSRAM_ADDR)
-    os_printf("Starting: %d (0x%p + %lu)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE);
+    os_printf("starting: %d (0x%p + %lu)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE);
     #else
-    os_printf("Starting: %d\n", os_free_memory());
+    os_printf("starting: %d\n", os_free_memory());
     #endif
 
     assert(os_initialize());
