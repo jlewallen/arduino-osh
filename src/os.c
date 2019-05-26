@@ -199,7 +199,6 @@ bool os_start(void) {
     }
 
     OSDOTH_ASSERT(os_platform_setup());
-
     OSDOTH_ASSERT(osg.running != NULL);
 
     NVIC_SetPriority(PendSV_IRQn, 0xff);
@@ -217,12 +216,9 @@ bool os_start(void) {
     __ISB();
 
     osg.state = OS_STATE_STARTED;
-
     osg.running->handler(osg.running->params);
 
     OSDOTH_ASSERT(0);
-
-    infinite_loop();
 
     return true;
 }
@@ -300,7 +296,7 @@ void os_schedule() {
 
 void os_assert(const char *assertion, const char *file, int line) {
     os_printf("Assertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
-    os_error(1);
+    os_error(OS_ERROR_ASSERTION);
     /* NOTREACHED */
 }
 
@@ -310,7 +306,7 @@ void os_error(uint8_t code) {
 
 void os_stack_check() {
     if ((osg.running->sp < osg.running->stack) || (((uint32_t *)osg.running->stack)[0] != OSH_STACK_MAGIC_WORD)) {
-        os_error(0);
+        os_error(OS_ERROR_STACK_OVERFLOW);
     }
 }
 
@@ -331,6 +327,9 @@ uint32_t os_task_uptime() {
 uint32_t os_task_runtime() {
     OSDOTH_ASSERT(osg.running != NULL);
     return os_uptime() - osg.running->started;
+}
+
+void os_yield() {
 }
 
 void os_delay(uint32_t ms) {

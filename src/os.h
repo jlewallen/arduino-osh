@@ -88,6 +88,12 @@ typedef enum {
     OS_STATE_STARTED,
 } os_state;
 
+typedef enum {
+    OS_ERROR_NONE,
+    OS_ERROR_ASSERTION,
+    OS_ERROR_STACK_OVERFLOW
+} os_error_kind;
+
 typedef struct os_globals_t {
     volatile os_task_t *running;
     volatile os_task_t *scheduled;
@@ -135,6 +141,8 @@ void os_delay(uint32_t ms);
 void os_assert(const char *assertion, const char *file, int line);
 
 void os_error(uint8_t code);
+
+void os_yield();
 
 void os_stack_check();
 
