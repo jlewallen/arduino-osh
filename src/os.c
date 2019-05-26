@@ -78,7 +78,7 @@ typedef struct os_stack_frame_t {
     uint32_t r8;
 } os_stack_frame_t;
 
-bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
+bool os_task_initialize(os_task_t *task, const char *name, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
     if (osg.state != OS_STATE_INITIALIZED && osg.state != OS_STATE_TASKS_INITIALIZED) {
         return false;
     }
@@ -136,6 +136,7 @@ bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *pa
     task->handler = handler;
     task->status = OS_TASK_STATUS_IDLE;
     task->np = osg.tasks;
+    task->name = name;
     task->delay = 0;
 
     osg.tasks = task;

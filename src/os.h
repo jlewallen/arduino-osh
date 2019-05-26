@@ -72,6 +72,7 @@ typedef struct os_task_t {
     volatile uint32_t stack_size;
     volatile uint8_t stack_kind;
     volatile enum os_task_status status;
+    const char *name;
     void (*handler)(void*);
     void *params;
     struct os_task_t *np;
@@ -101,7 +102,7 @@ bool os_platform_setup();
 
 bool os_initialize();
 
-bool os_task_initialize(os_task_t *task, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size);
+bool os_task_initialize(os_task_t *task, const char *name, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size);
 
 bool os_task_suspend(os_task_t *task);
 
