@@ -27,9 +27,10 @@ os_globals_t osg = {
     NULL,
     NULL,
     OS_STATE_DEFAULT,
-    0,
-    NULL,
-    NULL,
+    0,     /* ntasks */
+    NULL,  /* idle */
+    NULL,  /* tasks */
+    NULL,  /* delayed */
 };
 
 #if defined(OSH_MTB)
@@ -135,13 +136,18 @@ bool os_task_initialize(os_task_t *task, const char *name, void (*handler)(void 
     task->params = params;
     task->handler = handler;
     task->status = OS_TASK_STATUS_IDLE;
-    task->np = osg.tasks;
     task->name = name;
     task->delay = 0;
     task->started = os_uptime();
 
+    task->np = osg.tasks;
     osg.tasks = task;
     osg.ntasks++;
+
+    /* First task initialized is always the idle task. */
+    if (osg.idle == NULL) {
+        osg.idle = task;
+    }
 
     /* This will always initialize the initial task to be the idle task, this
      * that's the first call to this. */
@@ -156,7 +162,13 @@ bool os_task_initialize(os_task_t *task, const char *name, void (*handler)(void 
     return true;
 }
 
+volatile os_task_t *os_task_self() {
+    OSDOTH_ASSERT(osg.running != NULL);
+    return osg.running;
+}
+
 bool os_task_suspend(os_task_t *task) {
+    OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
 
     task->status = OS_TASK_STATUS_SUSPENDED;
@@ -165,11 +177,20 @@ bool os_task_suspend(os_task_t *task) {
 }
 
 bool os_task_resume(os_task_t *task) {
+    OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(task->status == OS_TASK_STATUS_SUSPENDED);
 
     task->status = OS_TASK_STATUS_IDLE;
 
     return true;
+}
+
+bool os_self_suspend() {
+    return os_task_suspend((os_task_t *)os_task_self());
+}
+
+bool os_self_resume() {
+    return os_task_resume((os_task_t *)os_task_self());
 }
 
 bool os_start(void) {
@@ -208,12 +229,12 @@ bool os_start(void) {
 
 static void task_finished() {
     OSDOTH_ASSERT(osg.running != NULL);
+    OSDOTH_ASSERT(osg.running != osg.idle);
     OSDOTH_ASSERT(osg.running->status == OS_TASK_STATUS_ACTIVE);
 
     os_printf("os: task finished\n");
 
     osg.running->status = OS_TASK_STATUS_FINISHED;
-    osg.ntasks--;
 
     infinite_loop();
 }
@@ -234,8 +255,8 @@ void os_schedule() {
 
         // If no other tasks can run but the one that just did, just return.
         // Technically, this should only happen to the idle task.
-        // TODO: ASSERT this is the idle task?
         if (iter == osg.running) {
+            OSDOTH_ASSERT(iter == osg.idle);
             return;
         }
 
@@ -265,6 +286,7 @@ void os_schedule() {
         break;
     case OS_TASK_STATUS_IDLE:
     case OS_TASK_STATUS_WAIT:
+    case OS_TASK_STATUS_SUSPENDED:
     case OS_TASK_STATUS_FINISHED:
         break;
     }

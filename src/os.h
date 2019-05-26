@@ -93,6 +93,7 @@ typedef struct os_globals_t {
     volatile os_task_t *scheduled;
     os_state state;
     uint8_t ntasks;
+    os_task_t *idle;
     os_task_t *tasks;
     os_task_t *delayed;
 } os_globals_t;
@@ -103,11 +104,17 @@ bool os_platform_setup();
 
 bool os_initialize();
 
-bool os_task_initialize(os_task_t *task, const char *name, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size);
+bool os_task_initialize(os_task_t *task, const char *name,
+                        void (*handler)(void *params), void *params,
+                        uint32_t *stack, size_t stack_size);
 
 bool os_task_suspend(os_task_t *task);
 
 bool os_task_resume(os_task_t *task);
+
+bool os_self_suspend();
+
+bool os_self_resume();
 
 bool os_start();
 
