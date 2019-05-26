@@ -50,44 +50,38 @@ void setup() {
     uint32_t p3 = p1 / 4;
 
     #if defined(HSRAM_ADDR)
-    os_printf("Starting: %d (0x%p + %lu)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE);
+    os_printf("Starting: %d (0x%p + %lu) (%lu used)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory());
     #else
     os_printf("Starting: %d\n", os_free_memory());
     #endif
 
-    auto status = os_initialize();
-    if (!status) {
-        Serial.println("Error: os_initialize failed");
+    if (!os_initialize()) {
+        os_printf("Error: os_initialize failed\n");
         while (true);
     }
 
-    status = os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack));
-    if (!status) {
-        Serial.println("Error: os_task_initialize failed");
+    if (!os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack))) {
+        os_printf("Error: os_task_initialize failed\n");
         while (true);
     }
 
-    status = os_task_initialize(&tasks[0], "task1", OS_TASK_START_RUNNING, &task_handler, (void*)p1, stack1, sizeof(stack1));
-    if (!status) {
-        Serial.println("Error: os_task_initialize failed");
+    if (!os_task_initialize(&tasks[0], "task1", OS_TASK_START_RUNNING, &task_handler, (void*)p1, stack1, sizeof(stack1))) {
+        os_printf("Error: os_task_initialize failed\n");
         while (true);
     }
 
-    status = os_task_initialize(&tasks[1], "task2", OS_TASK_START_RUNNING, &task_handler, (void*)p2, stack2, sizeof(stack2));
-    if (!status) {
-        Serial.println("Error: os_task_initialize failed");
+    if (!os_task_initialize(&tasks[1], "task2", OS_TASK_START_RUNNING, &task_handler, (void*)p2, stack2, sizeof(stack2))) {
+        os_printf("Error: os_task_initialize failed\n");
         while (true);
     }
 
-    status = os_task_initialize(&tasks[2], "task3", OS_TASK_START_RUNNING, &task_handler, (void*)p3, stack3, sizeof(stack3));
-    if (!status) {
-        Serial.println("Error: os_task_initialize failed");
+    if (!os_task_initialize(&tasks[2], "task3", OS_TASK_START_RUNNING, &task_handler, (void*)p3, stack3, sizeof(stack3))) {
+        os_printf("Error: os_task_initialize failed\n");
         while (true);
     }
 
-    status = os_start();
-    if (!status) {
-        Serial.println("Error: os_start failed");
+    if (!os_start()) {
+        os_printf("Error: os_start failed\n");
         while (true);
     }
 }

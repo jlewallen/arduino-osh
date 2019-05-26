@@ -79,11 +79,7 @@ typedef struct os_stack_frame_t {
     uint32_t r8;
 } os_stack_frame_t;
 
-bool os_task_initialize(os_task_t *task, const char *name, os_start_status status, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
-    if (osg.state != OS_STATE_INITIALIZED && osg.state != OS_STATE_TASKS_INITIALIZED) {
-        return false;
-    }
-
+uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) {
     OSDOTH_ASSERT((stack_size % sizeof(uint32_t)) == 0);
     OSDOTH_ASSERT(stack_size >= OSDOTH_STACK_MINIMUM_SIZE);
 
@@ -105,9 +101,9 @@ bool os_task_initialize(os_task_t *task, const char *name, os_start_status statu
        - LR: Point to a function to be called when the handler returns
        - R0: Point to the handler function's parameter */
     stk[15] = 0x01000000;
-    stk[14] = (uint32_t)handler & ~0x01UL;
+    stk[14] = (uint32_t)task->handler & ~0x01UL;
     stk[13] = (uint32_t)&task_finished;
-    stk[ 8] = (uint32_t)params;
+    stk[ 8] = (uint32_t)task->params;
     #if defined(OSDOTH_CONFIG_DEBUG)
     uint32_t base = 1000 * (osg.ntasks + 1);
     stk[12] = base + 12; /* R12 */
@@ -128,7 +124,15 @@ bool os_task_initialize(os_task_t *task, const char *name, os_start_status statu
     // Magic word to check for overflows.
     stack[0] = OSH_STACK_MAGIC_WORD;
 
-    task->sp = stk;
+    return stk;
+}
+
+bool os_task_initialize(os_task_t *task, const char *name, os_start_status status, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
+    if (osg.state != OS_STATE_INITIALIZED && osg.state != OS_STATE_TASKS_INITIALIZED) {
+        return false;
+    }
+
+    task->sp = NULL; /* This gets set correctly later. */
     task->stack = stack;
     task->stack_size = stack_size;
     task->stack_kind = 0;
@@ -141,6 +145,8 @@ bool os_task_initialize(os_task_t *task, const char *name, os_start_status statu
     #if defined(OSDOTH_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif
+
+    task->sp = initialize_stack(task, stack, stack_size);
 
     task->np = osg.tasks;
     osg.tasks = task;
@@ -170,6 +176,15 @@ volatile os_task_t *os_task_self() {
     return osg.running;
 }
 
+bool os_task_start(os_task_t *task) {
+    __disable_irq();
+    task->sp = initialize_stack(task, (uint32_t *)task->stack, task->stack_size);
+    task->status = OS_TASK_STATUS_IDLE;
+    __enable_irq();
+
+    return true;
+}
+
 bool os_task_suspend(os_task_t *task) {
     OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
@@ -186,6 +201,10 @@ bool os_task_resume(os_task_t *task) {
     task->status = OS_TASK_STATUS_IDLE;
 
     return true;
+}
+
+os_task_status os_task_get_status(os_task_t *task) {
+    return task->status;
 }
 
 bool os_self_suspend() {
@@ -231,7 +250,7 @@ static void task_finished() {
     OSDOTH_ASSERT(osg.running != osg.idle);
     OSDOTH_ASSERT(osg.running->status == OS_TASK_STATUS_ACTIVE);
 
-    os_printf("os: task finished\n");
+    os_printf("os: task '%s' finished\n", osg.running->name);
 
     osg.running->status = OS_TASK_STATUS_FINISHED;
 
