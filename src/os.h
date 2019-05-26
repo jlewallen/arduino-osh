@@ -77,6 +77,7 @@ typedef struct os_task_t {
     void *params;
     struct os_task_t *np;
     struct os_task_t *delayed;
+    uint32_t started;
     uint32_t delay;
 } os_task_t;
 
@@ -108,17 +109,19 @@ bool os_task_suspend(os_task_t *task);
 
 bool os_task_resume(os_task_t *task);
 
-os_task_status os_task_get_status(os_task_t *task);
-
 bool os_start();
 
 void os_schedule();
 
-void os_log(const char *f, ...);
-
 void os_irs_systick();
 
 uint32_t os_uptime();
+
+const char *os_task_name();
+
+uint32_t os_task_uptime();
+
+uint32_t os_task_runtime();
 
 void os_delay(uint32_t ms);
 

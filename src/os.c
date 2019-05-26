@@ -138,6 +138,7 @@ bool os_task_initialize(os_task_t *task, const char *name, void (*handler)(void 
     task->np = osg.tasks;
     task->name = name;
     task->delay = 0;
+    task->started = os_uptime();
 
     osg.tasks = task;
     osg.ntasks++;
@@ -169,10 +170,6 @@ bool os_task_resume(os_task_t *task) {
     task->status = OS_TASK_STATUS_IDLE;
 
     return true;
-}
-
-os_task_status os_task_get_status(os_task_t *task) {
-    return task->status;
 }
 
 bool os_start(void) {
@@ -279,9 +276,6 @@ void os_schedule() {
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
-void os_log(const char *f, ...) {
-}
-
 void os_assert(const char *assertion, const char *file, int line) {
     os_printf("Assertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
     os_error(1);
@@ -300,6 +294,21 @@ void os_stack_check() {
 
 uint32_t os_uptime() {
     return os_platform_uptime();
+}
+
+const char *os_task_name() {
+    OSDOTH_ASSERT(osg.running != NULL);
+    return osg.running->name;
+}
+
+uint32_t os_task_uptime() {
+    OSDOTH_ASSERT(osg.running != NULL);
+    return os_uptime() - osg.running->started;
+}
+
+uint32_t os_task_runtime() {
+    OSDOTH_ASSERT(osg.running != NULL);
+    return os_uptime() - osg.running->started;
 }
 
 void os_delay(uint32_t ms) {
