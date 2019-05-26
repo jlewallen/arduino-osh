@@ -7,7 +7,6 @@ static void task_handler(void *arg) {
     auto time = (uint32_t)arg;
     auto lastTick = (uint32_t)0;
     auto now = (uint32_t)0;
-    auto faulted = false;
 
     while (true) {
         __disable_irq();
