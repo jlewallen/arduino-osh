@@ -84,6 +84,7 @@ typedef struct os_task_t {
     struct os_task_t *delayed;
     uint32_t started;
     uint32_t delay;
+    uint32_t debug_stack_max;
 } os_task_t;
 
 typedef enum {
@@ -124,6 +125,8 @@ bool os_task_suspend(os_task_t *task);
 
 bool os_task_resume(os_task_t *task);
 
+uint32_t os_task_stack_usage(os_task_t *task);
+
 bool os_self_suspend();
 
 bool os_self_resume();
@@ -153,6 +156,8 @@ void os_yield();
 void os_stack_check();
 
 void os_printf(const char *f, ...);
+
+uint32_t os_free_memory();
 
 #if defined(__cplusplus)
 }

@@ -138,6 +138,7 @@ bool os_task_initialize(os_task_t *task, const char *name, os_start_status statu
     task->name = name;
     task->delay = 0;
     task->started = os_uptime();
+    task->debug_stack_max = 0;
 
     task->np = osg.tasks;
     osg.tasks = task;
@@ -235,9 +236,21 @@ static void task_finished() {
     infinite_loop();
 }
 
+uint32_t os_task_stack_usage(os_task_t *task) {
+    OSDOTH_ASSERT(task != NULL);
+    return task->stack_size - (task->sp - task->stack);
+}
+
 void os_schedule() {
     /* May be unnecessary for us to be here... */
     osg.scheduled = NULL;
+
+    /* Calculate stack usage and update when debugging. */
+    volatile os_task_t *running = osg.running;
+    uint32_t stack_usage = os_task_stack_usage((os_task_t *)running);
+    if (stack_usage > running->debug_stack_max) {
+        running->debug_stack_max = stack_usage;
+    }
 
     // Schedule a new task to run...
     volatile os_task_t *iter = osg.running;
@@ -375,6 +388,12 @@ void hard_fault_handler(uint32_t *stack, uint32_t lr) {
     hfr.registers.psr.byte = stack[7];   // Program status word PSR
 
     hard_fault_report(stack, lr, &hfr);
+}
+
+extern char *sbrk(int32_t i);
+
+uint32_t os_free_memory() {
+    return (uint32_t)__get_MSP() - (uint32_t)sbrk(0);
 }
 
 inline static void infinite_loop() {

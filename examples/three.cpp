@@ -9,12 +9,11 @@ static void task_handler(void *arg) {
     auto now = (uint32_t)0;
 
     while (true) {
+        auto usage = os_task_stack_usage((os_task_t *)osg.running);
+
         __disable_irq();
-        Serial.print("Waiting ");
-        Serial.print(time);
-        Serial.print(" ");
-        Serial.print(now - lastTick);
-        Serial.println("");
+        os_printf("Waiting %lu (%lu) (%lu) (%lu)\n", now - lastTick, os_free_memory(), osg.running->debug_stack_max, usage);
+        Serial.flush();
         __enable_irq();
 
         lastTick = millis();
@@ -37,9 +36,9 @@ static void task_handler_idle(void *params) {
 }
 
 static os_task_t tasks[3];
-static uint32_t stack1[64];
-static uint32_t stack2[64];
-static uint32_t stack3[64];
+static uint32_t stack1[256];
+static uint32_t stack2[256];
+static uint32_t stack3[256];
 
 void setup() {
     Serial.begin(115200);
@@ -53,7 +52,11 @@ void setup() {
     uint32_t p2 = p1 / 2;
     uint32_t p3 = p1 / 4;
 
-    Serial.println("Starting");
+    #if defined(HSRAM_ADDR)
+    os_printf("Starting: %d (0x%p + %lu)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE);
+    #else
+    os_printf("Starting: %d\n", os_free_memory());
+    #endif
 
     auto status = os_initialize();
     if (!status) {

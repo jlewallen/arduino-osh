@@ -10,13 +10,6 @@ static uint32_t stack1[128] = { 0 };
 static os_task_t idle_task;
 static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
 
-extern "C" char *sbrk(int32_t i);
-
-static uint32_t free_memory() {
-    char stack_dummy = 0;
-    return &stack_dummy - sbrk(0);
-}
-
 static void task_handler_empty(void *) {
     os_printf("Empty\n");
     os_delay(100);
@@ -50,9 +43,9 @@ void setup() {
     }
 
     #if defined(HSRAM_ADDR)
-    os_printf("Starting: %d (0x%p + %lu)\n", free_memory(), HSRAM_ADDR, HSRAM_SIZE);
+    os_printf("Starting: %d (0x%p + %lu)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE);
     #else
-    os_printf("Starting: %d\n");
+    os_printf("Starting: %d\n", os_free_memory());
     #endif
 
     assert(os_initialize());
