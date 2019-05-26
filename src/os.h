@@ -155,7 +155,7 @@ void os_yield();
 
 void os_stack_check();
 
-void os_printf(const char *f, ...);
+int32_t os_printf(const char *f, ...);
 
 uint32_t os_free_memory();
 

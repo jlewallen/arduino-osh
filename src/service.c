@@ -21,3 +21,7 @@ uint32_t os_svc_delay(uint32_t ms) {
 
     return 0;
 }
+
+int32_t os_svc_printf(const char *str) {
+    return os_printf(str);
+}

@@ -16,11 +16,12 @@ static void serial_putchar(char c, void *arg) {
     }
 }
 
-void os_printf(const char *f, ...) {
+int32_t os_printf(const char *f, ...) {
     va_list args;
     va_start(args, f);
-    os_vfctprintf(serial_putchar, NULL, f, args);
+    auto i = os_vfctprintf(serial_putchar, NULL, f, args);
     va_end(args);
+    return i;
 }
 
 bool os_platform_setup() {

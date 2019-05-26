@@ -88,12 +88,15 @@ static inline  t __##f (t1 a1) {                                               \
 }
 
 #define RET_uint32_t   __r0
+#define RET_int32_t    __r0
 
 uint32_t os_svc_example(void);
 uint32_t os_svc_delay(uint32_t ms);
+int32_t os_svc_printf(const char *str);
 
 SVC_0_1(os_svc_example, uint32_t, RET_uint32_t);
 SVC_1_1(os_svc_delay, uint32_t, uint32_t, RET_uint32_t);
+SVC_1_1(os_svc_printf, int32_t, const char*, RET_int32_t);
 
 #if defined(__cplusplus)
 }
