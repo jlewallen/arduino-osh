@@ -10,12 +10,16 @@
 
 extern "C" {
 
+static void serial_putchar(char c, void *arg) {
+    if (c != 0) {
+        Serial.print(c);
+    }
+}
+
 void os_printf(const char *f, ...) {
     va_list args;
     va_start(args, f);
-    char message[128];
-    os_vsnprintf(message, sizeof(message), f, args);
-    Serial.print(message);
+    os_vfctprintf(serial_putchar, NULL, f, args);
     va_end(args);
 }
 

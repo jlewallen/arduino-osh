@@ -686,6 +686,13 @@ int os_vsnprintf(char* buffer, size_t count, const char* format, va_list va)
 }
 
 
+int os_vfctprintf(void (*out)(char character, void* arg), void* arg, const char* format, va_list va)
+{
+    const out_fct_wrap_type out_fct_wrap = { out, arg };
+    const int ret = _vsnprintf(_out_fct, (char*)&out_fct_wrap, (size_t)-1, format, va);
+    return ret;
+}
+
 int os_fctprintf(void (*out)(char character, void* arg), void* arg, const char* format, ...)
 {
   va_list va;

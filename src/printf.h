@@ -72,7 +72,7 @@ int os_vsnprintf(char* buffer, size_t count, const char* format, va_list va);
  * \return The number of characters that are sent to the output function, not counting the terminating null character
  */
 int os_fctprintf(void (*out)(char character, void* arg), void* arg, const char* format, ...);
-
+int os_vfctprintf(void (*out)(char character, void* arg), void* arg, const char* format, va_list va);
 
 #ifdef __cplusplus
 }
