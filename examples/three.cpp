@@ -1,7 +1,6 @@
 #include <Arduino.h>
 
-#include "os.h"
-
+#include <os.h>
 
 static void task_handler(void *arg) {
     auto time = (uint32_t)arg;

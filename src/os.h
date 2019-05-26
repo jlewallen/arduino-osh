@@ -27,6 +27,7 @@
 
 #include "arduino.h"
 #include "service.h"
+#include "segger/SEGGER_RTT.h"
 
 #if defined(__cplusplus)
 extern "C" {
