@@ -235,14 +235,23 @@ void os_schedule() {
             iter = osg.tasks;
         }
 
-        // If no other tasks can run but the one that just did, go ahead.
+        // If no other tasks can run but the one that just did, just return.
+        // Technically, this should only happen to the idle task.
+        // TODO: ASSERT this is the idle task?
         if (iter == osg.running) {
-            OSDOTH_ASSERT(0);
             return;
         }
 
+        // Wake up tasks that are waiting if it's their time.
+        if (iter->status == OS_TASK_STATUS_WAIT) {
+            if (os_uptime() >= iter->delay) {
+                iter->status = OS_TASK_STATUS_IDLE;
+                iter->delay = 0;
+            }
+        }
+
         // Only run tasks that are idle.
-        if (iter->status != OS_TASK_STATUS_FINISHED) {
+        if (iter->status == OS_TASK_STATUS_IDLE) {
             OSDOTH_ASSERT(iter != osg.running);
             osg.scheduled = iter;
             break;
@@ -252,9 +261,15 @@ void os_schedule() {
     OSDOTH_ASSERT(osg.running != NULL);
     OSDOTH_ASSERT(osg.scheduled != NULL);
 
-    // NOTE: Should this happen in the PendSV?
-    if (osg.running->status != OS_TASK_STATUS_FINISHED) {
+    // NOTE: Should the status update happen in the PendSV?
+    switch (osg.running->status) {
+    case OS_TASK_STATUS_ACTIVE:
         osg.running->status = OS_TASK_STATUS_IDLE;
+        break;
+    case OS_TASK_STATUS_IDLE:
+    case OS_TASK_STATUS_WAIT:
+    case OS_TASK_STATUS_FINISHED:
+        break;
     }
     osg.scheduled->status = OS_TASK_STATUS_ACTIVE;
 

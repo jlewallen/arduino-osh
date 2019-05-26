@@ -9,7 +9,7 @@ uint32_t os_svc_delay(uint32_t ms) {
     OSDOTH_ASSERT(osg.running != NULL);
     OSDOTH_ASSERT(osg.scheduled != osg.running);
 
-    // osg.running->status = OS_TASK_STATUS_WAIT;
+    osg.running->status = OS_TASK_STATUS_WAIT;
     osg.running->delay = os_uptime() + ms;
 
     if (osg.scheduled == NULL) {

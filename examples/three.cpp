@@ -22,18 +22,7 @@ static void task_handler(void *arg) {
 
         __os_svc_delay(time);
 
-        delay(1000);
-
-        __os_svc_example();
-
         now = millis();
-
-        /*
-        if (!faulted && now > 5000) {
-            *((uint32_t *)0xdeadbeef) = 0;
-            faulted = true;
-        }
-        */
     }
 }
 
@@ -42,8 +31,9 @@ static os_task_t idle_task;
 static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
 
 static void task_handler_idle(void *params) {
+    volatile uint32_t i = 0;
     while (true) {
-        os_delay(1000);
+        i++;
     }
 }
 
