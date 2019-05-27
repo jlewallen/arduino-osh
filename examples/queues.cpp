@@ -1,6 +1,4 @@
 #include <Arduino.h>
-#include <errno.h>
-
 #include <os.h>
 
 #define NUMBER_OF_RECEIVERS     (1)

@@ -60,25 +60,6 @@ os_status_t os_initialize() {
     return OSS_SUCCESS;
 }
 
-typedef struct os_stack_frame_t {
-    uint32_t xpsr;
-    void *pc;
-    void *lr;
-    uint32_t r12;
-    uint32_t r3;
-    uint32_t r2;
-    uint32_t r1;
-    uint32_t r0;
-    uint32_t r7;
-    uint32_t r6;
-    uint32_t r5;
-    uint32_t r4;
-    uint32_t r11;
-    uint32_t r10;
-    uint32_t r9;
-    uint32_t r8;
-} os_stack_frame_t;
-
 uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) {
     OSDOTH_ASSERT((stack_size % sizeof(uint32_t)) == 0);
     OSDOTH_ASSERT(stack_size >= OSDOTH_STACK_MINIMUM_SIZE);
@@ -145,7 +126,7 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
     task->started = os_uptime();
     task->queue = NULL;
     task->mutex = NULL;
-    task->blocked = NULL;
+    task->nblocked = NULL;
     #if defined(OSDOTH_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif
@@ -184,7 +165,7 @@ os_status_t os_task_start(os_task_t *task) {
     task->flags = 0;
     task->queue = NULL;
     task->mutex = NULL;
-    task->blocked = NULL;
+    task->nblocked = NULL;
     task->started = os_uptime();
     #if defined(OSDOTH_CONFIG_DEBUG)
     task->debug_stack_max = 0;
@@ -322,14 +303,14 @@ os_status_t osi_schedule() {
                 if ((iter->flags & OS_TASK_FLAG_MUTEX) == OS_TASK_FLAG_MUTEX) {
                     OSDOTH_ASSERT(iter->queue == NULL);
                     OSDOTH_ASSERT(iter->mutex != NULL);
-                    OSDOTH_ASSERT(iter->mutex->blocked == iter);
+                    OSDOTH_ASSERT(iter->mutex->blocked.tasks == iter);
 
                     #if defined(OSDOTH_CONFIG_DEBUG_MUTEXES)
                     os_printf("%s: removed from mutex %p\n", iter->name, iter->mutex);
                     #endif
 
-                    iter->mutex->blocked = iter->mutex->blocked->blocked;
-                    iter->blocked = NULL;
+                    iter->mutex->blocked.tasks = iter->mutex->blocked.tasks->nblocked;
+                    iter->nblocked = NULL;
                     iter->queue = NULL;
                     iter->mutex = NULL;
                     iter->flags = 0;
@@ -337,14 +318,14 @@ os_status_t osi_schedule() {
                 if ((iter->flags & OS_TASK_FLAG_QUEUE) == OS_TASK_FLAG_QUEUE) {
                     OSDOTH_ASSERT(iter->mutex == NULL);
                     OSDOTH_ASSERT(iter->queue != NULL);
-                    OSDOTH_ASSERT(iter->queue->blocked == iter);
+                    OSDOTH_ASSERT(iter->queue->blocked.tasks == iter);
 
                     #if defined(OSDOTH_CONFIG_DEBUG_QUEUES)
                     os_printf("%s: removed from queue %p\n", iter->name, iter->queue);
                     #endif
 
-                    iter->queue->blocked = iter->queue->blocked->blocked;
-                    iter->blocked = NULL;
+                    iter->queue->blocked.tasks = iter->queue->blocked.tasks->nblocked;
+                    iter->nblocked = NULL;
                     iter->queue = NULL;
                     iter->mutex = NULL;
                     iter->flags = 0;

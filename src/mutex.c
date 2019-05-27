@@ -2,16 +2,16 @@
 #include "internal.h"
 
 static void blocked_enq(os_mutex_t *mutex, os_task_t *task) {
-    OSDOTH_ASSERT(task->blocked == NULL);
+    OSDOTH_ASSERT(task->nblocked == NULL);
     // osi_printf("%s: queuing for %p existing=%p\n", task->name, mutex, task->mutex);
-    if (mutex->blocked == NULL) {
-        mutex->blocked = task;
+    if (mutex->blocked.tasks == NULL) {
+        mutex->blocked.tasks = task;
     }
     else {
-        for (os_task_t *iter = mutex->blocked; ; iter = iter->blocked) {
+        for (os_task_t *iter = mutex->blocked.tasks; ; iter = iter->nblocked) {
             OSDOTH_ASSERT(iter != task);
-            if (iter->blocked == NULL) {
-                iter->blocked = task;
+            if (iter->nblocked == NULL) {
+                iter->nblocked = task;
                 break;
             }
         }
@@ -21,19 +21,20 @@ static void blocked_enq(os_mutex_t *mutex, os_task_t *task) {
 }
 
 static os_task_t *blocked_deq(os_mutex_t *mutex) {
-    os_task_t *task = mutex->blocked;
+    os_task_t *task = mutex->blocked.tasks;
     if (task == NULL) {
         return NULL;
     }
-    mutex->blocked = task->blocked;
+    OSDOTH_ASSERT(task->mutex == mutex);
+    mutex->blocked.tasks = task->nblocked;
     task->mutex = NULL;
-    task->blocked = NULL;
+    task->nblocked = NULL;
     return task;
 }
 
 os_status_t osi_mutex_create(os_mutex_t *mutex) {
     mutex->owner = NULL;
-    mutex->blocked = NULL;
+    mutex->blocked.tasks = NULL;
     mutex->level = 0;
     return OSS_SUCCESS;
 }
@@ -86,7 +87,7 @@ os_status_t osi_mutex_release(os_mutex_t *mutex) {
     mutex->owner = NULL;
 
     /* Is somebody waiting for this mutex? */
-    if (mutex->blocked != NULL) {
+    if (mutex->blocked.tasks != NULL) {
         os_task_t *blocked_task = blocked_deq(mutex);
         // osi_printf("%s: waking to acquire %p\n", blocked_task->name, mutex);
         mutex->owner = blocked_task;

@@ -2,15 +2,15 @@
 #include "internal.h"
 
 static void blocked_enq(os_queue_t *queue, os_task_t *task) {
-    OSDOTH_ASSERT(task->blocked == NULL);
-    if (queue->blocked == NULL) {
-        queue->blocked = task;
+    OSDOTH_ASSERT(task->nblocked == NULL);
+    if (queue->blocked.tasks == NULL) {
+        queue->blocked.tasks = task;
     }
     else {
-        for (os_task_t *iter = queue->blocked; ; iter = iter->blocked) {
+        for (os_task_t *iter = queue->blocked.tasks; ; iter = iter->nblocked) {
             OSDOTH_ASSERT(iter != task);
-            if (iter->blocked == NULL) {
-                iter->blocked = task;
+            if (iter->nblocked == NULL) {
+                iter->nblocked = task;
                 break;
             }
         }
@@ -20,14 +20,14 @@ static void blocked_enq(os_queue_t *queue, os_task_t *task) {
 }
 
 static os_task_t *blocked_deq(os_queue_t *queue) {
-    os_task_t *task = queue->blocked;
+    os_task_t *task = queue->blocked.tasks;
     if (task == NULL) {
         return NULL;
     }
     OSDOTH_ASSERT(task->queue == queue);
-    queue->blocked = task->blocked;
+    queue->blocked.tasks = task->nblocked;
     task->queue = NULL;
-    task->blocked = NULL;
+    task->nblocked = NULL;
     return task;
 }
 
@@ -40,7 +40,6 @@ os_status_t osi_queue_create(os_queue_t *queue, uint16_t size) {
     for (uint16_t i = 0; i < size; ++i) {
         queue->messages[i] = NULL;
     }
-
     return OSS_SUCCESS;
 }
 
@@ -48,10 +47,10 @@ os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
     os_task_t *running = os_task_self();
 
     OSDOTH_ASSERT(running != NULL); // TODO: Relax this?
-    OSDOTH_ASSERT(running->blocked == NULL);
+    OSDOTH_ASSERT(running->nblocked == NULL);
 
     /* If there's tasks waiting, we can send directly via their stack. */
-    if (queue->blocked != NULL && queue->status == OS_QUEUE_BLOCKED_RECEIVE) {
+    if (queue->blocked.tasks != NULL && queue->status == OS_QUEUE_BLOCKED_RECEIVE) {
         os_task_t *blocked_receiver = blocked_deq(queue);
 
         os_tuple_t *receive_rv = osi_task_return_tuple(blocked_receiver);
@@ -93,7 +92,7 @@ os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
 
 os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint16_t to) {
     OSDOTH_ASSERT(osg.running != NULL); // TODO: Relax this?
-    OSDOTH_ASSERT(osg.running->blocked == NULL);
+    OSDOTH_ASSERT(osg.running->nblocked == NULL);
 
     if (queue->number > 0) {
         *message = queue->messages[queue->last];
@@ -103,7 +102,7 @@ os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint16_t to) {
         queue->number--;
 
         // Is somebody waiting to send a message?
-        if (queue->blocked != NULL && queue->status == OS_QUEUE_BLOCKED_SEND) {
+        if (queue->blocked.tasks != NULL && queue->status == OS_QUEUE_BLOCKED_SEND) {
             os_task_t *blocked_sender = blocked_deq(queue);
 
             queue->messages[queue->first] = blocked_sender->message;

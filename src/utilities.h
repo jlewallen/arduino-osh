@@ -11,19 +11,15 @@
  * You should have received a copy of the GNU General Public License along with
  * this source code. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef OS_QUEUE_H
-#define OS_QUEUE_H
+#ifndef OS_UTILITIES_H
+#define OS_UTILITIES_H
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-os_status_t osi_queue_create(os_queue_t *queue, uint16_t size);
-os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to);
-os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint16_t to);
-
 #if defined(__cplusplus)
 }
 #endif
 
-#endif
+#endif // OS_UTILITIES_H
