@@ -87,16 +87,49 @@ static inline  t __##f (t1 a1) {                                               \
   return (t) rv;                                                               \
 }
 
-#define RET_uint32_t   __r0
-#define RET_int32_t    __r0
+#define SVC_2_1(f,t,t1,t2,rv)                                                  \
+__attribute__((always_inline))                                                 \
+static inline  t __##f (t1 a1, t2 a2) {                                        \
+  SVC_Arg2(t1,t2);                                                             \
+  SVC_Call(f);                                                                 \
+  return (t) rv;                                                               \
+}
+
+#define SVC_3_1(f,t,t1,t2,t3,rv)                                               \
+__attribute__((always_inline))                                                 \
+static inline  t __##f (t1 a1, t2 a2, t3 a3) {                                 \
+  SVC_Arg3(t1,t2,t3);                                                          \
+  SVC_Call(f);                                                                 \
+  return (t) rv;                                                               \
+}
+
+#define SVC_4_1(f,t,t1,t2,t3,t4,rv)                                            \
+__attribute__((always_inline))                                                 \
+static inline  t __##f (t1 a1, t2 a2, t3 a3, t4 a4) {                          \
+  SVC_Arg4(t1,t2,t3,t4);                                                       \
+  SVC_Call(f);                                                                 \
+  return (t) rv;                                                               \
+}
+
+#define RET_uint32_t     __r0
+#define RET_int32_t      __r0
+#define RET_os_status_t  __r0
 
 uint32_t os_svc_example(void);
 uint32_t os_svc_delay(uint32_t ms);
-int32_t os_svc_printf(const char *str);
+uint32_t os_svc_printf(const char *str);
 
 SVC_0_1(os_svc_example, uint32_t, RET_uint32_t);
 SVC_1_1(os_svc_delay, uint32_t, uint32_t, RET_uint32_t);
-SVC_1_1(os_svc_printf, int32_t, const char*, RET_int32_t);
+SVC_1_1(os_svc_printf, uint32_t, const char*, RET_uint32_t);
+
+os_status_t svc_queue_create(os_queue_t *queue, uint32_t size);
+os_status_t svc_queue_enqueue(os_queue_t *queue, void *message, uint32_t to);
+os_status_t svc_queue_dequeue(os_queue_t *queue, void **message, uint32_t to);
+
+SVC_2_1(svc_queue_create, os_status_t, os_queue_t*, uint32_t, RET_os_status_t);
+SVC_3_1(svc_queue_enqueue, os_status_t, os_queue_t*, void*, uint32_t, RET_os_status_t);
+SVC_3_1(svc_queue_dequeue, os_status_t, os_queue_t*, void**, uint32_t, RET_os_status_t);
 
 #if defined(__cplusplus)
 }

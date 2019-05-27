@@ -9,7 +9,7 @@ static void task_handler(void *arg) {
 
     while (true) {
         __disable_irq();
-        os_printf("Waiting %lu\n", now - lastTick, os_free_memory());
+        os_printf("waiting %lu\n", now - lastTick, os_free_memory());
         Serial.flush();
         __enable_irq();
 
@@ -50,7 +50,7 @@ void setup() {
     uint32_t p3 = p1 / 4;
 
     #if defined(HSRAM_ADDR)
-    os_printf("starting: %d (0x%p + %lu) (%lu used)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory());
+    os_printf("starting: %d (0x%p + %lu) (%lu used) (%d)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory(), __get_CONTROL());
     #else
     os_printf("starting: %d\n", os_free_memory());
     #endif

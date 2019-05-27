@@ -141,6 +141,7 @@ bool os_task_initialize(os_task_t *task, const char *name, os_start_status statu
     task->status = status == OS_TASK_START_RUNNING ? OS_TASK_STATUS_IDLE : OS_TASK_STATUS_SUSPENDED;
     task->name = name;
     task->delay = 0;
+    task->flags = 0;
     task->started = os_uptime();
     #if defined(OSDOTH_CONFIG_DEBUG)
     task->debug_stack_max = 0;
@@ -180,10 +181,15 @@ bool os_task_start(os_task_t *task) {
     OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(task->status != OS_TASK_STATUS_IDLE && task->status != OS_TASK_STATUS_ACTIVE);
 
-    __disable_irq();
+    task->stack_kind = 0;
+    task->delay = 0;
+    task->flags = 0;
+    task->started = os_uptime();
+    #if defined(OSDOTH_CONFIG_DEBUG)
+    task->debug_stack_max = 0;
+    #endif
     task->sp = initialize_stack(task, (uint32_t *)task->stack, task->stack_size);
     task->status = OS_TASK_STATUS_IDLE;
-    __enable_irq();
 
     return true;
 }

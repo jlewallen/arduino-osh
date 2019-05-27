@@ -55,7 +55,7 @@ void setup() {
     }
 
     #if defined(HSRAM_ADDR)
-    os_printf("starting: %d (0x%p + %lu) (%lu used)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory());
+    os_printf("starting: %d (0x%p + %lu) (%lu used) (%d)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory(), __get_CONTROL());
     #else
     os_printf("starting: %d\n", os_free_memory());
     #endif

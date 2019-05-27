@@ -26,7 +26,6 @@
 #include <sam.h>
 
 #include "arduino.h"
-#include "service.h"
 #include "segger/SEGGER_RTT.h"
 
 #if defined(__cplusplus)
@@ -82,6 +81,9 @@ typedef enum os_task_status {
     OS_TASK_STATUS_FINISHED
 } os_task_status;
 
+#define OS_TASK_FLAG_NONE                             (0)
+#define OS_TASK_FLAG_QUEUE                            (1)
+
 typedef struct os_task_t {
     /* The stack pointer (sp) has to be the first element as it is located
        at the same address as the structure itself (which makes it possible
@@ -99,6 +101,7 @@ typedef struct os_task_t {
     struct os_task_t *delayed;
     uint32_t started;
     uint32_t delay;
+    uint32_t flags;
     #if defined(OSDOTH_CONFIG_DEBUG)
     uint32_t debug_stack_max;
     #endif
@@ -127,6 +130,22 @@ typedef struct os_globals_t {
     os_task_t *tasks;
     os_task_t *delayed;
 } os_globals_t;
+
+/* TODO: typedef enum here breaks in the service call macro magic. */
+typedef uint32_t os_status_t;
+
+#define OSS_SUCCESS     (0)
+#define OSS_ERROR_TO    (1)
+#define OSS_ERROR_MEM   (2)
+
+inline const char *os_status_str(os_status_t status) {
+    switch (status) {
+    case OSS_SUCCESS: return "OSS_SUCCESS";
+    case OSS_ERROR_TO: return "OSS_ERROR_TO";
+    case OSS_ERROR_MEM: return "OSS_ERROR_MEM";
+    default: return "UNKNOWN";
+    }
+}
 
 extern os_globals_t osg;
 
@@ -184,5 +203,8 @@ uint32_t os_free_memory();
 #if defined(__cplusplus)
 }
 #endif
+
+#include "queue.h"
+#include "service.h"
 
 #endif /* OS_H */
