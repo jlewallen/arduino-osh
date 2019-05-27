@@ -7,7 +7,7 @@
 static uint8_t queue[sizeof(os_queue_t) + (4 * 4)];
 
 static os_task_t idle_task;
-static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
+static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];
 static os_task_t sender_tasks[NUMBER_OF_SENDERS];
 static os_task_t receiver_tasks[NUMBER_OF_RECEIVERS];
 
@@ -18,7 +18,7 @@ static const char *os_pstrdup(const char *f, ...) {
     os_vsnprintf(message, sizeof(message), f, args);
     va_end(args);
     auto copy = strdup(message);
-    OSDOTH_ASSERT(copy != NULL);
+    OS_ASSERT(copy != NULL);
     return copy;
 }
 

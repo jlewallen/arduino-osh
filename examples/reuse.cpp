@@ -3,7 +3,7 @@
 #include <os.h>
 
 static os_task_t idle_task;
-static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
+static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];
 
 static void task_handler_idle(void *params) {
     volatile uint32_t i = 0;

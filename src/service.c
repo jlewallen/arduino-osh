@@ -11,8 +11,8 @@ uint32_t svc_example() {
 }
 
 uint32_t svc_delay(uint32_t ms) {
-    OSDOTH_ASSERT(osg.running != NULL);
-    OSDOTH_ASSERT(osg.scheduled != osg.running);
+    OS_ASSERT(osg.running != NULL);
+    OS_ASSERT(osg.scheduled != osg.running);
 
     osg.running->status = OS_TASK_STATUS_WAIT;
     osg.running->delay = os_uptime() + ms;
@@ -21,8 +21,8 @@ uint32_t svc_delay(uint32_t ms) {
         osi_schedule();
     }
 
-    OSDOTH_ASSERT(osg.scheduled != NULL);
-    OSDOTH_ASSERT(osg.scheduled != osg.running);
+    OS_ASSERT(osg.scheduled != NULL);
+    OS_ASSERT(osg.scheduled != osg.running);
 
     return OSS_ERROR_TO;
 }

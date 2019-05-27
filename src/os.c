@@ -61,8 +61,8 @@ os_status_t os_initialize() {
 }
 
 uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) {
-    OSDOTH_ASSERT((stack_size % sizeof(uint32_t)) == 0);
-    OSDOTH_ASSERT(stack_size >= OSDOTH_STACK_MINIMUM_SIZE);
+    OS_ASSERT((stack_size % sizeof(uint32_t)) == 0);
+    OS_ASSERT(stack_size >= OS_STACK_MINIMUM_SIZE);
 
     uint32_t stack_offset = (stack_size / sizeof(uint32_t));
     for (uint32_t i = 0; i < stack_offset; ++i) {
@@ -74,7 +74,7 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
     if ((uint32_t)stk & 0x04U) {
         stk--;
     }
-    stk -= OSDOTH_STACK_BASIC_FRAME_SIZE;
+    stk -= OS_STACK_BASIC_FRAME_SIZE;
 
     /* Save values of registers which will be restored on exc. return:
        - XPSR: Default value (0x01000000)
@@ -85,7 +85,7 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
     stk[14] = (uint32_t)task->handler & ~0x01UL;
     stk[13] = (uint32_t)&task_finished;
     stk[ 8] = (uint32_t)task->params;
-    #if defined(OSDOTH_CONFIG_DEBUG)
+    #if defined(OS_CONFIG_DEBUG)
     uint32_t base = 1000 * (osg.ntasks + 1);
     stk[12] = base + 12; /* R12 */
     stk[11] = base + 3;  /* R3  */
@@ -127,7 +127,7 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
     task->queue = NULL;
     task->mutex = NULL;
     task->nblocked = NULL;
-    #if defined(OSDOTH_CONFIG_DEBUG)
+    #if defined(OS_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif
 
@@ -139,7 +139,7 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
 
     /* First task initialized is always the idle task. */
     if (osg.idle == NULL) {
-        OSDOTH_ASSERT(task->status != OS_TASK_STATUS_SUSPENDED);
+        OS_ASSERT(task->status != OS_TASK_STATUS_SUSPENDED);
         osg.idle = task;
     }
 
@@ -157,8 +157,8 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
 }
 
 os_status_t os_task_start(os_task_t *task) {
-    OSDOTH_ASSERT(task != NULL);
-    OSDOTH_ASSERT(task->status != OS_TASK_STATUS_IDLE && task->status != OS_TASK_STATUS_ACTIVE);
+    OS_ASSERT(task != NULL);
+    OS_ASSERT(task->status != OS_TASK_STATUS_IDLE && task->status != OS_TASK_STATUS_ACTIVE);
 
     task->stack_kind = 0;
     task->delay = 0;
@@ -167,7 +167,7 @@ os_status_t os_task_start(os_task_t *task) {
     task->mutex = NULL;
     task->nblocked = NULL;
     task->started = os_uptime();
-    #if defined(OSDOTH_CONFIG_DEBUG)
+    #if defined(OS_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif
     task->sp = initialize_stack(task, (uint32_t *)task->stack, task->stack_size);
@@ -177,8 +177,8 @@ os_status_t os_task_start(os_task_t *task) {
 }
 
 os_status_t os_task_suspend(os_task_t *task) {
-    OSDOTH_ASSERT(task != NULL);
-    OSDOTH_ASSERT(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
+    OS_ASSERT(task != NULL);
+    OS_ASSERT(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
 
     task->status = OS_TASK_STATUS_SUSPENDED;
 
@@ -186,8 +186,8 @@ os_status_t os_task_suspend(os_task_t *task) {
 }
 
 os_status_t os_task_resume(os_task_t *task) {
-    OSDOTH_ASSERT(task != NULL);
-    OSDOTH_ASSERT(task->status == OS_TASK_STATUS_SUSPENDED);
+    OS_ASSERT(task != NULL);
+    OS_ASSERT(task->status == OS_TASK_STATUS_SUSPENDED);
 
     task->status = OS_TASK_STATUS_IDLE;
 
@@ -195,12 +195,12 @@ os_status_t os_task_resume(os_task_t *task) {
 }
 
 uint32_t os_task_uptime(os_task_t *task) {
-    OSDOTH_ASSERT(task != NULL);
+    OS_ASSERT(task != NULL);
     return os_uptime() - task->started;
 }
 
 uint32_t os_task_runtime(os_task_t *task) {
-    OSDOTH_ASSERT(task != NULL);
+    OS_ASSERT(task != NULL);
     return os_uptime() - task->started;
 }
 
@@ -213,8 +213,8 @@ os_status_t os_start(void) {
         return OSS_ERROR_INVALID;
     }
 
-    OSDOTH_ASSERT(osi_platform_setup() == OSS_SUCCESS);
-    OSDOTH_ASSERT(osg.running != NULL);
+    OS_ASSERT(osi_platform_setup() == OSS_SUCCESS);
+    OS_ASSERT(osg.running != NULL);
 
     NVIC_SetPriority(PendSV_IRQn, 0xff);
     NVIC_SetPriority(SysTick_IRQn, 0x00);
@@ -223,7 +223,7 @@ os_status_t os_start(void) {
     // __set_PSP((uint32_t)(stack + 8));
 
     /* Set PSP to the top of task's stack */
-    __set_PSP((uint32_t)osg.running->sp + OSDOTH_STACK_BASIC_FRAME_SIZE);
+    __set_PSP((uint32_t)osg.running->sp + OS_STACK_BASIC_FRAME_SIZE);
     /* Switch to Unprivilleged Thread Mode with PSP */
     __set_CONTROL(0x03);
     /* Execute DSB/ISB after changing CONTORL (recommended) */
@@ -233,15 +233,15 @@ os_status_t os_start(void) {
     osg.state = OS_STATE_STARTED;
     osg.running->handler(osg.running->params);
 
-    OSDOTH_ASSERT(0);
+    OS_ASSERT(0);
 
     return true;
 }
 
 os_status_t osi_dispatch(os_task_t *task) {
-    OSDOTH_ASSERT(task != NULL);
-    OSDOTH_ASSERT(osg.running != NULL);
-    OSDOTH_ASSERT(task != osg.running);
+    OS_ASSERT(task != NULL);
+    OS_ASSERT(osg.running != NULL);
+    OS_ASSERT(task != osg.running);
 
     task->flags = 0;
 
@@ -271,7 +271,7 @@ os_status_t osi_schedule() {
     /* May be unnecessary for us to be here... */
     osg.scheduled = NULL;
 
-    #if defined(OSDOTH_CONFIG_DEBUG)
+    #if defined(OS_CONFIG_DEBUG)
     /* Calculate stack usage and update when debugging. */
     uint32_t stack_usage = os_task_stack_usage((os_task_t *)running);
     if (stack_usage > running->debug_stack_max) {
@@ -292,7 +292,7 @@ os_status_t osi_schedule() {
         // If no other tasks can run but the one that just did, just return.
         // Technically, this should only happen to the idle task.
         if (iter == osg.running) {
-            OSDOTH_ASSERT(iter == osg.idle);
+            OS_ASSERT(iter == osg.idle);
             return OSS_SUCCESS;
         }
 
@@ -301,11 +301,11 @@ os_status_t osi_schedule() {
             if (os_uptime() >= iter->delay) {
                 iter->status = OS_TASK_STATUS_IDLE;
                 if ((iter->flags & OS_TASK_FLAG_MUTEX) == OS_TASK_FLAG_MUTEX) {
-                    OSDOTH_ASSERT(iter->queue == NULL);
-                    OSDOTH_ASSERT(iter->mutex != NULL);
-                    OSDOTH_ASSERT(iter->mutex->blocked.tasks == iter);
+                    OS_ASSERT(iter->queue == NULL);
+                    OS_ASSERT(iter->mutex != NULL);
+                    OS_ASSERT(iter->mutex->blocked.tasks == iter);
 
-                    #if defined(OSDOTH_CONFIG_DEBUG_MUTEXES)
+                    #if defined(OS_CONFIG_DEBUG_MUTEXES)
                     os_printf("%s: removed from mutex %p\n", iter->name, iter->mutex);
                     #endif
 
@@ -316,11 +316,11 @@ os_status_t osi_schedule() {
                     iter->flags = 0;
                 }
                 if ((iter->flags & OS_TASK_FLAG_QUEUE) == OS_TASK_FLAG_QUEUE) {
-                    OSDOTH_ASSERT(iter->mutex == NULL);
-                    OSDOTH_ASSERT(iter->queue != NULL);
-                    OSDOTH_ASSERT(iter->queue->blocked.tasks == iter);
+                    OS_ASSERT(iter->mutex == NULL);
+                    OS_ASSERT(iter->queue != NULL);
+                    OS_ASSERT(iter->queue->blocked.tasks == iter);
 
-                    #if defined(OSDOTH_CONFIG_DEBUG_QUEUES)
+                    #if defined(OS_CONFIG_DEBUG_QUEUES)
                     os_printf("%s: removed from queue %p\n", iter->name, iter->queue);
                     #endif
 
@@ -343,8 +343,8 @@ os_status_t osi_schedule() {
         }
     }
 
-    OSDOTH_ASSERT(osg.running != NULL);
-    OSDOTH_ASSERT(osg.scheduled != NULL);
+    OS_ASSERT(osg.running != NULL);
+    OS_ASSERT(osg.scheduled != NULL);
 
     // Trigger PendSV!
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
@@ -448,9 +448,9 @@ void osi_hard_fault_handler(uint32_t *stack, uint32_t lr) {
 }
 
 static void task_finished() {
-    OSDOTH_ASSERT(osg.running != NULL);
-    OSDOTH_ASSERT(osg.running != osg.idle);
-    OSDOTH_ASSERT(osg.running->status == OS_TASK_STATUS_ACTIVE);
+    OS_ASSERT(osg.running != NULL);
+    OS_ASSERT(osg.running != osg.idle);
+    OS_ASSERT(osg.running->status == OS_TASK_STATUS_ACTIVE);
 
     os_printf("os: task '%s' finished\n", osg.running->name);
 

@@ -2,20 +2,20 @@
 #include "internal.h"
 
 static void blocked_enq(os_queue_t *queue, os_task_t *task) {
-    OSDOTH_ASSERT(task->nblocked == NULL);
+    OS_ASSERT(task->nblocked == NULL);
     if (queue->blocked.tasks == NULL) {
         queue->blocked.tasks = task;
     }
     else {
         for (os_task_t *iter = queue->blocked.tasks; ; iter = iter->nblocked) {
-            OSDOTH_ASSERT(iter != task);
+            OS_ASSERT(iter != task);
             if (iter->nblocked == NULL) {
                 iter->nblocked = task;
                 break;
             }
         }
     }
-    OSDOTH_ASSERT(task->queue == NULL);
+    OS_ASSERT(task->queue == NULL);
     task->queue = queue;
 }
 
@@ -24,7 +24,7 @@ static os_task_t *blocked_deq(os_queue_t *queue) {
     if (task == NULL) {
         return NULL;
     }
-    OSDOTH_ASSERT(task->queue == queue);
+    OS_ASSERT(task->queue == queue);
     queue->blocked.tasks = task->nblocked;
     task->queue = NULL;
     task->nblocked = NULL;
@@ -46,8 +46,8 @@ os_status_t osi_queue_create(os_queue_t *queue, uint16_t size) {
 os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
     os_task_t *running = os_task_self();
 
-    OSDOTH_ASSERT(running != NULL); // TODO: Relax this?
-    OSDOTH_ASSERT(running->nblocked == NULL);
+    OS_ASSERT(running != NULL); // TODO: Relax this?
+    OS_ASSERT(running->nblocked == NULL);
 
     /* If there's tasks waiting, we can send directly via their stack. */
     if (queue->blocked.tasks != NULL && queue->status == OS_QUEUE_BLOCKED_RECEIVE) {
@@ -91,8 +91,8 @@ os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
 }
 
 os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint16_t to) {
-    OSDOTH_ASSERT(osg.running != NULL); // TODO: Relax this?
-    OSDOTH_ASSERT(osg.running->nblocked == NULL);
+    OS_ASSERT(osg.running != NULL); // TODO: Relax this?
+    OS_ASSERT(osg.running->nblocked == NULL);
 
     if (queue->number > 0) {
         *message = queue->messages[queue->last];

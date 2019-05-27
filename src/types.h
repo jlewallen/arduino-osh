@@ -22,16 +22,16 @@ extern "C" {
  *
  */
 /*
-#define OSDOTH_CONFIG_DEBUG
+#define OS_CONFIG_DEBUG
 */
 
 /**
  *
  */
-#define OSDOTH_CONFIG_DEBUG_RTT
+#define OS_CONFIG_DEBUG_RTT
 /*
-#define OSDOTH_CONFIG_DEBUG_MUTEXES
-#define OSDOTH_CONFIG_DEBUG_QUEUES
+#define OS_CONFIG_DEBUG_MUTEXES
+#define OS_CONFIG_DEBUG_QUEUES
 */
 
 /**
@@ -48,20 +48,20 @@ extern "C" {
 /**
  * Minimum number of bytes for a stack.
  */
-#define OSDOTH_STACK_BASIC_FRAME_SIZE                 (16)
-#define OSDOTH_STACK_EXTENDED_FRAME_SIZE              (32)
-#define OSDOTH_STACK_MINIMUM_SIZE_WORDS               (OSDOTH_STACK_EXTENDED_FRAME_SIZE + 8)
-#define OSDOTH_STACK_MINIMUM_SIZE                     (OSDOTH_STACK_MINIMUM_SIZE_WORDS * 4)
+#define OS_STACK_BASIC_FRAME_SIZE                     (16)
+#define OS_STACK_EXTENDED_FRAME_SIZE                  (32)
+#define OS_STACK_MINIMUM_SIZE_WORDS                   (OS_STACK_EXTENDED_FRAME_SIZE + 8)
+#define OS_STACK_MINIMUM_SIZE                         (OS_STACK_MINIMUM_SIZE_WORDS * 4)
 
 /**
  *
  */
-#define OSDOTH_ASSERT(expression)                     (void)((expression) || (os_assert(#expression, __FILE__, __LINE__), 0))
+#define OS_ASSERT(expression)                         (void)((expression) || (os_assert(#expression, __FILE__, __LINE__), 0))
 
 /**
  *
  */
-#define OS_CHECK(expression)                          OSDOTH_ASSERT((expression) == OSS_SUCCESS)
+#define OS_CHECK(expression)                          OS_ASSERT((expression) == OSS_SUCCESS)
 
 typedef enum os_start_status {
     OS_TASK_START_RUNNING,
@@ -105,7 +105,7 @@ typedef struct os_task_t {
     uint32_t delay;
     uint32_t flags;
 
-    #if defined(OSDOTH_CONFIG_DEBUG)
+    #if defined(OS_CONFIG_DEBUG)
     uint32_t debug_stack_max;
     #endif
 } os_task_t;
