@@ -16,10 +16,19 @@ uint32_t os_svc_delay(uint32_t ms) {
         os_schedule();
     }
 
+    uint32_t status = OSS_ERROR_TO;
+
     OSDOTH_ASSERT(osg.scheduled != NULL);
     OSDOTH_ASSERT(osg.scheduled != osg.running);
 
-    return 0;
+    return status;
+}
+
+uint32_t os_svc_block(uint32_t ms, uint32_t flags) {
+    osg.running->flags |= flags;
+    uint32_t status = os_svc_delay(ms);
+
+    return status;
 }
 
 uint32_t os_svc_printf(const char *str) {
@@ -30,10 +39,18 @@ os_status_t svc_queue_create(os_queue_t *queue, uint32_t size) {
     return os_queue_create(queue, size);
 }
 
-os_status_t svc_queue_enqueue(os_queue_t *queue, void *message, uint32_t to) {
-    return os_queue_enqueue(queue, message, (uint16_t)to);
+os_tuple_return_type_t svc_queue_enqueue(os_queue_t *queue, void *message, uint32_t to) {
+    os_tuple_t rtuple = { OSS_ERROR_TO, { 0 } };
+
+    rtuple.status = os_queue_enqueue(queue, message, (uint16_t)to);
+
+    return os_tuple_return_value(rtuple);
 }
 
-os_status_t svc_queue_dequeue(os_queue_t *queue, void **message, uint32_t to) {
-    return os_queue_dequeue(queue, message, (uint16_t)to);
+os_tuple_return_type_t svc_queue_dequeue(os_queue_t *queue, uint32_t to) {
+    os_tuple_t rtuple = { OSS_ERROR_TO, { 0 } };
+
+    rtuple.status = os_queue_dequeue(queue, &rtuple.value.ptr, (uint16_t)to);
+
+    return os_tuple_return_value(rtuple);
 }

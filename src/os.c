@@ -172,11 +172,6 @@ bool os_task_initialize(os_task_t *task, const char *name, os_start_status statu
     return true;
 }
 
-volatile os_task_t *os_task_self() {
-    OSDOTH_ASSERT(osg.running != NULL);
-    return osg.running;
-}
-
 bool os_task_start(os_task_t *task) {
     OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(task->status != OS_TASK_STATUS_IDLE && task->status != OS_TASK_STATUS_ACTIVE);
@@ -271,13 +266,39 @@ uint32_t os_task_stack_usage(os_task_t *task) {
     return task->stack_size - (task->sp - task->stack);
 }
 
+void os_dispatch(os_task_t *task) {
+    OSDOTH_ASSERT(task != NULL);
+    OSDOTH_ASSERT(osg.running != NULL);
+    OSDOTH_ASSERT(task != osg.running);
+
+    task->flags = 0;
+
+    osg.scheduled = task;
+
+    // NOTE: Should the status update happen in the PendSV?
+    switch (osg.running->status) {
+    case OS_TASK_STATUS_ACTIVE:
+        osg.running->status = OS_TASK_STATUS_IDLE;
+        break;
+    case OS_TASK_STATUS_IDLE:
+    case OS_TASK_STATUS_WAIT:
+    case OS_TASK_STATUS_SUSPENDED:
+    case OS_TASK_STATUS_FINISHED:
+        break;
+    }
+    osg.scheduled->status = OS_TASK_STATUS_ACTIVE;
+
+    os_stack_check();
+}
+
 void os_schedule() {
+    os_task_t *running = os_task_self();
+
     /* May be unnecessary for us to be here... */
     osg.scheduled = NULL;
 
     #if defined(OSDOTH_CONFIG_DEBUG)
     /* Calculate stack usage and update when debugging. */
-    volatile os_task_t *running = osg.running;
     uint32_t stack_usage = os_task_stack_usage((os_task_t *)running);
     if (stack_usage > running->debug_stack_max) {
         running->debug_stack_max = stack_usage;
@@ -285,7 +306,7 @@ void os_schedule() {
     #endif
 
     // Schedule a new task to run...
-    volatile os_task_t *iter = osg.running;
+    os_task_t *iter = running;
     while (true) {
         if (iter->np != NULL) {
             iter = iter->np;
@@ -305,35 +326,29 @@ void os_schedule() {
         if (iter->status == OS_TASK_STATUS_WAIT) {
             if (os_uptime() >= iter->delay) {
                 iter->status = OS_TASK_STATUS_IDLE;
+                if ((iter->flags & OS_TASK_FLAG_QUEUE) == OS_TASK_FLAG_QUEUE) {
+                    OSDOTH_ASSERT(iter->queue != NULL);
+                    OSDOTH_ASSERT(iter->queue->blocked == iter);
+
+                    iter->queue->blocked = iter->queue->blocked->blocked;
+                    iter->queue = NULL;
+                    iter->flags = 0;
+                }
                 iter->delay = 0;
+                os_dispatch(iter);
+                break;
             }
         }
 
         // Only run tasks that are idle.
         if (iter->status == OS_TASK_STATUS_IDLE) {
-            OSDOTH_ASSERT(iter != osg.running);
-            osg.scheduled = iter;
+            os_dispatch(iter);
             break;
         }
     }
 
     OSDOTH_ASSERT(osg.running != NULL);
     OSDOTH_ASSERT(osg.scheduled != NULL);
-
-    // NOTE: Should the status update happen in the PendSV?
-    switch (osg.running->status) {
-    case OS_TASK_STATUS_ACTIVE:
-        osg.running->status = OS_TASK_STATUS_IDLE;
-        break;
-    case OS_TASK_STATUS_IDLE:
-    case OS_TASK_STATUS_WAIT:
-    case OS_TASK_STATUS_SUSPENDED:
-    case OS_TASK_STATUS_FINISHED:
-        break;
-    }
-    osg.scheduled->status = OS_TASK_STATUS_ACTIVE;
-
-    os_stack_check();
 
     // Trigger PendSV!
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
@@ -359,11 +374,6 @@ uint32_t os_uptime() {
     return os_platform_uptime();
 }
 
-const char *os_task_name() {
-    OSDOTH_ASSERT(osg.running != NULL);
-    return osg.running->name;
-}
-
 uint32_t os_task_uptime() {
     OSDOTH_ASSERT(osg.running != NULL);
     return os_uptime() - osg.running->started;
@@ -379,6 +389,33 @@ void os_yield() {
 
 void os_delay(uint32_t ms) {
     os_platform_delay(ms);
+}
+
+uint32_t *os_task_return_regs(os_task_t *task) {
+    /* Get pointer to task return value registers (R0..R3) in Stack */
+#if defined(__SAMD51__)
+    if (task->stack_kind == 1) {
+        /* Extended Stack Frame: R4 - R11, S16 - S31, R0 - R3, R12, LR, PC,
+         * xPSR, S0 - S15, FPSCR */
+        return (uint32_t *)(task->sp + (8U * 4U) + (16U * 4U));
+    }
+    else {
+        /* Basic Stack Frame: R4 - R11, R0 - R3, R12, LR, PC, xPSR */
+        return (uint32_t *)(task->sp + (8U * 4U));
+    }
+#else
+    /* Stack Frame: R4 - R11, R0 - R3, R12, LR, PC, xPSR */
+    return (uint32_t *)(task->sp + (8U * 4U));
+#endif
+}
+
+os_tuple_t *os_task_return_tuple(os_task_t *task) {
+    return (os_tuple_t *)os_task_return_regs(task);
+}
+
+void os_task_set_rv(os_task_t *task, uint32_t v0) {
+    uint32_t *regs = os_task_return_regs(task);
+    regs[0] = v0;
 }
 
 void os_irs_systick() {

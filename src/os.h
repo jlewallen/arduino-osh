@@ -26,6 +26,7 @@
 #include <sam.h>
 
 #include "arduino.h"
+#include "printf.h"
 #include "segger/SEGGER_RTT.h"
 
 #if defined(__cplusplus)
@@ -84,6 +85,8 @@ typedef enum os_task_status {
 #define OS_TASK_FLAG_NONE                             (0)
 #define OS_TASK_FLAG_QUEUE                            (1)
 
+struct os_queue_t;
+
 typedef struct os_task_t {
     /* The stack pointer (sp) has to be the first element as it is located
        at the same address as the structure itself (which makes it possible
@@ -98,14 +101,33 @@ typedef struct os_task_t {
     void (*handler)(void*);
     void *params;
     struct os_task_t *np;
-    struct os_task_t *delayed;
+    struct os_task_t *blocked;
+    struct os_queue_t *queue;
+    void *message;
     uint32_t started;
     uint32_t delay;
     uint32_t flags;
+
     #if defined(OSDOTH_CONFIG_DEBUG)
     uint32_t debug_stack_max;
     #endif
 } os_task_t;
+
+typedef enum os_queue_status_t {
+    OS_QUEUE_FINE,
+    OS_QUEUE_BLOCKED_SEND,
+    OS_QUEUE_BLOCKED_RECEIVE,
+} os_queue_status_t;
+
+typedef struct os_queue_t {
+    os_task_t *blocked;
+    uint16_t size;
+    uint16_t number;
+    uint16_t first;
+    uint16_t last;
+    os_queue_status_t status;
+    void *messages[1];
+} os_queue_t;
 
 typedef enum {
     OS_STATE_DEFAULT = 1,
@@ -134,18 +156,32 @@ typedef struct os_globals_t {
 /* TODO: typedef enum here breaks in the service call macro magic. */
 typedef uint32_t os_status_t;
 
-#define OSS_SUCCESS     (0)
-#define OSS_ERROR_TO    (1)
-#define OSS_ERROR_MEM   (2)
+#define OSS_SUCCESS                                   (0x0)
+#define OSS_ERROR_TO                                  (0x1)
+#define OSS_ERROR_MEM                                 (0x2)
+#define OSS_ERROR_INT                                 (0x3)
+
+typedef struct {
+    os_status_t status;
+    union  {
+        uint32_t u32;
+        void *ptr;
+    } value;
+} os_tuple_t;
 
 inline const char *os_status_str(os_status_t status) {
     switch (status) {
     case OSS_SUCCESS: return "OSS_SUCCESS";
     case OSS_ERROR_TO: return "OSS_ERROR_TO";
     case OSS_ERROR_MEM: return "OSS_ERROR_MEM";
+    case OSS_ERROR_INT: return "OSS_ERROR_INT";
     default: return "UNKNOWN";
     }
 }
+
+#define os_task_self()                               ((os_task_t *)osg.running)
+
+#define os_task_name()                               (osg.running->name)
 
 extern os_globals_t osg;
 
@@ -174,13 +210,13 @@ bool os_self_resume();
 
 bool os_start();
 
+void os_dispatch(os_task_t *task);
+
 void os_schedule();
 
 void os_irs_systick();
 
 uint32_t os_uptime();
-
-const char *os_task_name();
 
 uint32_t os_task_uptime();
 
@@ -199,6 +235,12 @@ void os_stack_check();
 int32_t os_printf(const char *f, ...);
 
 uint32_t os_free_memory();
+
+uint32_t *os_task_return_regs(os_task_t *task);
+
+os_tuple_t *os_task_return_tuple(os_task_t *task);
+
+void os_task_set_rv(os_task_t *task, uint32_t v0);
 
 #if defined(__cplusplus)
 }
