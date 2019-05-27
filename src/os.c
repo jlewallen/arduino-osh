@@ -389,7 +389,7 @@ void os_assert(const char *assertion, const char *file, int line) {
 }
 
 void os_error(uint8_t code) {
-    infinite_loop();
+    __asm__("BKPT");
 }
 
 void os_stack_check() {
