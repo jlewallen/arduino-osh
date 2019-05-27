@@ -29,11 +29,11 @@ static void task_handler_sender(void *params) {
         if (status == OSS_SUCCESS) {
             auto wms = random(10, 2000);
             os_printf("%s: success (%s) (%dms)\n", os_task_name(), os_status_str(status), wms);
-            __os_svc_delay(wms);
+            __svc_delay(wms);
         }
         else {
             os_printf("%s: fail (%s)\n", os_task_name(), os_status_str(status));
-            __os_svc_delay(100);
+            __svc_delay(100);
         }
     }
 }
@@ -44,7 +44,7 @@ static uint32_t receiver_stacks[NUMBER_OF_RECEIVERS][256];
 static void task_handler_receiver(void *params) {
     os_printf("%s started\n", os_task_name());
 
-    __os_svc_delay(500);
+    __svc_delay(500);
 
     while (true) {
         auto tuple = __svc_queue_dequeue((os_queue_t *)queue, 1000);
@@ -52,7 +52,7 @@ static void task_handler_receiver(void *params) {
             auto message = (const char *)tuple.value.ptr;
             auto wms = random(10, 200);
             os_printf("%s: success ('%s') (%dms)\n", os_task_name(), message, wms);
-            __os_svc_delay(wms);
+            __svc_delay(wms);
         }
         else {
             os_printf("%s: fail (%s)\n", os_task_name(), os_status_str(tuple.status));

@@ -71,7 +71,7 @@ os_status_t os_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
         // Block until somebody takes one, freeing space.
         queue->status = OS_QUEUE_BLOCKED_SEND;
         blocked_enq(queue, os_task_self());
-        os_svc_block(to, OS_TASK_FLAG_QUEUE);
+        svc_block(to, OS_TASK_FLAG_QUEUE);
 
         return OSS_ERROR_TO;
     }
@@ -125,6 +125,6 @@ os_status_t os_queue_dequeue(os_queue_t *queue, void **message, uint16_t to) {
     // Block for to ms or until a message comes in.
     queue->status = OS_QUEUE_BLOCKED_RECEIVE;
     blocked_enq(queue, os_task_self());
-    os_svc_block(to, OS_TASK_FLAG_QUEUE);
+    svc_block(to, OS_TASK_FLAG_QUEUE);
     return OSS_ERROR_TO;
 }

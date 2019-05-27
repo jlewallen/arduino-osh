@@ -20,7 +20,7 @@ static void task_handler_child(void *params) {
 
     auto started = os_uptime();
     while (os_uptime() - started < 5000) {
-        __os_svc_delay(100);
+        __svc_delay(100);
     }
 
     os_printf("task done\n");
@@ -45,7 +45,7 @@ static void task_handler_main(void *params) {
         }
         }
 
-        __os_svc_delay(1000);
+        __svc_delay(1000);
     }
 }
 

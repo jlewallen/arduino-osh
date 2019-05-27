@@ -1,11 +1,11 @@
 #include "os.h"
 
-uint32_t os_svc_example() {
-    os_printf("os_svc_example\n");
+uint32_t svc_example() {
+    os_printf("svc_example\n");
     return 0;
 }
 
-uint32_t os_svc_delay(uint32_t ms) {
+uint32_t svc_delay(uint32_t ms) {
     OSDOTH_ASSERT(osg.running != NULL);
     OSDOTH_ASSERT(osg.scheduled != osg.running);
 
@@ -24,14 +24,14 @@ uint32_t os_svc_delay(uint32_t ms) {
     return status;
 }
 
-uint32_t os_svc_block(uint32_t ms, uint32_t flags) {
+uint32_t svc_block(uint32_t ms, uint32_t flags) {
     osg.running->flags |= flags;
-    uint32_t status = os_svc_delay(ms);
+    uint32_t status = svc_delay(ms);
 
     return status;
 }
 
-uint32_t os_svc_printf(const char *str) {
+uint32_t svc_printf(const char *str) {
     return os_printf(str);
 }
 

@@ -15,7 +15,7 @@ static void task_handler(void *arg) {
 
         lastTick = os_uptime();
 
-        __os_svc_delay(time);
+        __svc_delay(time);
 
         now = os_uptime();
     }

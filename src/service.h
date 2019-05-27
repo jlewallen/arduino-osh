@@ -122,15 +122,15 @@ typedef uint32_t __attribute__((vector_size(16))) ret128;
 #define os_tuple_return_type_t   __attribute__((pcs("aapcs"))) ret64
 #define os_tuple_return_value(r) (ret64){ r.status, r.value.u32 }
 
-uint32_t os_svc_example(void);
-uint32_t os_svc_delay(uint32_t ms);
-uint32_t os_svc_block(uint32_t ms, uint32_t flags);
-uint32_t os_svc_printf(const char *str);
+uint32_t svc_example(void);
+uint32_t svc_delay(uint32_t ms);
+uint32_t svc_block(uint32_t ms, uint32_t flags);
+uint32_t svc_printf(const char *str);
 
-SVC_0_1(os_svc_example, uint32_t, RET_uint32_t);
-SVC_1_1(os_svc_delay, uint32_t, uint32_t, RET_uint32_t);
-SVC_2_1(os_svc_block, uint32_t, uint32_t, uint32_t, RET_uint32_t);
-SVC_1_1(os_svc_printf, uint32_t, const char*, RET_uint32_t);
+SVC_0_1(svc_example, uint32_t, RET_uint32_t);
+SVC_1_1(svc_delay, uint32_t, uint32_t, RET_uint32_t);
+SVC_2_1(svc_block, uint32_t, uint32_t, uint32_t, RET_uint32_t);
+SVC_1_1(svc_printf, uint32_t, const char*, RET_uint32_t);
 
 os_status_t svc_queue_create(os_queue_t *queue, uint32_t size);
 os_tuple_return_type_t svc_queue_enqueue(os_queue_t *queue, void *message, uint32_t to);
