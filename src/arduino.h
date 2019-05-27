@@ -11,7 +11,7 @@ extern "C" {
 /**
  *
  */
-bool osi_platform_setup();
+os_status_t osi_platform_setup();
 
 /**
  *
@@ -21,7 +21,7 @@ uint32_t osi_platform_uptime();
 /**
  *
  */
-void osi_platform_delay(uint32_t ms);
+uint32_t osi_platform_delay(uint32_t ms);
 
 #if defined(__cplusplus)
 }

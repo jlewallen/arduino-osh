@@ -28,16 +28,17 @@ uint32_t os_printf(const char *f, ...) {
     return i;
 }
 
-bool osi_platform_setup() {
-    return true;
+os_status_t osi_platform_setup() {
+    return OSS_SUCCESS;
 }
 
 uint32_t osi_platform_uptime() {
     return millis();
 }
 
-void osi_platform_delay(uint32_t ms) {
+uint32_t osi_platform_delay(uint32_t ms) {
     delay(ms);
+    return ms;
 }
 
 extern void SysTick_DefaultHandler(void);

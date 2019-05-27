@@ -94,25 +94,25 @@ void setup() {
     os_printf("starting: %d\n", os_free_memory());
     #endif
 
-    OSDOTH_ASSERT(os_initialize());
+    OS_CHECK(os_initialize());
 
-    OSDOTH_ASSERT(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
+    OS_CHECK(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
 
     for (auto i = 0; i < NUMBER_OF_RECEIVERS; ++i) {
         char temp[32];
         os_snprintf(temp, sizeof(temp), "receiver-%d", i);
-        OSDOTH_ASSERT(os_task_initialize(&receiver_tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler_receiver, NULL, receiver_stacks[i], sizeof(receiver_stacks[i])));
+        OS_CHECK(os_task_initialize(&receiver_tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler_receiver, NULL, receiver_stacks[i], sizeof(receiver_stacks[i])));
     }
 
     for (auto i = 0; i < NUMBER_OF_SENDERS; ++i) {
         char temp[32];
         os_snprintf(temp, sizeof(temp), "sender-%d", i);
-        OSDOTH_ASSERT(os_task_initialize(&sender_tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler_sender, NULL, sender_stacks[i], sizeof(sender_stacks[i])));
+        OS_CHECK(os_task_initialize(&sender_tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler_sender, NULL, sender_stacks[i], sizeof(sender_stacks[i])));
     }
 
-    os_queue_create((os_queue_t *)queue, 4);
+    OS_CHECK(os_queue_create((os_queue_t *)queue, 4));
 
-    OSDOTH_ASSERT(os_start());
+    OS_CHECK(os_start());
 }
 
 void loop() {

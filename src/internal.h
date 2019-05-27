@@ -18,22 +18,22 @@ extern "C" {
 /**
  *
  */
-bool osi_platform_setup();
+os_status_t osi_platform_setup();
 
 /**
  *
  */
-void osi_dispatch(os_task_t *task);
+os_status_t osi_dispatch(os_task_t *task);
 
 /**
  *
  */
-void osi_schedule();
+os_status_t osi_schedule();
 
 /**
  *
  */
-void osi_irs_systick();
+os_status_t osi_irs_systick();
 
 /**
  *

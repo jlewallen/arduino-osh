@@ -24,9 +24,8 @@
 #include <string.h>
 #include <sam.h>
 
-#include "arduino.h"
-#include "printf.h"
-#include "segger/SEGGER_RTT.h"
+#include "./printf.h"
+#include "./segger/SEGGER_RTT.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -71,6 +70,11 @@ extern "C" {
  *
  */
 #define OSDOTH_ASSERT(expression)                     (void)((expression) || (os_assert(#expression, __FILE__, __LINE__), 0))
+
+/**
+ *
+ */
+#define OS_CHECK(expression)                          OSDOTH_ASSERT((expression) == OSS_SUCCESS)
 
 typedef enum os_start_status {
     OS_TASK_START_RUNNING,
@@ -218,20 +222,20 @@ inline const char *os_task_name() {
 /**
  *
  */
-bool os_initialize();
+os_status_t os_initialize();
 
 /**
  *
  */
-bool os_task_initialize(os_task_t *task, const char *name,
-                        os_start_status status,
-                        void (*handler)(void *params), void *params,
-                        uint32_t *stack, size_t stack_size);
+os_status_t os_task_initialize(os_task_t *task, const char *name,
+                               os_start_status status,
+                               void (*handler)(void *params), void *params,
+                               uint32_t *stack, size_t stack_size);
 
 /**
  *
  */
-bool os_start();
+os_status_t os_start();
 
 /**
  *
@@ -241,17 +245,17 @@ os_task_status os_task_get_status(os_task_t *task);
 /**
  *
  */
-bool os_task_start(os_task_t *task);
+os_status_t os_task_start(os_task_t *task);
 
 /**
  *
  */
-bool os_task_suspend(os_task_t *task);
+os_status_t os_task_suspend(os_task_t *task);
 
 /**
  *
  */
-bool os_task_resume(os_task_t *task);
+os_status_t os_task_resume(os_task_t *task);
 
 /**
  *
@@ -287,6 +291,7 @@ void os_assert(const char *assertion, const char *file, int line) __attribute__ 
 }
 #endif
 
+#include "arduino.h"
 #include "service.h"
 
 #endif /* OS_H */

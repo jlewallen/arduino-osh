@@ -31,7 +31,7 @@ static void task_handler(void *params) {
             os_delay(wms);
 
             os_printf("%s releasing\n", os_task_name());
-            OSDOTH_ASSERT(os_mutex_release(&mutex) == OSS_SUCCESS);
+            OS_CHECK(os_mutex_release(&mutex));
         }
         else {
             auto elapsed = os_uptime() - started;
@@ -58,18 +58,18 @@ void setup() {
     os_printf("starting: %d\n", os_free_memory());
     #endif
 
-    OSDOTH_ASSERT(os_initialize());
-    OSDOTH_ASSERT(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
+    OS_CHECK(os_initialize());
+    OS_CHECK(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
 
     for (auto i = 0; i < NUMBER_OF_TASKS; ++i) {
         char temp[32];
         os_snprintf(temp, sizeof(temp), "task-%d", i);
-        OSDOTH_ASSERT(os_task_initialize(&tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler, NULL, stacks[i], sizeof(stacks[i])));
+        OS_CHECK(os_task_initialize(&tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler, NULL, stacks[i], sizeof(stacks[i])));
     }
 
-    os_mutex_create(&mutex);
+    OS_CHECK(os_mutex_create(&mutex));
 
-    OSDOTH_ASSERT(os_start());
+    OS_CHECK(os_start());
 }
 
 void loop() {

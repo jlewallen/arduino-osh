@@ -44,9 +44,9 @@ static void infinite_loop() __attribute__ ((noreturn));
 
 static void task_finished() __attribute__ ((noreturn));
 
-bool os_initialize() {
+os_status_t os_initialize() {
     if (osg.state != OS_STATE_DEFAULT) {
-        return false;
+        return OSS_ERROR_INVALID;
     }
 
     #if defined(OSH_MTB)
@@ -57,7 +57,7 @@ bool os_initialize() {
 
     osg.state = OS_STATE_INITIALIZED;
 
-    return true;
+    return OSS_SUCCESS;
 }
 
 typedef struct os_stack_frame_t {
@@ -127,9 +127,9 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
     return stk;
 }
 
-bool os_task_initialize(os_task_t *task, const char *name, os_start_status status, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
+os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_status status, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
     if (osg.state != OS_STATE_INITIALIZED && osg.state != OS_STATE_TASKS_INITIALIZED) {
-        return false;
+        return OSS_ERROR_INVALID;
     }
 
     task->sp = NULL; /* This gets set correctly later. */
@@ -172,10 +172,10 @@ bool os_task_initialize(os_task_t *task, const char *name, os_start_status statu
 
     osg.state = OS_STATE_TASKS_INITIALIZED;
 
-    return true;
+    return OSS_SUCCESS;
 }
 
-bool os_task_start(os_task_t *task) {
+os_status_t os_task_start(os_task_t *task) {
     OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(task->status != OS_TASK_STATUS_IDLE && task->status != OS_TASK_STATUS_ACTIVE);
 
@@ -192,25 +192,25 @@ bool os_task_start(os_task_t *task) {
     task->sp = initialize_stack(task, (uint32_t *)task->stack, task->stack_size);
     task->status = OS_TASK_STATUS_IDLE;
 
-    return true;
+    return OSS_SUCCESS;
 }
 
-bool os_task_suspend(os_task_t *task) {
+os_status_t os_task_suspend(os_task_t *task) {
     OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
 
     task->status = OS_TASK_STATUS_SUSPENDED;
 
-    return true;
+    return OSS_SUCCESS;
 }
 
-bool os_task_resume(os_task_t *task) {
+os_status_t os_task_resume(os_task_t *task) {
     OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(task->status == OS_TASK_STATUS_SUSPENDED);
 
     task->status = OS_TASK_STATUS_IDLE;
 
-    return true;
+    return OSS_SUCCESS;
 }
 
 uint32_t os_task_uptime(os_task_t *task) {
@@ -227,12 +227,12 @@ os_task_status os_task_get_status(os_task_t *task) {
     return task->status;
 }
 
-bool os_start(void) {
+os_status_t os_start(void) {
     if (osg.state != OS_STATE_TASKS_INITIALIZED) {
-        return false;
+        return OSS_ERROR_INVALID;
     }
 
-    OSDOTH_ASSERT(osi_platform_setup());
+    OSDOTH_ASSERT(osi_platform_setup() == OSS_SUCCESS);
     OSDOTH_ASSERT(osg.running != NULL);
 
     NVIC_SetPriority(PendSV_IRQn, 0xff);
@@ -274,7 +274,7 @@ uint32_t os_task_stack_usage(os_task_t *task) {
     return task->stack_size - (task->sp - task->stack);
 }
 
-void osi_dispatch(os_task_t *task) {
+os_status_t osi_dispatch(os_task_t *task) {
     OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(osg.running != NULL);
     OSDOTH_ASSERT(task != osg.running);
@@ -297,9 +297,11 @@ void osi_dispatch(os_task_t *task) {
     osg.scheduled->status = OS_TASK_STATUS_ACTIVE;
 
     osi_stack_check();
+
+    return OSS_SUCCESS;
 }
 
-void osi_schedule() {
+os_status_t osi_schedule() {
     os_task_t *running = os_task_self();
 
     /* May be unnecessary for us to be here... */
@@ -327,7 +329,7 @@ void osi_schedule() {
         // Technically, this should only happen to the idle task.
         if (iter == osg.running) {
             OSDOTH_ASSERT(iter == osg.idle);
-            return;
+            return OSS_SUCCESS;
         }
 
         // Wake up tasks that are waiting if it's their time.
@@ -382,6 +384,8 @@ void osi_schedule() {
 
     // Trigger PendSV!
     SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+
+    return OSS_SUCCESS;
 }
 
 void os_assert(const char *assertion, const char *file, int line) {
@@ -437,10 +441,11 @@ void osi_task_return_value(os_task_t *task, uint32_t v0) {
     regs[0] = v0;
 }
 
-void osi_irs_systick() {
+os_status_t osi_irs_systick() {
     if (osg.state == OS_STATE_STARTED) {
-        osi_schedule();
+        return osi_schedule();
     }
+    return OSS_SUCCESS;
 }
 
 void hard_fault_report(uint32_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {

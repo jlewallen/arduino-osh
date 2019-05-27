@@ -39,9 +39,6 @@ static uint32_t stack3[256];
 
 void setup() {
     Serial.begin(115200);
-    #if defined(__SAMD21__)
-    Serial5.begin(115200);
-    #endif
     while (!Serial && millis() < 2000) {
     }
 
@@ -55,17 +52,17 @@ void setup() {
     os_printf("starting: %d\n", os_free_memory());
     #endif
 
-    OSDOTH_ASSERT(os_initialize());
+    OS_CHECK(os_initialize());
 
-    OSDOTH_ASSERT(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
+    OS_CHECK(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
 
-    OSDOTH_ASSERT(os_task_initialize(&tasks[0], "task1", OS_TASK_START_RUNNING, &task_handler, (void*)p1, stack1, sizeof(stack1)));
+    OS_CHECK(os_task_initialize(&tasks[0], "task1", OS_TASK_START_RUNNING, &task_handler, (void*)p1, stack1, sizeof(stack1)));
 
-    OSDOTH_ASSERT(os_task_initialize(&tasks[1], "task2", OS_TASK_START_RUNNING, &task_handler, (void*)p2, stack2, sizeof(stack2)));
+    OS_CHECK(os_task_initialize(&tasks[1], "task2", OS_TASK_START_RUNNING, &task_handler, (void*)p2, stack2, sizeof(stack2)));
 
-    OSDOTH_ASSERT(os_task_initialize(&tasks[2], "task3", OS_TASK_START_RUNNING, &task_handler, (void*)p3, stack3, sizeof(stack3)));
+    OS_CHECK(os_task_initialize(&tasks[2], "task3", OS_TASK_START_RUNNING, &task_handler, (void*)p3, stack3, sizeof(stack3)));
 
-    OSDOTH_ASSERT(os_start()) ;
+    OS_CHECK(os_start()) ;
 }
 
 void loop() {

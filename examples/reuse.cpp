@@ -33,11 +33,11 @@ static void task_handler_main(void *params) {
     while (true) {
         switch (os_task_get_status(&child_task)) {
         case OS_TASK_STATUS_SUSPENDED: {
-            os_task_resume(&child_task);
+            OS_CHECK(os_task_resume(&child_task));
             break;
         }
         case OS_TASK_STATUS_FINISHED: {
-            os_task_start(&child_task);
+            OS_CHECK(os_task_start(&child_task));
             break;
         }
         default: {
@@ -60,15 +60,15 @@ void setup() {
     os_printf("starting: %d\n", os_free_memory());
     #endif
 
-    OSDOTH_ASSERT(os_initialize());
+    OS_CHECK(os_initialize());
 
-    OSDOTH_ASSERT(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
+    OS_CHECK(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
 
-    OSDOTH_ASSERT(os_task_initialize(&main_task, "main", OS_TASK_START_RUNNING, &task_handler_main, NULL, main_stack, sizeof(main_stack)));
+    OS_CHECK(os_task_initialize(&main_task, "main", OS_TASK_START_RUNNING, &task_handler_main, NULL, main_stack, sizeof(main_stack)));
 
-    OSDOTH_ASSERT(os_task_initialize(&child_task, "child", OS_TASK_START_SUSPENDED, &task_handler_child, NULL, child_stack, sizeof(child_stack)));
+    OS_CHECK(os_task_initialize(&child_task, "child", OS_TASK_START_SUSPENDED, &task_handler_child, NULL, child_stack, sizeof(child_stack)));
 
-    OSDOTH_ASSERT(!os_start());
+    OS_CHECK(os_start());
 }
 
 void loop() {
