@@ -20,7 +20,7 @@ static void task_handler_child(void *params) {
 
     auto started = os_uptime();
     while (os_uptime() - started < 5000) {
-        __svc_delay(100);
+        os_delay(100);
     }
 
     os_printf("task done\n");
@@ -45,7 +45,7 @@ static void task_handler_main(void *params) {
         }
         }
 
-        __svc_delay(1000);
+        os_delay(1000);
     }
 }
 
@@ -60,30 +60,15 @@ void setup() {
     os_printf("starting: %d\n", os_free_memory());
     #endif
 
-    if (!os_initialize()) {
-        os_printf("Error: os_initialize failed\n");
-        os_error(OS_ERROR_APP);
-    }
+    OSDOTH_ASSERT(os_initialize());
 
-    if (!os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack))) {
-        os_printf("Error: os_task_initialize failed\n");
-        os_error(OS_ERROR_APP);
-    }
+    OSDOTH_ASSERT(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
 
-    if (!os_task_initialize(&main_task, "main", OS_TASK_START_RUNNING, &task_handler_main, NULL, main_stack, sizeof(main_stack))) {
-        os_printf("Error: os_task_initialize failed\n");
-        os_error(OS_ERROR_APP);
-    }
+    OSDOTH_ASSERT(os_task_initialize(&main_task, "main", OS_TASK_START_RUNNING, &task_handler_main, NULL, main_stack, sizeof(main_stack)));
 
-    if (!os_task_initialize(&child_task, "child", OS_TASK_START_SUSPENDED, &task_handler_child, NULL, child_stack, sizeof(child_stack))) {
-        os_printf("Error: os_task_initialize failed\n");
-        os_error(OS_ERROR_APP);
-    }
+    OSDOTH_ASSERT(os_task_initialize(&child_task, "child", OS_TASK_START_SUSPENDED, &task_handler_child, NULL, child_stack, sizeof(child_stack)));
 
-    if (!os_start()) {
-        os_printf("Error: os_start failed\n");
-        os_error(OS_ERROR_APP);
-    }
+    OSDOTH_ASSERT(!os_start());
 }
 
 void loop() {

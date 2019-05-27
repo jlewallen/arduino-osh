@@ -32,42 +32,42 @@ static void task_handler_idle(void *params) {
 }
 
 static void task_handler_sender(void *params) {
-    os_printf("%s started\n", os_task_name());
+    os_printf("%s started (%d)\n", os_task_name(), __get_CONTROL());
 
     uint32_t counter = 0;
 
     while (true) {
         auto started = os_uptime();
         auto message = (char *)os_pstrdup("message<%d>", counter++);
-        auto tuple = __svc_queue_enqueue((os_queue_t *)queue, message, 1000);
+        auto tuple = os_queue_enqueue((os_queue_t *)queue, message, 1000);
         auto status = tuple.status;
         if (status == OSS_SUCCESS) {
             auto wms = random(10, 2000);
             os_printf("%s: success (%s) (%dms)\n", os_task_name(), os_status_str(status), wms);
-            __svc_delay(wms);
+            os_delay(wms);
         }
         else {
             auto elapsed = os_uptime() - started;
             os_printf("%s: fail (%s) (after %lums)\n", os_task_name(), os_status_str(status), elapsed);
-            __svc_delay(100);
+            os_delay(100);
         }
     }
 }
 
 static void task_handler_receiver(void *params) {
-    os_printf("%s started\n", os_task_name());
+    os_printf("%s started (%d)\n", os_task_name(), __get_CONTROL());
 
-    __svc_delay(500);
+    os_delay(500);
 
     while (true) {
         auto started = os_uptime();
-        auto tuple = __svc_queue_dequeue((os_queue_t *)queue, 1000);
+        auto tuple = os_queue_dequeue((os_queue_t *)queue, 1000);
         if (tuple.status == OSS_SUCCESS) {
             auto message = (const char *)tuple.value.ptr;
             auto wms = random(10, 200);
             os_printf("%s: success ('%s') (%dms)\n", os_task_name(), message, wms);
             free((void *)message);
-            __svc_delay(wms);
+            os_delay(wms);
         }
         else {
             auto elapsed = os_uptime() - started;
@@ -94,40 +94,25 @@ void setup() {
     os_printf("starting: %d\n", os_free_memory());
     #endif
 
-    if (!os_initialize()) {
-        os_printf("Error: os_initialize failed\n");
-        os_error(OS_ERROR_APP);
-    }
+    OSDOTH_ASSERT(os_initialize());
 
-    if (!os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack))) {
-        os_printf("Error: os_task_initialize failed\n");
-        os_error(OS_ERROR_APP);
-    }
+    OSDOTH_ASSERT(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
 
     for (auto i = 0; i < NUMBER_OF_RECEIVERS; ++i) {
         char temp[32];
         os_snprintf(temp, sizeof(temp), "receiver-%d", i);
-        if (!os_task_initialize(&receiver_tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler_receiver, NULL, receiver_stacks[i], sizeof(receiver_stacks[i]))) {
-            os_printf("Error: os_task_initialize failed\n");
-            os_error(OS_ERROR_APP);
-        }
+        OSDOTH_ASSERT(os_task_initialize(&receiver_tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler_receiver, NULL, receiver_stacks[i], sizeof(receiver_stacks[i])));
     }
 
     for (auto i = 0; i < NUMBER_OF_SENDERS; ++i) {
         char temp[32];
         os_snprintf(temp, sizeof(temp), "sender-%d", i);
-        if (!os_task_initialize(&sender_tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler_sender, NULL, sender_stacks[i], sizeof(sender_stacks[i]))) {
-            os_printf("Error: os_task_initialize failed\n");
-            os_error(OS_ERROR_APP);
-        }
+        OSDOTH_ASSERT(os_task_initialize(&sender_tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler_sender, NULL, sender_stacks[i], sizeof(sender_stacks[i])));
     }
 
     os_queue_create((os_queue_t *)queue, 4);
 
-    if (!os_start()) {
-        os_printf("Error: os_start failed\n");
-        os_error(OS_ERROR_APP);
-    }
+    OSDOTH_ASSERT(os_start());
 }
 
 void loop() {

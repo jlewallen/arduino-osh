@@ -95,7 +95,7 @@ PendSV_Handler:
 
         /* check for stack overflow */
         push    {r2, r3}
-        bl      os_stack_check
+        bl      osi_stack_check
         pop     {r2, r3}
 
         /* running_task = scheduled_task; */
@@ -105,7 +105,7 @@ PendSV_Handler:
 
         /* check for stack overflow */
         push    {r2, r3}
-        bl      os_stack_check
+        bl      osi_stack_check
         pop     {r2, r3}
 
         /* Load next task's SP: */
@@ -191,7 +191,7 @@ SVC_Handler:
         str       r0, [r1, #OS_TASK_SP]           /* update osg.running->sp */
 
         push      {r2, r3}
-        bl        os_stack_check
+        bl        osi_stack_check
         pop       {r2, r3}
 
 svc_switch:

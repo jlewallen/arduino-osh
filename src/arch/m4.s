@@ -50,7 +50,7 @@ PendSV_Handler:
         str      r12, [r1, #OS_TASK_SP]           /* Update osg.running->sp */
 
         push     {r2, r3}
-        bl       os_stack_check
+        bl       osi_stack_check
         pop      {r2, r3}
 
         /* running_task = scheduled_task; */
@@ -139,7 +139,7 @@ svc_ctx_save:
         str       r12, [r1, #OS_TASK_SP]          /* update osg.running->sp_stack */
 
         push      {r2, r3}
-        bl        os_stack_check
+        bl        osi_stack_check
         pop       {r2, r3}
 
 svc_ctx_restore:

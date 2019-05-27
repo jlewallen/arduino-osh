@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU General Public License
  * along with os.h.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 #ifndef OS_H
 #define OS_H
 
@@ -147,42 +146,39 @@ typedef enum {
     OS_STATE_INITIALIZED,
     OS_STATE_TASKS_INITIALIZED,
     OS_STATE_STARTED,
-} os_state;
+} os_state_t;
 
-typedef enum {
-    OS_ERROR_NONE,
-    OS_ERROR_ASSERTION,
-    OS_ERROR_STACK_OVERFLOW,
-    OS_ERROR_APP,
-} os_error_kind;
-
+/**
+ * Struct with global operating system state.
+ */
 typedef struct os_globals_t {
     volatile os_task_t *running;
     volatile os_task_t *scheduled;
-    os_state state;
+    os_state_t state;
     uint8_t ntasks;
     os_task_t *idle;
     os_task_t *tasks;
     os_task_t *delayed;
 } os_globals_t;
 
+/**
+ * Singleton instance of state for the operating system.
+ */
+extern os_globals_t osg;
+
 /* TODO: typedef enum here breaks in the service call macro magic. */
 typedef uint32_t os_status_t;
 
-#define OSS_SUCCESS                                   (0x0)
-#define OSS_ERROR                                     (0x1)
-#define OSS_ERROR_TO                                  (0x2)
-#define OSS_ERROR_MEM                                 (0x3)
-#define OSS_ERROR_INT                                 (0x4)
+#define OSS_SUCCESS                                   (0x0) /** Successful call. */
+#define OSS_ERROR                                     (0x1) /** A generic error. */
+#define OSS_ERROR_TO                                  (0x2) /** Timeout related rror. */
+#define OSS_ERROR_MEM                                 (0x3) /** Insufficient memory. */
+#define OSS_ERROR_INT                                 (0x4) /** Operation was interrupted. */
+#define OSS_ERROR_INVALID                             (0x5) /** Invalid operation. */
 
-typedef struct {
-    os_status_t status;
-    union  {
-        uint32_t u32;
-        void *ptr;
-    } value;
-} os_tuple_t;
-
+/**
+ * Map an os_status_t to a string for display/logging.
+ */
 inline const char *os_status_str(os_status_t status) {
     switch (status) {
     case OSS_SUCCESS: return "OSS_SUCCESS";
@@ -193,75 +189,104 @@ inline const char *os_status_str(os_status_t status) {
     }
 }
 
-#define os_task_self()                               ((os_task_t *)osg.running)
+/**
+ * Tuple for returning multiple values from a service call. This is modified in
+ * place on the stack by other tasks to fixup return values for blocked operations.
+ */
+typedef struct {
+    os_status_t status;
+    union  {
+        uint32_t u32;
+        void *ptr;
+    } value;
+} os_tuple_t;
 
-#define os_task_name()                               (osg.running->name)
+/**
+ * Return the currently executing task.
+ */
+inline os_task_t *os_task_self() {
+    return (os_task_t *)osg.running;
+}
 
-extern os_globals_t osg;
+/**
+ * Return the name of the currently executing task.
+ */
+inline const char *os_task_name() {
+    return osg.running->name;
+}
 
-bool os_platform_setup();
-
+/**
+ *
+ */
 bool os_initialize();
 
+/**
+ *
+ */
 bool os_task_initialize(os_task_t *task, const char *name,
                         os_start_status status,
                         void (*handler)(void *params), void *params,
                         uint32_t *stack, size_t stack_size);
 
-bool os_task_start(os_task_t *task);
-
-bool os_task_suspend(os_task_t *task);
-
-bool os_task_resume(os_task_t *task);
-
-os_task_status os_task_get_status(os_task_t *task);
-
-uint32_t os_task_stack_usage(os_task_t *task);
-
-bool os_self_suspend();
-
-bool os_self_resume();
-
+/**
+ *
+ */
 bool os_start();
 
-void os_dispatch(os_task_t *task);
+/**
+ *
+ */
+os_task_status os_task_get_status(os_task_t *task);
 
-void os_schedule();
+/**
+ *
+ */
+bool os_task_start(os_task_t *task);
 
-void os_irs_systick();
+/**
+ *
+ */
+bool os_task_suspend(os_task_t *task);
 
+/**
+ *
+ */
+bool os_task_resume(os_task_t *task);
+
+/**
+ *
+ */
+uint32_t os_task_uptime(os_task_t *task);
+
+/**
+ *
+ */
+uint32_t os_task_runtime(os_task_t *task);
+
+/**
+ *
+ */
 uint32_t os_uptime();
 
-uint32_t os_task_uptime();
+/**
+ *
+ */
+uint32_t os_printf(const char *f, ...);
 
-uint32_t os_task_runtime();
-
-void os_delay(uint32_t ms);
-
-void os_assert(const char *assertion, const char *file, int line);
-
-void os_error(uint8_t code);
-
-void os_yield();
-
-void os_stack_check();
-
-int32_t os_printf(const char *f, ...);
-
+/**
+ *
+ */
 uint32_t os_free_memory();
 
-uint32_t *os_task_return_regs(os_task_t *task);
-
-os_tuple_t *os_task_return_tuple(os_task_t *task);
-
-void os_task_set_rv(os_task_t *task, uint32_t v0);
+/**
+ *
+ */
+void os_assert(const char *assertion, const char *file, int line) __attribute__ ((noreturn));
 
 #if defined(__cplusplus)
 }
 #endif
 
-#include "queue.h"
-#include "mutex.h"
 #include "service.h"
 
 #endif /* OS_H */

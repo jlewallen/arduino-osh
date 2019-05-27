@@ -1,3 +1,6 @@
+/**
+ *
+ */
 #ifndef OS_FAULTS_H
 #define OS_FAULTS_H
 
@@ -12,19 +15,19 @@
 
 typedef struct cortex_hard_fault_t {
     struct {
-        volatile void *R0;              // Register R0
-        volatile void *R1;              // Register R1
-        volatile void *R2;              // Register R2
-        volatile void *R3;              // Register R3
-        volatile void *R12;             // Register R12
-        volatile void *LR;              // Link register
-        volatile void *PC;              // Program counter
+        volatile void *R0;                     // Register R0
+        volatile void *R1;                     // Register R1
+        volatile void *R2;                     // Register R2
+        volatile void *R3;                     // Register R3
+        volatile void *R12;                    // Register R12
+        volatile void *LR;                     // Link register
+        volatile void *PC;                     // Program counter
         union {
             volatile uint32_t byte;
             struct {
-                uint32_t IPSR : 8;         // Interrupt Program Status register (IPSR)
-                uint32_t EPSR : 19;        // Execution Program Status register (EPSR)
-                uint32_t APSR : 5;         // Application Program Status register (APSR)
+                uint32_t IPSR : 8;             // Interrupt Program Status register (IPSR)
+                uint32_t EPSR : 19;            // Execution Program Status register (EPSR)
+                uint32_t APSR : 5;             // Application Program Status register (APSR)
             } bits;
         } psr;                                 // Program status register.
     } registers;

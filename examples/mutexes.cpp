@@ -22,21 +22,21 @@ static void task_handler(void *params) {
 
     while (true) {
         auto started = os_uptime();
-        auto status = __svc_mutex_acquire(&mutex, 500);
+        auto status = os_mutex_acquire(&mutex, 500);
         if (status == OSS_SUCCESS) {
             auto elapsed = os_uptime() - started;
             os_printf("%s acquire (%s) (%dms)\n", os_task_name(), os_status_str(status), elapsed);
 
             auto wms = random(100, 1000);
-            __svc_delay(wms);
+            os_delay(wms);
 
             os_printf("%s releasing\n", os_task_name());
-            OSDOTH_ASSERT(__svc_mutex_release(&mutex) == OSS_SUCCESS);
+            OSDOTH_ASSERT(os_mutex_release(&mutex) == OSS_SUCCESS);
         }
         else {
             auto elapsed = os_uptime() - started;
             os_printf("%s failed (%s) (after %lums)\n", os_task_name(), os_status_str(status), elapsed);
-            __svc_delay(10);
+            os_delay(10);
         }
     }
 }
@@ -58,31 +58,18 @@ void setup() {
     os_printf("starting: %d\n", os_free_memory());
     #endif
 
-    if (!os_initialize()) {
-        os_printf("Error: os_initialize failed\n");
-        os_error(OS_ERROR_APP);
-    }
-
-    if (!os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack))) {
-        os_printf("Error: os_task_initialize failed\n");
-        os_error(OS_ERROR_APP);
-    }
+    OSDOTH_ASSERT(os_initialize());
+    OSDOTH_ASSERT(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
 
     for (auto i = 0; i < NUMBER_OF_TASKS; ++i) {
         char temp[32];
         os_snprintf(temp, sizeof(temp), "task-%d", i);
-        if (!os_task_initialize(&tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler, NULL, stacks[i], sizeof(stacks[i]))) {
-            os_printf("Error: os_task_initialize failed\n");
-            os_error(OS_ERROR_APP);
-        }
+        OSDOTH_ASSERT(os_task_initialize(&tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler, NULL, stacks[i], sizeof(stacks[i])));
     }
 
     os_mutex_create(&mutex);
 
-    if (!os_start()) {
-        os_printf("Error: os_start failed\n");
-        os_error(OS_ERROR_APP);
-    }
+    OSDOTH_ASSERT(os_start());
 }
 
 void loop() {

@@ -1,8 +1,9 @@
 #include "os.h"
+#include "internal.h"
 
 static void blocked_enq(os_mutex_t *mutex, os_task_t *task) {
     OSDOTH_ASSERT(task->blocked == NULL);
-    // os_printf("%s: queuing for %p existing=%p\n", task->name, mutex, task->mutex);
+    // osi_printf("%s: queuing for %p existing=%p\n", task->name, mutex, task->mutex);
     if (mutex->blocked == NULL) {
         mutex->blocked = task;
     }
@@ -30,14 +31,14 @@ static os_task_t *blocked_deq(os_mutex_t *mutex) {
     return task;
 }
 
-os_status_t os_mutex_create(os_mutex_t *mutex) {
+os_status_t osi_mutex_create(os_mutex_t *mutex) {
     mutex->owner = NULL;
     mutex->blocked = NULL;
     mutex->level = 0;
     return OSS_SUCCESS;
 }
 
-os_status_t os_mutex_acquire(os_mutex_t *mutex, uint16_t to) {
+os_status_t osi_mutex_acquire(os_mutex_t *mutex, uint16_t to) {
     os_task_t *task = os_task_self();
 
     // TODO: Allow tasks to have more than one mutex.
@@ -45,7 +46,7 @@ os_status_t os_mutex_acquire(os_mutex_t *mutex, uint16_t to) {
 
     // Check for an easy acquire.
     if (mutex->level == 0) {
-        // os_printf("%s: immediate acq\n", task->name);
+        // osi_printf("%s: immediate acq\n", task->name);
         mutex->owner = task;
         mutex->level = 1;
         task->mutex = mutex;
@@ -70,7 +71,7 @@ os_status_t os_mutex_acquire(os_mutex_t *mutex, uint16_t to) {
     return OSS_ERROR_TO;
 }
 
-os_status_t os_mutex_release(os_mutex_t *mutex) {
+os_status_t osi_mutex_release(os_mutex_t *mutex) {
     OSDOTH_ASSERT(mutex->level > 0);
     OSDOTH_ASSERT(mutex->owner == os_task_self());
 
@@ -87,12 +88,12 @@ os_status_t os_mutex_release(os_mutex_t *mutex) {
     /* Is somebody waiting for this mutex? */
     if (mutex->blocked != NULL) {
         os_task_t *blocked_task = blocked_deq(mutex);
-        // os_printf("%s: waking to acquire %p\n", blocked_task->name, mutex);
+        // osi_printf("%s: waking to acquire %p\n", blocked_task->name, mutex);
         mutex->owner = blocked_task;
         mutex->level = 1;
         blocked_task->mutex = mutex;
-        os_task_set_rv(blocked_task, OSS_SUCCESS);
-        os_dispatch(blocked_task);
+        osi_task_return_value(blocked_task, OSS_SUCCESS);
+        osi_dispatch(blocked_task);
     }
 
     return OSS_SUCCESS;

@@ -21,7 +21,7 @@
 #include <sam.h>
 
 #include "os.h"
-#include "faults.h"
+#include "internal.h"
 
 os_globals_t osg = {
     NULL,
@@ -40,9 +40,9 @@ __attribute__((__aligned__(DEBUG_MTB_SIZE_BYTES))) uint32_t mtb[DEBUG_MTB_SIZE];
 #define OSH_STACK_MAGIC_WORD     0xE25A2EA5U
 #define OSH_STACK_MAGIC_PATTERN  0xCCCCCCCCU
 
-static void infinite_loop()  __attribute__ ((noreturn));
+static void infinite_loop() __attribute__ ((noreturn));
 
-static void task_finished()  __attribute__ ((noreturn));
+static void task_finished() __attribute__ ((noreturn));
 
 bool os_initialize() {
     if (osg.state != OS_STATE_DEFAULT) {
@@ -167,7 +167,7 @@ bool os_task_initialize(os_task_t *task, const char *name, os_start_status statu
     if (osg.running == NULL) {
         osg.running = osg.tasks;
         osg.scheduled = NULL;
-        os_stack_check();
+        osi_stack_check();
     }
 
     osg.state = OS_STATE_TASKS_INITIALIZED;
@@ -213,16 +213,18 @@ bool os_task_resume(os_task_t *task) {
     return true;
 }
 
+uint32_t os_task_uptime(os_task_t *task) {
+    OSDOTH_ASSERT(task != NULL);
+    return os_uptime() - task->started;
+}
+
+uint32_t os_task_runtime(os_task_t *task) {
+    OSDOTH_ASSERT(task != NULL);
+    return os_uptime() - task->started;
+}
+
 os_task_status os_task_get_status(os_task_t *task) {
     return task->status;
-}
-
-bool os_self_suspend() {
-    return os_task_suspend((os_task_t *)os_task_self());
-}
-
-bool os_self_resume() {
-    return os_task_resume((os_task_t *)os_task_self());
 }
 
 bool os_start(void) {
@@ -230,7 +232,7 @@ bool os_start(void) {
         return false;
     }
 
-    OSDOTH_ASSERT(os_platform_setup());
+    OSDOTH_ASSERT(osi_platform_setup());
     OSDOTH_ASSERT(osg.running != NULL);
 
     NVIC_SetPriority(PendSV_IRQn, 0xff);
@@ -272,7 +274,7 @@ uint32_t os_task_stack_usage(os_task_t *task) {
     return task->stack_size - (task->sp - task->stack);
 }
 
-void os_dispatch(os_task_t *task) {
+void osi_dispatch(os_task_t *task) {
     OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(osg.running != NULL);
     OSDOTH_ASSERT(task != osg.running);
@@ -294,10 +296,10 @@ void os_dispatch(os_task_t *task) {
     }
     osg.scheduled->status = OS_TASK_STATUS_ACTIVE;
 
-    os_stack_check();
+    osi_stack_check();
 }
 
-void os_schedule() {
+void osi_schedule() {
     os_task_t *running = os_task_self();
 
     /* May be unnecessary for us to be here... */
@@ -363,14 +365,14 @@ void os_schedule() {
                     iter->flags = 0;
                 }
                 iter->delay = 0;
-                os_dispatch(iter);
+                osi_dispatch(iter);
                 break;
             }
         }
 
         // Only run tasks that are idle.
         if (iter->status == OS_TASK_STATUS_IDLE) {
-            os_dispatch(iter);
+            osi_dispatch(iter);
             break;
         }
     }
@@ -384,44 +386,33 @@ void os_schedule() {
 
 void os_assert(const char *assertion, const char *file, int line) {
     os_printf("Assertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
-    os_error(OS_ERROR_ASSERTION);
-    /* NOTREACHED */
+    osi_error(OS_ERROR_ASSERTION);
 }
 
-void os_error(uint8_t code) {
+void osi_error(uint8_t code) {
     __asm__("BKPT");
+    infinite_loop();
 }
 
-void os_stack_check() {
+void osi_stack_check() {
     if ((osg.running->sp < osg.running->stack) || (((uint32_t *)osg.running->stack)[0] != OSH_STACK_MAGIC_WORD)) {
-        os_error(OS_ERROR_STACK_OVERFLOW);
+        osi_error(OS_ERROR_STACK_OVERFLOW);
     }
 }
 
 uint32_t os_uptime() {
-    return os_platform_uptime();
+    return osi_platform_uptime();
 }
 
-uint32_t os_task_uptime() {
-    OSDOTH_ASSERT(osg.running != NULL);
-    return os_uptime() - osg.running->started;
+extern char *sbrk(int32_t i);
+
+uint32_t os_free_memory() {
+    return (uint32_t)__get_MSP() - (uint32_t)sbrk(0);
 }
 
-uint32_t os_task_runtime() {
-    OSDOTH_ASSERT(osg.running != NULL);
-    return os_uptime() - osg.running->started;
-}
-
-void os_yield() {
-}
-
-void os_delay(uint32_t ms) {
-    os_platform_delay(ms);
-}
-
-uint32_t *os_task_return_regs(os_task_t *task) {
+uint32_t *osi_task_return_regs(os_task_t *task) {
     /* Get pointer to task return value registers (R0..R3) in Stack */
-#if defined(__SAMD51__)
+    #if defined(__SAMD51__)
     if (task->stack_kind == 1) {
         /* Extended Stack Frame: R4 - R11, S16 - S31, R0 - R3, R12, LR, PC,
          * xPSR, S0 - S15, FPSCR */
@@ -431,24 +422,24 @@ uint32_t *os_task_return_regs(os_task_t *task) {
         /* Basic Stack Frame: R4 - R11, R0 - R3, R12, LR, PC, xPSR */
         return (uint32_t *)(task->sp + (8U * 4U));
     }
-#else
+    #else
     /* Stack Frame: R4 - R11, R0 - R3, R12, LR, PC, xPSR */
     return (uint32_t *)(task->sp + (8U * 4U));
-#endif
+    #endif
 }
 
-os_tuple_t *os_task_return_tuple(os_task_t *task) {
-    return (os_tuple_t *)os_task_return_regs(task);
+os_tuple_t *osi_task_return_tuple(os_task_t *task) {
+    return (os_tuple_t *)osi_task_return_regs(task);
 }
 
-void os_task_set_rv(os_task_t *task, uint32_t v0) {
-    uint32_t *regs = os_task_return_regs(task);
+void osi_task_return_value(os_task_t *task, uint32_t v0) {
+    uint32_t *regs = osi_task_return_regs(task);
     regs[0] = v0;
 }
 
-void os_irs_systick() {
+void osi_irs_systick() {
     if (osg.state == OS_STATE_STARTED) {
-        os_schedule();
+        osi_schedule();
     }
 }
 
@@ -460,37 +451,31 @@ void hard_fault_report(uint32_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {
 
 void hard_fault_handler(uint32_t *stack, uint32_t lr) {
     if (NVIC_HFSR & (1uL << 31)) {
-        NVIC_HFSR |= (1uL << 31);   // Reset Hard Fault status
-        *(stack + 6u) += 2u;        // PC is located on stack at SP + 24 bytes; increment PC by 2 to skip break instruction.
-        return;                     // Return to application
+        NVIC_HFSR |= (1uL << 31);         // Reset Hard Fault status
+        *(stack + 6u) += 2u;              // PC is located on stack at SP + 24 bytes; increment PC by 2 to skip break instruction.
+        return;                           // Return to application
     }
 
     cortex_hard_fault_t hfr;
-    hfr.syshndctrl.byte = SYSHND_CTRL;   // System Handler Control and State Register
-    hfr.mfsr.byte       = NVIC_MFSR;     // Memory Fault Status Register
-    hfr.bfsr.byte       = NVIC_BFSR;     // Bus Fault Status Register
-    hfr.bfar            = NVIC_BFAR;     // Bus Fault Manage Address Register
-    hfr.ufsr.byte       = NVIC_UFSR;     // Usage Fault Status Register
-    hfr.hfsr.byte       = NVIC_HFSR;     // Hard Fault Status Register
-    hfr.dfsr.byte       = NVIC_DFSR;     // Debug Fault Status Register
-    hfr.afsr            = NVIC_AFSR;     // Auxiliary Fault Status Register
+    hfr.syshndctrl.byte = SYSHND_CTRL;    // System Handler Control and State Register
+    hfr.mfsr.byte       = NVIC_MFSR;      // Memory Fault Status Register
+    hfr.bfsr.byte       = NVIC_BFSR;      // Bus Fault Status Register
+    hfr.bfar            = NVIC_BFAR;      // Bus Fault Manage Address Register
+    hfr.ufsr.byte       = NVIC_UFSR;      // Usage Fault Status Register
+    hfr.hfsr.byte       = NVIC_HFSR;      // Hard Fault Status Register
+    hfr.dfsr.byte       = NVIC_DFSR;      // Debug Fault Status Register
+    hfr.afsr            = NVIC_AFSR;      // Auxiliary Fault Status Register
 
-    hfr.registers.R0 = (void *)stack[0]; // Register R0
-    hfr.registers.R1 = (void *)stack[1]; // Register R1
-    hfr.registers.R2 = (void *)stack[2]; // Register R2
-    hfr.registers.R3 = (void *)stack[3]; // Register R3
-    hfr.registers.R12 = (void *)stack[4];// Register R12
-    hfr.registers.LR = (void *)stack[5]; // Link register LR
-    hfr.registers.PC = (void *)stack[6]; // Program counter PC
-    hfr.registers.psr.byte = stack[7];   // Program status word PSR
+    hfr.registers.R0 = (void *)stack[0];  // Register R0
+    hfr.registers.R1 = (void *)stack[1];  // Register R1
+    hfr.registers.R2 = (void *)stack[2];  // Register R2
+    hfr.registers.R3 = (void *)stack[3];  // Register R3
+    hfr.registers.R12 = (void *)stack[4]; // Register R12
+    hfr.registers.LR = (void *)stack[5];  // Link register LR
+    hfr.registers.PC = (void *)stack[6];  // Program counter PC
+    hfr.registers.psr.byte = stack[7];    // Program status word PSR
 
     hard_fault_report(stack, lr, &hfr);
-}
-
-extern char *sbrk(int32_t i);
-
-uint32_t os_free_memory() {
-    return (uint32_t)__get_MSP() - (uint32_t)sbrk(0);
 }
 
 inline static void infinite_loop() {

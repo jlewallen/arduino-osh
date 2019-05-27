@@ -1,12 +1,13 @@
-#include <cstdarg>
-
-#include <Arduino.h>
-#include <sam.h>
+/**
+ *
+ */
+#if defined(ARDUINO)
 
 #include "os.h"
 #include "printf.h"
+#include "internal.h"
 
-#if defined(ARDUINO)
+#include <Arduino.h>
 
 extern "C" {
 
@@ -19,7 +20,7 @@ static void serial_putchar(char c, void *arg) {
     }
 }
 
-int32_t os_printf(const char *f, ...) {
+uint32_t os_printf(const char *f, ...) {
     va_list args;
     va_start(args, f);
     auto i = os_vfctprintf(serial_putchar, NULL, f, args);
@@ -27,31 +28,24 @@ int32_t os_printf(const char *f, ...) {
     return i;
 }
 
-bool os_platform_setup() {
-    return 1;
+bool osi_platform_setup() {
+    return true;
 }
 
-void os_platform_led(bool on) {
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, on ? HIGH : LOW);
-}
-
-uint32_t os_platform_uptime() {
+uint32_t osi_platform_uptime() {
     return millis();
 }
 
-void os_platform_delay(uint32_t ms) {
+void osi_platform_delay(uint32_t ms) {
     delay(ms);
 }
 
-int sysTickHook(void);
-
 extern void SysTick_DefaultHandler(void);
 
-int sysTickHook(void) {
+int32_t sysTickHook(void) {
     SysTick_DefaultHandler();
 
-    os_irs_systick();
+    osi_irs_systick();
 
     return 1;
 }

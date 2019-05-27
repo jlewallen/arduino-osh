@@ -1,7 +1,6 @@
-/*
- * This file is part of os.h.
+/**
+ *
  */
-
 #ifndef OS_ARDUINO_H
 #define OS_ARDUINO_H
 
@@ -12,37 +11,17 @@ extern "C" {
 /**
  *
  */
-#define OS_DECLARE_PENDSV_HANDLER()               void PendSV_Handler()
+bool osi_platform_setup();
 
 /**
  *
  */
-#define OS_DECLARE_HARD_FAULT_HANDLER()           void HardFault_Handler()
+uint32_t osi_platform_uptime();
 
 /**
  *
  */
-#define OS_DECLARE_USAGE_FAULT_HANDLER()          void UsageFault_Handler()
-
-/**
- *
- */
-bool os_platform_setup();
-
-/**
- *
- */
-void os_platform_led(bool on);
-
-/**
- *
- */
-uint32_t os_platform_uptime();
-
-/**
- *
- */
-void os_platform_delay(uint32_t ms);
+void osi_platform_delay(uint32_t ms);
 
 #if defined(__cplusplus)
 }

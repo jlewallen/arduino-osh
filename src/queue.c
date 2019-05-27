@@ -1,4 +1,5 @@
 #include "os.h"
+#include "internal.h"
 
 static void blocked_enq(os_queue_t *queue, os_task_t *task) {
     OSDOTH_ASSERT(task->blocked == NULL);
@@ -30,7 +31,7 @@ static os_task_t *blocked_deq(os_queue_t *queue) {
     return task;
 }
 
-os_status_t os_queue_create(os_queue_t *queue, uint16_t size) {
+os_status_t osi_queue_create(os_queue_t *queue, uint16_t size) {
     queue->size = size;
     queue->number = 0;
     queue->first = 0;
@@ -43,7 +44,7 @@ os_status_t os_queue_create(os_queue_t *queue, uint16_t size) {
     return OSS_SUCCESS;
 }
 
-os_status_t os_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
+os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
     os_task_t *running = os_task_self();
 
     OSDOTH_ASSERT(running != NULL); // TODO: Relax this?
@@ -53,11 +54,11 @@ os_status_t os_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
     if (queue->blocked != NULL && queue->status == OS_QUEUE_BLOCKED_RECEIVE) {
         os_task_t *blocked_receiver = blocked_deq(queue);
 
-        os_tuple_t *receive_rv = os_task_return_tuple(blocked_receiver);
+        os_tuple_t *receive_rv = osi_task_return_tuple(blocked_receiver);
         receive_rv->status = OSS_SUCCESS;
         receive_rv->value.ptr = message;
 
-        os_dispatch(blocked_receiver);
+        osi_dispatch(blocked_receiver);
 
         return OSS_SUCCESS;
     }
@@ -90,7 +91,7 @@ os_status_t os_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
     return OSS_SUCCESS;
 }
 
-os_status_t os_queue_dequeue(os_queue_t *queue, void **message, uint16_t to) {
+os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint16_t to) {
     OSDOTH_ASSERT(osg.running != NULL); // TODO: Relax this?
     OSDOTH_ASSERT(osg.running->blocked == NULL);
 
@@ -112,11 +113,11 @@ os_status_t os_queue_dequeue(os_queue_t *queue, void **message, uint16_t to) {
             queue->number++;
             blocked_sender->message = NULL;
 
-            os_tuple_t *send_rv = os_task_return_tuple(blocked_sender);
+            os_tuple_t *send_rv = osi_task_return_tuple(blocked_sender);
             send_rv->status = OSS_SUCCESS;
             send_rv->value.ptr = NULL;
 
-            os_dispatch(blocked_sender);
+            osi_dispatch(blocked_sender);
         }
         return OSS_SUCCESS;
     }
