@@ -187,14 +187,6 @@ typedef struct {
  *
  */
 typedef struct os_basic_sframe_t {
-    uint32_t r8;
-    uint32_t r9;
-    uint32_t r10;
-    uint32_t r11;
-    uint32_t r4;
-    uint32_t r5;
-    uint32_t r6;
-    uint32_t r7;
     uint32_t r0;
     uint32_t r1;
     uint32_t r2;
@@ -204,6 +196,40 @@ typedef struct os_basic_sframe_t {
     void *pc;
     uint32_t xpsr;
 } os_basic_sframe_t;
+
+/**
+ *
+ */
+typedef struct os_our_sframe_t {
+    uint32_t r8;
+    uint32_t r9;
+    uint32_t r10;
+    uint32_t r11;
+    uint32_t r4;
+    uint32_t r5;
+    uint32_t r6;
+    uint32_t r7;
+    os_basic_sframe_t basic;
+} os_our_sframe_t;
+
+/**
+ *
+ */
+typedef struct os_extended_sframe_t {
+    uint32_t r8;
+    uint32_t r9;
+    uint32_t r10;
+    uint32_t r11;
+    uint32_t r4;
+    uint32_t r5;
+    uint32_t r6;
+    uint32_t r7;
+    os_basic_sframe_t basic;
+    uint32_t s0, s1, s2, s3, s4;
+    uint32_t s5, s6, s7, s8, s9;
+    uint32_t s10, s11, s12, s13;
+    uint32_t s14, s15, fpscr, reserved0;
+} os_extended_sframe_t;
 
 #if defined(__cplusplus)
 }
