@@ -1,21 +1,24 @@
 #include "os.h"
 
-inline void blocked_enq(os_queue_t *queue, os_task_t *task) {
+static void blocked_enq(os_queue_t *queue, os_task_t *task) {
+    OSDOTH_ASSERT(task->blocked == NULL);
     if (queue->blocked == NULL) {
         queue->blocked = task;
     }
     else {
         for (os_task_t *iter = queue->blocked; ; iter = iter->blocked) {
+            OSDOTH_ASSERT(iter != task);
             if (iter->blocked == NULL) {
                 iter->blocked = task;
                 break;
             }
         }
     }
+    OSDOTH_ASSERT(task->queue == NULL);
     task->queue = queue;
 }
 
-inline os_task_t *blocked_deq(os_queue_t *queue) {
+static os_task_t *blocked_deq(os_queue_t *queue) {
     os_task_t *task = queue->blocked;
     if (task == NULL) {
         return NULL;

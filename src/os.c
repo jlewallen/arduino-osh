@@ -143,6 +143,9 @@ bool os_task_initialize(os_task_t *task, const char *name, os_start_status statu
     task->delay = 0;
     task->flags = 0;
     task->started = os_uptime();
+    task->queue = NULL;
+    task->mutex = NULL;
+    task->blocked = NULL;
     #if defined(OSDOTH_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif
@@ -179,6 +182,9 @@ bool os_task_start(os_task_t *task) {
     task->stack_kind = 0;
     task->delay = 0;
     task->flags = 0;
+    task->queue = NULL;
+    task->mutex = NULL;
+    task->blocked = NULL;
     task->started = os_uptime();
     #if defined(OSDOTH_CONFIG_DEBUG)
     task->debug_stack_max = 0;
@@ -326,12 +332,34 @@ void os_schedule() {
         if (iter->status == OS_TASK_STATUS_WAIT) {
             if (os_uptime() >= iter->delay) {
                 iter->status = OS_TASK_STATUS_IDLE;
+                if ((iter->flags & OS_TASK_FLAG_MUTEX) == OS_TASK_FLAG_MUTEX) {
+                    OSDOTH_ASSERT(iter->queue == NULL);
+                    OSDOTH_ASSERT(iter->mutex != NULL);
+                    OSDOTH_ASSERT(iter->mutex->blocked == iter);
+
+                    #if defined(OSDOTH_CONFIG_DEBUG_MUTEXES)
+                    os_printf("%s: removed from mutex %p\n", iter->name, iter->mutex);
+                    #endif
+
+                    iter->mutex->blocked = iter->mutex->blocked->blocked;
+                    iter->blocked = NULL;
+                    iter->queue = NULL;
+                    iter->mutex = NULL;
+                    iter->flags = 0;
+                }
                 if ((iter->flags & OS_TASK_FLAG_QUEUE) == OS_TASK_FLAG_QUEUE) {
+                    OSDOTH_ASSERT(iter->mutex == NULL);
                     OSDOTH_ASSERT(iter->queue != NULL);
                     OSDOTH_ASSERT(iter->queue->blocked == iter);
 
+                    #if defined(OSDOTH_CONFIG_DEBUG_QUEUES)
+                    os_printf("%s: removed from queue %p\n", iter->name, iter->queue);
+                    #endif
+
                     iter->queue->blocked = iter->queue->blocked->blocked;
+                    iter->blocked = NULL;
                     iter->queue = NULL;
+                    iter->mutex = NULL;
                     iter->flags = 0;
                 }
                 iter->delay = 0;

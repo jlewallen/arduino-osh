@@ -44,6 +44,10 @@ extern "C" {
  *
  */
 #define OSDOTH_CONFIG_DEBUG_RTT
+/*
+#define OSDOTH_CONFIG_DEBUG_MUTEXES
+#define OSDOTH_CONFIG_DEBUG_QUEUES
+*/
 
 /**
  *
@@ -83,9 +87,11 @@ typedef enum os_task_status {
 } os_task_status;
 
 #define OS_TASK_FLAG_NONE                             (0)
-#define OS_TASK_FLAG_QUEUE                            (1)
+#define OS_TASK_FLAG_MUTEX                            (1)
+#define OS_TASK_FLAG_QUEUE                            (2)
 
 struct os_queue_t;
+struct os_mutex_t;
 
 typedef struct os_task_t {
     /* The stack pointer (sp) has to be the first element as it is located
@@ -103,6 +109,7 @@ typedef struct os_task_t {
     struct os_task_t *np;
     struct os_task_t *blocked;
     struct os_queue_t *queue;
+    struct os_mutex_t *mutex;
     void *message;
     uint32_t started;
     uint32_t delay;
@@ -128,6 +135,12 @@ typedef struct os_queue_t {
     os_queue_status_t status;
     void *messages[1];
 } os_queue_t;
+
+typedef struct os_mutex_t {
+    os_task_t *owner;
+    os_task_t *blocked;
+    uint16_t level;
+} os_mutex_t;
 
 typedef enum {
     OS_STATE_DEFAULT = 1,
@@ -157,9 +170,10 @@ typedef struct os_globals_t {
 typedef uint32_t os_status_t;
 
 #define OSS_SUCCESS                                   (0x0)
-#define OSS_ERROR_TO                                  (0x1)
-#define OSS_ERROR_MEM                                 (0x2)
-#define OSS_ERROR_INT                                 (0x3)
+#define OSS_ERROR                                     (0x1)
+#define OSS_ERROR_TO                                  (0x2)
+#define OSS_ERROR_MEM                                 (0x3)
+#define OSS_ERROR_INT                                 (0x4)
 
 typedef struct {
     os_status_t status;
@@ -247,6 +261,7 @@ void os_task_set_rv(os_task_t *task, uint32_t v0);
 #endif
 
 #include "queue.h"
+#include "mutex.h"
 #include "service.h"
 
 #endif /* OS_H */

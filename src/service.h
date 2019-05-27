@@ -140,6 +140,14 @@ SVC_2_1(svc_queue_create, os_status_t, os_queue_t*, uint32_t, RET_os_status_t);
 SVC_3_1(svc_queue_enqueue, os_tuple_t, os_queue_t*, void*, uint32_t, RET_os_tuple_t);
 SVC_2_1(svc_queue_dequeue, os_tuple_t, os_queue_t*, uint32_t, RET_os_tuple_t);
 
+os_status_t svc_mutex_create(os_mutex_t *mutex);
+os_status_t svc_mutex_acquire(os_mutex_t *mutex, uint32_t to);
+os_status_t svc_mutex_release(os_mutex_t *mutex);
+
+SVC_1_1(svc_mutex_create, os_status_t, os_mutex_t*, RET_os_status_t);
+SVC_2_1(svc_mutex_acquire, os_status_t, os_mutex_t*, uint32_t, RET_os_status_t);
+SVC_1_1(svc_mutex_release, os_status_t, os_mutex_t*, RET_os_status_t);
+
 #if defined(__cplusplus)
 }
 #endif

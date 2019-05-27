@@ -54,3 +54,16 @@ os_tuple_return_type_t svc_queue_dequeue(os_queue_t *queue, uint32_t to) {
 
     return os_tuple_return_value(rtuple);
 }
+
+
+os_status_t svc_mutex_create(os_mutex_t *mutex) {
+    return os_mutex_create(mutex);
+}
+
+os_status_t svc_mutex_acquire(os_mutex_t *mutex, uint32_t to) {
+    return os_mutex_acquire(mutex, (uint16_t)to);
+}
+
+os_status_t svc_mutex_release(os_mutex_t *mutex) {
+    return os_mutex_release(mutex);
+}
