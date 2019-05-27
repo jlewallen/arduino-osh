@@ -17,15 +17,15 @@
  * along with os.h.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-#include <sam.h>
+//#include <inttypes.h>
+// #include <sam.h>
 
 #include "os.h"
 #include "internal.h"
 
 os_globals_t osg = {
-    NULL,
-    NULL,
+    NULL,  /* running */
+    NULL,  /* scheduled */
     OS_STATE_DEFAULT,
     0,     /* ntasks */
     NULL,  /* idle */
@@ -257,23 +257,6 @@ os_status_t os_start(void) {
     return true;
 }
 
-static void task_finished() {
-    OSDOTH_ASSERT(osg.running != NULL);
-    OSDOTH_ASSERT(osg.running != osg.idle);
-    OSDOTH_ASSERT(osg.running->status == OS_TASK_STATUS_ACTIVE);
-
-    os_printf("os: task '%s' finished\n", osg.running->name);
-
-    osg.running->status = OS_TASK_STATUS_FINISHED;
-
-    infinite_loop();
-}
-
-uint32_t os_task_stack_usage(os_task_t *task) {
-    OSDOTH_ASSERT(task != NULL);
-    return task->stack_size - (task->sp - task->stack);
-}
-
 os_status_t osi_dispatch(os_task_t *task) {
     OSDOTH_ASSERT(task != NULL);
     OSDOTH_ASSERT(osg.running != NULL);
@@ -388,23 +371,7 @@ os_status_t osi_schedule() {
     return OSS_SUCCESS;
 }
 
-void os_assert(const char *assertion, const char *file, int line) {
-    os_printf("Assertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
-    osi_error(OS_ERROR_ASSERTION);
-}
-
-void osi_error(uint8_t code) {
-    __asm__("BKPT");
-    infinite_loop();
-}
-
-void osi_stack_check() {
-    if ((osg.running->sp < osg.running->stack) || (((uint32_t *)osg.running->stack)[0] != OSH_STACK_MAGIC_WORD)) {
-        osi_error(OS_ERROR_STACK_OVERFLOW);
-    }
-}
-
-uint32_t os_uptime() {
+inline uint32_t os_uptime() {
     return osi_platform_uptime();
 }
 
@@ -448,13 +415,29 @@ os_status_t osi_irs_systick() {
     return OSS_SUCCESS;
 }
 
-void hard_fault_report(uint32_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {
+inline void os_assert(const char *assertion, const char *file, int line) {
+    os_printf("Assertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
+    osi_error(OS_ERROR_ASSERTION);
+}
+
+void osi_error(uint8_t code) {
+    __asm__("BKPT");
+    infinite_loop();
+}
+
+void osi_stack_check() {
+    if ((osg.running->sp < osg.running->stack) || (((uint32_t *)osg.running->stack)[0] != OSH_STACK_MAGIC_WORD)) {
+        osi_error(OS_ERROR_STACK_OVERFLOW);
+    }
+}
+
+void osi_hard_fault_report(uint32_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {
     volatile uint32_t looping = 1;
     while (looping) {
     }
 }
 
-void hard_fault_handler(uint32_t *stack, uint32_t lr) {
+void osi_hard_fault_handler(uint32_t *stack, uint32_t lr) {
     if (NVIC_HFSR & (1uL << 31)) {
         NVIC_HFSR |= (1uL << 31);         // Reset Hard Fault status
         *(stack + 6u) += 2u;              // PC is located on stack at SP + 24 bytes; increment PC by 2 to skip break instruction.
@@ -480,10 +463,22 @@ void hard_fault_handler(uint32_t *stack, uint32_t lr) {
     hfr.registers.PC = (void *)stack[6];  // Program counter PC
     hfr.registers.psr.byte = stack[7];    // Program status word PSR
 
-    hard_fault_report(stack, lr, &hfr);
+    osi_hard_fault_report(stack, lr, &hfr);
 }
 
-inline static void infinite_loop() {
+static void task_finished() {
+    OSDOTH_ASSERT(osg.running != NULL);
+    OSDOTH_ASSERT(osg.running != osg.idle);
+    OSDOTH_ASSERT(osg.running->status == OS_TASK_STATUS_ACTIVE);
+
+    os_printf("os: task '%s' finished\n", osg.running->name);
+
+    osg.running->status = OS_TASK_STATUS_FINISHED;
+
+    infinite_loop();
+}
+
+static void infinite_loop() {
     volatile uint32_t i = 0;
     while (true) {
         i++;

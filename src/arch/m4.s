@@ -12,7 +12,7 @@ HardFault_Handler:
         mrseq  r0, msp
         mrsne  r0, psp
         mov    r1, lr
-        b      hard_fault_handler
+        b      osi_hard_fault_handler
 
         .fnend
         .size   HardFault_Handler, .-HardFault_Handler
