@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <errno.h>
 
 #include <os.h>
 
@@ -9,6 +10,19 @@ static uint8_t queue[sizeof(os_queue_t) + (4 * 4)];
 
 static os_task_t idle_task;
 static uint32_t idle_stack[OSDOTH_STACK_MINIMUM_SIZE_WORDS];
+static os_task_t sender_tasks[NUMBER_OF_SENDERS];
+static os_task_t receiver_tasks[NUMBER_OF_RECEIVERS];
+
+static const char *os_pstrdup(const char *f, ...) {
+    char message[64];
+    va_list args;
+    va_start(args, f);
+    os_vsnprintf(message, sizeof(message), f, args);
+    va_end(args);
+    auto copy = strdup(message);
+    OSDOTH_ASSERT(copy != NULL);
+    return copy;
+}
 
 static void task_handler_idle(void *params) {
     volatile uint32_t i = 0;
@@ -17,14 +31,15 @@ static void task_handler_idle(void *params) {
     }
 }
 
-static os_task_t sender_tasks[NUMBER_OF_SENDERS];
-static uint32_t sender_stacks[NUMBER_OF_SENDERS][256];
-
 static void task_handler_sender(void *params) {
     os_printf("%s started\n", os_task_name());
 
+    uint32_t counter = 0;
+
     while (true) {
-        auto tuple = __svc_queue_enqueue((os_queue_t *)queue, (void *)"Jacob", 1000);
+        auto started = os_uptime();
+        auto message = (char *)os_pstrdup("message<%d>", counter++);
+        auto tuple = __svc_queue_enqueue((os_queue_t *)queue, message, 1000);
         auto status = tuple.status;
         if (status == OSS_SUCCESS) {
             auto wms = random(10, 2000);
@@ -32,14 +47,12 @@ static void task_handler_sender(void *params) {
             __svc_delay(wms);
         }
         else {
-            os_printf("%s: fail (%s)\n", os_task_name(), os_status_str(status));
+            auto elapsed = os_uptime() - started;
+            os_printf("%s: fail (%s) (after %lums)\n", os_task_name(), os_status_str(status), elapsed);
             __svc_delay(100);
         }
     }
 }
-
-static os_task_t receiver_tasks[NUMBER_OF_RECEIVERS];
-static uint32_t receiver_stacks[NUMBER_OF_RECEIVERS][256];
 
 static void task_handler_receiver(void *params) {
     os_printf("%s started\n", os_task_name());
@@ -47,20 +60,26 @@ static void task_handler_receiver(void *params) {
     __svc_delay(500);
 
     while (true) {
+        auto started = os_uptime();
         auto tuple = __svc_queue_dequeue((os_queue_t *)queue, 1000);
         if (tuple.status == OSS_SUCCESS) {
             auto message = (const char *)tuple.value.ptr;
             auto wms = random(10, 200);
             os_printf("%s: success ('%s') (%dms)\n", os_task_name(), message, wms);
+            free((void *)message);
             __svc_delay(wms);
         }
         else {
-            os_printf("%s: fail (%s)\n", os_task_name(), os_status_str(tuple.status));
+            auto elapsed = os_uptime() - started;
+            os_printf("%s: fail (%s) (after %lums)\n", os_task_name(), os_status_str(tuple.status), elapsed);
         }
     }
 }
 
 void setup() {
+    uint32_t sender_stacks[NUMBER_OF_SENDERS][256];
+    uint32_t receiver_stacks[NUMBER_OF_RECEIVERS][256];
+
     Serial.begin(115200);
     while (!Serial && millis() < 2000) {
     }
