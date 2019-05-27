@@ -18,6 +18,22 @@
 extern "C" {
 #endif
 
+static inline void blocked_append(os_blocked_t *blocked, os_task_t *task) {
+    OS_ASSERT(task->nblocked == NULL);
+    if (blocked->tasks == NULL) {
+        blocked->tasks = task;
+    }
+    else {
+        for (os_task_t *iter = blocked->tasks; ; iter = iter->nblocked) {
+            OS_ASSERT(iter != task);
+            if (iter->nblocked == NULL) {
+                iter->nblocked = task;
+                break;
+            }
+        }
+    }
+}
+
 #if defined(__cplusplus)
 }
 #endif

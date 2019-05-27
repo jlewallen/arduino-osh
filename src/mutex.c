@@ -2,20 +2,7 @@
 #include "internal.h"
 
 static void blocked_enq(os_mutex_t *mutex, os_task_t *task) {
-    OS_ASSERT(task->nblocked == NULL);
-    // osi_printf("%s: queuing for %p existing=%p\n", task->name, mutex, task->mutex);
-    if (mutex->blocked.tasks == NULL) {
-        mutex->blocked.tasks = task;
-    }
-    else {
-        for (os_task_t *iter = mutex->blocked.tasks; ; iter = iter->nblocked) {
-            OS_ASSERT(iter != task);
-            if (iter->nblocked == NULL) {
-                iter->nblocked = task;
-                break;
-            }
-        }
-    }
+    blocked_append(&mutex->blocked, task);
     OS_ASSERT(task->mutex == NULL);
     task->mutex = mutex;
 }

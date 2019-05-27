@@ -104,7 +104,6 @@ typedef struct os_task_t {
     uint32_t started;
     uint32_t delay;
     uint32_t flags;
-
     #if defined(OS_CONFIG_DEBUG)
     uint32_t debug_stack_max;
     #endif
@@ -117,6 +116,7 @@ typedef enum os_queue_status_t {
 } os_queue_status_t;
 
 typedef struct os_blocked_t {
+    uint32_t type;
     os_task_t *tasks;
 } os_blocked_t;
 

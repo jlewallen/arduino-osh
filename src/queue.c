@@ -2,19 +2,7 @@
 #include "internal.h"
 
 static void blocked_enq(os_queue_t *queue, os_task_t *task) {
-    OS_ASSERT(task->nblocked == NULL);
-    if (queue->blocked.tasks == NULL) {
-        queue->blocked.tasks = task;
-    }
-    else {
-        for (os_task_t *iter = queue->blocked.tasks; ; iter = iter->nblocked) {
-            OS_ASSERT(iter != task);
-            if (iter->nblocked == NULL) {
-                iter->nblocked = task;
-                break;
-            }
-        }
-    }
+    blocked_append(&queue->blocked, task);
     OS_ASSERT(task->queue == NULL);
     task->queue = queue;
 }
