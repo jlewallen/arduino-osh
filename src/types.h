@@ -63,11 +63,17 @@ extern "C" {
  */
 #define OS_CHECK(expression)                          OS_ASSERT((expression) == OSS_SUCCESS)
 
+/**
+ *
+ */
 typedef enum os_start_status {
     OS_TASK_START_RUNNING,
     OS_TASK_START_SUSPENDED,
 } os_start_status;
 
+/**
+ *
+ */
 typedef enum os_task_status {
     OS_TASK_STATUS_IDLE = 1,
     OS_TASK_STATUS_ACTIVE,
@@ -83,6 +89,9 @@ typedef enum os_task_status {
 struct os_queue_t;
 struct os_mutex_t;
 
+/**
+ *
+ */
 typedef struct os_task_t {
     /* The stack pointer (sp) has to be the first element as it is located
        at the same address as the structure itself (which makes it possible
@@ -109,17 +118,34 @@ typedef struct os_task_t {
     #endif
 } os_task_t;
 
+/**
+ *
+ */
 typedef enum os_queue_status_t {
     OS_QUEUE_FINE,
     OS_QUEUE_BLOCKED_SEND,
     OS_QUEUE_BLOCKED_RECEIVE,
 } os_queue_status_t;
 
+/**
+ *
+ */
 typedef struct os_blocked_t {
     uint32_t type;
     os_task_t *tasks;
 } os_blocked_t;
 
+/**
+ *
+ */
+typedef struct os_queue_definition_t {
+    const char *name;
+    uint16_t size;
+} os_queue_definition_t;
+
+/**
+ *
+ */
 typedef struct os_queue_t {
     os_blocked_t blocked;
     uint16_t size;
@@ -130,12 +156,26 @@ typedef struct os_queue_t {
     void *messages[1];
 } os_queue_t;
 
+/**
+ *
+ */
+typedef struct os_mutex_definition_t {
+    const char *name;
+} os_mutex_definition_t;
+
+
+/**
+ *
+ */
 typedef struct os_mutex_t {
     os_blocked_t blocked;
     os_task_t *owner;
     uint16_t level;
 } os_mutex_t;
 
+/**
+ *
+ */
 typedef enum {
     OS_STATE_DEFAULT = 1,
     OS_STATE_INITIALIZED,

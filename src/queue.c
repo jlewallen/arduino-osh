@@ -19,13 +19,13 @@ static os_task_t *blocked_deq(os_queue_t *queue) {
     return task;
 }
 
-os_status_t osi_queue_create(os_queue_t *queue, uint16_t size) {
-    queue->size = size;
+os_status_t osi_queue_create(os_queue_t *queue, os_queue_definition_t *def) {
+    queue->size = def->size;
     queue->number = 0;
     queue->first = 0;
     queue->last = 0;
     queue->status = OS_QUEUE_FINE;
-    for (uint16_t i = 0; i < size; ++i) {
+    for (uint16_t i = 0; i < queue->size; ++i) {
         queue->messages[i] = NULL;
     }
     return OSS_SUCCESS;

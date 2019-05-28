@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-os_status_t osi_queue_create(os_queue_t *queue, uint16_t size);
+os_status_t osi_queue_create(os_queue_t *queue, os_queue_definition_t *def);
 os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to);
 os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint16_t to);
 

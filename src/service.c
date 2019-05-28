@@ -38,8 +38,8 @@ uint32_t svc_pstr(const char *str) {
     return os_printf(str);
 }
 
-os_status_t svc_queue_create(os_queue_t *queue, uint32_t size) {
-    return osi_queue_create(queue, size);
+os_status_t svc_queue_create(os_queue_t *queue, os_queue_definition_t *def) {
+    return osi_queue_create(queue, def);
 }
 
 os_tuple_return_type_t svc_queue_enqueue(os_queue_t *queue, void *message, uint32_t to) {
@@ -58,8 +58,8 @@ os_tuple_return_type_t svc_queue_dequeue(os_queue_t *queue, uint32_t to) {
     return os_tuple_return_value(rtuple);
 }
 
-os_status_t svc_mutex_create(os_mutex_t *mutex) {
-    return osi_mutex_create(mutex);
+os_status_t svc_mutex_create(os_mutex_t *mutex, os_mutex_definition_t *def) {
+    return osi_mutex_create(mutex, def);
 }
 
 os_status_t svc_mutex_acquire(os_mutex_t *mutex, uint32_t to) {
@@ -127,14 +127,14 @@ uint32_t os_pstr(const char *str) {
     }
 }
 
-os_status_t os_queue_create(os_queue_t *queue, uint32_t size) {
+os_status_t os_queue_create(os_queue_t *queue, os_queue_definition_t *def) {
     if (__get_IPSR() != 0U) {
         return OSS_ERROR_INVALID;
     }
     if (osi_in_task()) {
-        return __svc_queue_create(queue, size);
+        return __svc_queue_create(queue, def);
     }
-    return svc_queue_create(queue, size);
+    return svc_queue_create(queue, def);
 }
 
 os_tuple_t os_queue_enqueue(os_queue_t *queue, void *message, uint32_t to) {
@@ -145,14 +145,14 @@ os_tuple_t os_queue_dequeue(os_queue_t *queue, uint32_t to) {
     return __svc_queue_dequeue(queue, to);
 }
 
-os_status_t os_mutex_create(os_mutex_t *mutex) {
+os_status_t os_mutex_create(os_mutex_t *mutex, os_mutex_definition_t *def) {
     if (__get_IPSR() != 0U) {
         return OSS_ERROR_INVALID;
     }
     if (osi_in_task()) {
-        return __svc_mutex_create(mutex);
+        return __svc_mutex_create(mutex, def);
     }
-    return svc_mutex_create(mutex);
+    return svc_mutex_create(mutex, def);
 }
 
 os_status_t os_mutex_acquire(os_mutex_t *mutex, uint32_t to) {

@@ -67,7 +67,7 @@ void setup() {
         OS_CHECK(os_task_initialize(&tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler, NULL, stacks[i], sizeof(stacks[i])));
     }
 
-    OS_CHECK(os_mutex_create(os_mutex(mutex)));
+    OS_CHECK(os_mutex_create(os_mutex(mutex), os_mutex_def(mutex)));
 
     OS_CHECK(os_start());
 }

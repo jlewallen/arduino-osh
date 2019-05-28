@@ -4,11 +4,12 @@
 #define NUMBER_OF_RECEIVERS     (1)
 #define NUMBER_OF_SENDERS       (1)
 
-static os_queue_define(queue, 4);
 static os_task_t idle_task;
 static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];
 static os_task_t sender_tasks[NUMBER_OF_SENDERS];
 static os_task_t receiver_tasks[NUMBER_OF_RECEIVERS];
+
+os_queue_define(queue, 4);
 
 static const char *os_pstrdup(const char *f, ...) {
     char message[64];
@@ -107,7 +108,7 @@ void setup() {
         OS_CHECK(os_task_initialize(&sender_tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler_sender, NULL, sender_stacks[i], sizeof(sender_stacks[i])));
     }
 
-    OS_CHECK(os_queue_create(os_queue(queue), 4));
+    OS_CHECK(os_queue_create(os_queue(queue), os_queue_def(queue)));
 
     OS_CHECK(os_start());
 }

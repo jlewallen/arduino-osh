@@ -41,7 +41,7 @@ uint32_t os_example();
 /**
  *
  */
-os_status_t os_queue_create(os_queue_t *queue, uint32_t size);
+os_status_t os_queue_create(os_queue_t *queue, os_queue_definition_t *def);
 
 /**
  *
@@ -56,7 +56,7 @@ os_tuple_t os_queue_dequeue(os_queue_t *queue, uint32_t to);
 /**
  *
  */
-os_status_t os_mutex_create(os_mutex_t *mutex);
+os_status_t os_mutex_create(os_mutex_t *mutex, os_mutex_definition_t *def);
 
 /**
  *
@@ -71,7 +71,9 @@ os_status_t os_mutex_release(os_mutex_t *mutex);
 /**
  *
  */
-#define os_queue_define(name, size)   uint32_t _os_queue_##name[(sizeof(os_queue_t) / sizeof(uint32_t)) + (size)];
+#define os_queue_define(name, size)                                              \
+    os_queue_definition_t _os_queue_def_##name = { #name, size };                \
+    uint32_t _os_queue_##name[(sizeof(os_queue_t) / sizeof(uint32_t)) + (size)];
 
 /**
  *
@@ -81,12 +83,24 @@ os_status_t os_mutex_release(os_mutex_t *mutex);
 /**
  *
  */
-#define os_mutex_define(name)         os_mutex_t _os_mutex_##name;
+#define os_queue_def(name)            (os_queue_definition_t *)&_os_queue_def_##name
+
+/**
+ *
+ */
+#define os_mutex_define(name)                               \
+    os_mutex_definition_t _os_mutex_def_##name = { #name }; \
+    os_mutex_t _os_mutex_##name;
 
 /**
  *
  */
 #define os_mutex(name)                (os_mutex_t *)&_os_mutex_##name
+
+/**
+ *
+ */
+#define os_mutex_def(name)            (os_mutex_definition_t *)&_os_mutex_def_##name
 
 #if defined(__cplusplus)
 }
