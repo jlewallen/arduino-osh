@@ -1,8 +1,13 @@
 #include <Arduino.h>
 #include <os.h>
 
-#define NUMBER_OF_RECEIVERS     (1)
-#define NUMBER_OF_SENDERS       (1)
+#define NUMBER_OF_RECEIVERS            (4)
+#define RECEIVER_PROCESSING_MINIMUM    (10)
+#define RECEIVER_PROCESSING_MAXIMUM    (500)
+
+#define NUMBER_OF_SENDERS              (6)
+#define SENDER_DELAY_MINIMUM           (10)
+#define SENDER_DELAY_MAXIMUM           (200)
 
 static os_task_t idle_task;
 static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];
@@ -40,8 +45,8 @@ static void task_handler_sender(void *params) {
         auto tuple = os_queue_enqueue(os_queue(queue), message, 1000);
         auto status = tuple.status;
         if (status == OSS_SUCCESS) {
-            auto wms = random(10, 2000);
-            os_printf("%s: success (%s) (%dms)\n", os_task_name(), os_status_str(status), wms);
+            auto wms = random(SENDER_DELAY_MINIMUM, SENDER_DELAY_MAXIMUM);
+            os_printf("%s: success (%dms)\n", os_task_name(), wms);
             os_delay(wms);
         }
         else {
@@ -62,7 +67,7 @@ static void task_handler_receiver(void *params) {
         auto tuple = os_queue_dequeue(os_queue(queue), 1000);
         if (tuple.status == OSS_SUCCESS) {
             auto message = (const char *)tuple.value.ptr;
-            auto wms = random(10, 200);
+            auto wms = random(RECEIVER_PROCESSING_MINIMUM, RECEIVER_PROCESSING_MAXIMUM);
             os_printf("%s: success ('%s') (%dms)\n", os_task_name(), message, wms);
             free((void *)message);
             os_delay(wms);
