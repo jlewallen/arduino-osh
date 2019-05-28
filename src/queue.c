@@ -20,6 +20,7 @@ static os_task_t *blocked_deq(os_queue_t *queue) {
 }
 
 os_status_t osi_queue_create(os_queue_t *queue, os_queue_definition_t *def) {
+    queue->def = def;
     queue->size = def->size;
     queue->number = 0;
     queue->first = 0;

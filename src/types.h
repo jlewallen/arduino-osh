@@ -147,6 +147,7 @@ typedef struct os_queue_definition_t {
  *
  */
 typedef struct os_queue_t {
+    os_queue_definition_t *def;
     os_blocked_t blocked;
     uint16_t size;
     uint16_t number;
@@ -168,6 +169,7 @@ typedef struct os_mutex_definition_t {
  *
  */
 typedef struct os_mutex_t {
+    os_mutex_definition_t *def;
     os_blocked_t blocked;
     os_task_t *owner;
     uint16_t level;

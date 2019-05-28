@@ -71,9 +71,14 @@ os_status_t os_mutex_release(os_mutex_t *mutex);
 /**
  *
  */
+#define os_word_size(n) (((sizeof(n) + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1)) / sizeof(uint32_t))
+
+/**
+ *
+ */
 #define os_queue_define(name, size)                                              \
     os_queue_definition_t _os_queue_def_##name = { #name, size };                \
-    uint32_t _os_queue_##name[(sizeof(os_queue_t) / sizeof(uint32_t)) + (size)];
+    uint32_t _os_queue_##name[os_word_size(os_queue_t) + (size)];
 
 /**
  *

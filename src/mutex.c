@@ -20,6 +20,7 @@ static os_task_t *blocked_deq(os_mutex_t *mutex) {
 }
 
 os_status_t osi_mutex_create(os_mutex_t *mutex, os_mutex_definition_t *def) {
+    mutex->def = def;
     mutex->owner = NULL;
     mutex->blocked.tasks = NULL;
     mutex->level = 0;
