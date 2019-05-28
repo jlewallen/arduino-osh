@@ -21,11 +21,6 @@ extern "C" {
 /**
  *
  */
-uint32_t os_example();
-
-/**
- *
- */
 uint32_t os_delay(uint32_t ms);
 
 /**
@@ -37,6 +32,11 @@ uint32_t os_block(uint32_t ms, uint32_t flags);
  *
  */
 uint32_t os_pstr(const char *str);
+
+/**
+ *
+ */
+uint32_t os_example();
 
 /**
  *
@@ -67,6 +67,26 @@ os_status_t os_mutex_acquire(os_mutex_t *mutex, uint32_t to);
  *
  */
 os_status_t os_mutex_release(os_mutex_t *mutex);
+
+/**
+ *
+ */
+#define os_queue_define(name, size)   uint32_t _os_queue_##name[(sizeof(os_queue_t) / sizeof(uint32_t)) + (size)];
+
+/**
+ *
+ */
+#define os_queue(name)                (os_queue_t *)_os_queue_##name
+
+/**
+ *
+ */
+#define os_mutex_define(name)         os_mutex_t _os_mutex_##name;
+
+/**
+ *
+ */
+#define os_mutex(name)                (os_mutex_t *)&_os_mutex_##name
 
 #if defined(__cplusplus)
 }

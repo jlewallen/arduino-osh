@@ -5,7 +5,7 @@
 
 #define NUMBER_OF_TASKS         (4)
 
-static os_mutex_t mutex;
+static os_mutex_define(mutex);
 static os_task_t idle_task;
 static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];
 static os_task_t tasks[NUMBER_OF_TASKS];
@@ -22,7 +22,7 @@ static void task_handler(void *params) {
 
     while (true) {
         auto started = os_uptime();
-        auto status = os_mutex_acquire(&mutex, 500);
+        auto status = os_mutex_acquire(os_mutex(mutex), 500);
         if (status == OSS_SUCCESS) {
             auto elapsed = os_uptime() - started;
             os_printf("%s acquire (%s) (%dms)\n", os_task_name(), os_status_str(status), elapsed);
@@ -31,7 +31,7 @@ static void task_handler(void *params) {
             os_delay(wms);
 
             os_printf("%s releasing\n", os_task_name());
-            OS_CHECK(os_mutex_release(&mutex));
+            OS_CHECK(os_mutex_release(os_mutex(mutex)));
         }
         else {
             auto elapsed = os_uptime() - started;
@@ -67,7 +67,7 @@ void setup() {
         OS_CHECK(os_task_initialize(&tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler, NULL, stacks[i], sizeof(stacks[i])));
     }
 
-    OS_CHECK(os_mutex_create(&mutex));
+    OS_CHECK(os_mutex_create(os_mutex(mutex)));
 
     OS_CHECK(os_start());
 }

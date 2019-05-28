@@ -4,8 +4,7 @@
 #define NUMBER_OF_RECEIVERS     (1)
 #define NUMBER_OF_SENDERS       (1)
 
-static uint8_t queue[sizeof(os_queue_t) + (4 * 4)];
-
+static os_queue_define(queue, 4);
 static os_task_t idle_task;
 static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];
 static os_task_t sender_tasks[NUMBER_OF_SENDERS];
@@ -37,7 +36,7 @@ static void task_handler_sender(void *params) {
     while (true) {
         auto started = os_uptime();
         auto message = (char *)os_pstrdup("message<%d>", counter++);
-        auto tuple = os_queue_enqueue((os_queue_t *)queue, message, 1000);
+        auto tuple = os_queue_enqueue(os_queue(queue), message, 1000);
         auto status = tuple.status;
         if (status == OSS_SUCCESS) {
             auto wms = random(10, 2000);
@@ -59,7 +58,7 @@ static void task_handler_receiver(void *params) {
 
     while (true) {
         auto started = os_uptime();
-        auto tuple = os_queue_dequeue((os_queue_t *)queue, 1000);
+        auto tuple = os_queue_dequeue(os_queue(queue), 1000);
         if (tuple.status == OSS_SUCCESS) {
             auto message = (const char *)tuple.value.ptr;
             auto wms = random(10, 200);
@@ -108,7 +107,7 @@ void setup() {
         OS_CHECK(os_task_initialize(&sender_tasks[i], strdup(temp), OS_TASK_START_RUNNING, &task_handler_sender, NULL, sender_stacks[i], sizeof(sender_stacks[i])));
     }
 
-    OS_CHECK(os_queue_create((os_queue_t *)queue, 4));
+    OS_CHECK(os_queue_create(os_queue(queue), 4));
 
     OS_CHECK(os_start());
 }
