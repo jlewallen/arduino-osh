@@ -4,11 +4,17 @@
 
 * Overview
 
-This began as a fork of os.h (https://github.com/adamheinrich/os.h) that works
-on ATSAMD21 based Arduino devices and has evolved considerably, pulling in
-functionality from CMSIS RTOS and a few other places.
+  This began as a fork of os.h (https://github.com/adamheinrich/os.h) that works
+  on ATSAMD21 based Arduino devices and has evolved considerably, pulling in
+  functionality from CMSIS RTOS and a few other places.
 
-This now works great on Cortex-M4 devices, like the ATSAMD51.
+  This now works great on Cortex-M4 devices, like the ATSAMD51.
+
+* Future Work
+** TODO Priority levels
+** TODO OS level buffer handling
+** TODO Character and block abstractions for hardware
+** TODO Semaphores
 
 * License
 

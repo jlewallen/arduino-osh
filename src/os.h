@@ -42,6 +42,7 @@ inline const char *os_status_str(os_status_t status) {
     case OSS_ERROR_TO: return "OSS_ERROR_TO";
     case OSS_ERROR_MEM: return "OSS_ERROR_MEM";
     case OSS_ERROR_INT: return "OSS_ERROR_INT";
+    case OSS_ERROR_INVALID: return "OSS_ERROR_INVALID";
     default: return "UNKNOWN";
     }
 }
