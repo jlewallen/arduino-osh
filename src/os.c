@@ -356,7 +356,9 @@ os_status_t osi_dispatch(os_task_t *task) {
         break;
     }
 
-    osg.scheduled = task;
+    if (osg.running != task) {
+        osg.scheduled = task;
+    }
 
     osi_stack_check();
 
@@ -445,11 +447,9 @@ os_status_t osi_schedule() {
 
     osi_dispatch(new_task);
 
-    OS_ASSERT(osg.running != NULL);
-    OS_ASSERT(osg.scheduled != NULL);
-
-    // Trigger PendSV!
-    SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+    if (osg.scheduled != NULL) {
+        SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+    }
 
     return OSS_SUCCESS;
 }
