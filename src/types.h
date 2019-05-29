@@ -32,6 +32,7 @@ extern "C" {
 /*
 #define OS_CONFIG_DEBUG_MUTEXES
 #define OS_CONFIG_DEBUG_QUEUES
+#define OS_CONFIG_DEBUG_SCHEDULE
 */
 
 /**
@@ -89,6 +90,14 @@ typedef enum os_task_status {
 struct os_queue_t;
 struct os_mutex_t;
 
+typedef uint8_t os_priority_t;
+
+/**
+ *
+ */
+#define OS_PRIORITY_LOWEST                            (os_priority_t)0x00
+#define OS_PRIORITY_HIGHEST                           (os_priority_t)0xff
+
 /**
  *
  */
@@ -106,9 +115,11 @@ typedef struct os_task_t {
     void (*handler)(void*);
     void *params;
     struct os_task_t *np;
+    struct os_task_t *nrp;
     struct os_task_t *nblocked;
     struct os_queue_t *queue;
     struct os_mutex_t *mutex;
+    os_priority_t priority;
     void *message;
     uint32_t started;
     uint32_t delay;
@@ -193,9 +204,10 @@ typedef struct os_globals_t {
     volatile os_task_t *scheduled;
     os_state_t state;
     uint8_t ntasks;
-    os_task_t *idle;
-    os_task_t *tasks;
-    os_task_t *delayed;
+    os_task_t *idle;                 //! The idle task. */
+    os_task_t *tasks;                //! Immutable, every task in order of creation. */
+    os_task_t *queue;                //! Queue of tasks waiting for a turn to run. */
+    os_task_t *waiting;              //! Tasks waiting for something. */
 } os_globals_t;
 
 /**

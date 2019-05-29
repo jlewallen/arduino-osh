@@ -44,6 +44,14 @@ static void infinite_loop() __attribute__ ((noreturn));
 
 static void task_finished() __attribute__ ((noreturn));
 
+static void runqueue_add(os_task_t **head, os_task_t *task);
+
+static void runqueue_remove(os_task_t **head, os_task_t *task);
+
+static void waitqueue_add(os_task_t **head, os_task_t *task);
+
+static void waitqueue_remove(os_task_t **head, os_task_t *task);
+
 os_status_t os_initialize() {
     if (osg.state != OS_STATE_DEFAULT) {
         return OSS_ERROR_INVALID;
@@ -127,6 +135,8 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
     task->queue = NULL;
     task->mutex = NULL;
     task->nblocked = NULL;
+    task->nrp = NULL;
+    task->priority = OS_PRIORITY_LOWEST;
     #if defined(OS_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif
@@ -137,18 +147,16 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
     osg.tasks = task;
     osg.ntasks++;
 
-    /* First task initialized is always the idle task. */
+    /* First task initialized is always the idle task, it's also the task that
+     * gets a turn first. */
     if (osg.idle == NULL) {
         OS_ASSERT(task->status != OS_TASK_STATUS_SUSPENDED);
         osg.idle = task;
     }
 
-    /* This will always initialize the initial task to be the idle task, this
-     * that's the first call to this. */
-    if (osg.running == NULL) {
-        osg.running = osg.tasks;
-        osg.scheduled = NULL;
-        osi_stack_check();
+    /* If the task is ready to go, add to the runqueue. */
+    if (task->status == OS_TASK_STATUS_IDLE) {
+        runqueue_add(&osg.queue, task);
     }
 
     osg.state = OS_STATE_TASKS_INITIALIZED;
@@ -173,6 +181,15 @@ os_status_t os_task_start(os_task_t *task) {
     task->sp = initialize_stack(task, (uint32_t *)task->stack, task->stack_size);
     task->status = OS_TASK_STATUS_IDLE;
 
+    // Kind of a hack :)
+    waitqueue_remove(&osg.waiting, task);
+    waitqueue_remove(&osg.queue, task);
+    waitqueue_add(&osg.queue, task);
+
+    #if defined(OS_CONFIG_DEBUG_SCHEDULE)
+    os_printf("%s: started\n", task->name);
+    #endif
+
     return OSS_SUCCESS;
 }
 
@@ -180,7 +197,14 @@ os_status_t os_task_suspend(os_task_t *task) {
     OS_ASSERT(task != NULL);
     OS_ASSERT(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
 
+    #if defined(OS_CONFIG_DEBUG_SCHEDULE)
+    os_printf("%s: suspended\n", task->name);
+    #endif
+
     task->status = OS_TASK_STATUS_SUSPENDED;
+
+    waitqueue_remove(&osg.queue, task);
+    runqueue_remove(&osg.queue, task);
 
     return OSS_SUCCESS;
 }
@@ -189,7 +213,13 @@ os_status_t os_task_resume(os_task_t *task) {
     OS_ASSERT(task != NULL);
     OS_ASSERT(task->status == OS_TASK_STATUS_SUSPENDED);
 
+    #if defined(OS_CONFIG_DEBUG_SCHEDULE)
+    os_printf("%s: resumed\n", task->name);
+    #endif
+
     task->status = OS_TASK_STATUS_IDLE;
+
+    runqueue_add(&osg.queue, task);
 
     return OSS_SUCCESS;
 }
@@ -214,13 +244,13 @@ os_status_t os_start(void) {
     }
 
     OS_ASSERT(osi_platform_setup() == OSS_SUCCESS);
-    OS_ASSERT(osg.running != NULL);
+    OS_ASSERT(osg.queue != NULL);
 
     NVIC_SetPriority(PendSV_IRQn, 0xff);
     NVIC_SetPriority(SysTick_IRQn, 0x00);
 
-    // uint32_t stack[8];
-    // __set_PSP((uint32_t)(stack + 8));
+    /* Running task is the first task in the runqueue. */
+    osg.running = osg.queue;
 
     /* Set PSP to the top of task's stack */
     __set_PSP((uint32_t)osg.running->sp + OS_STACK_BASIC_FRAME_SIZE);
@@ -241,24 +271,81 @@ os_status_t os_start(void) {
 os_status_t osi_dispatch(os_task_t *task) {
     OS_ASSERT(task != NULL);
     OS_ASSERT(osg.running != NULL);
-    OS_ASSERT(task != osg.running);
+    // OS_ASSERT(task != osg.running);
 
+    #if defined(OS_CONFIG_DEBUG_SCHEDULE)
+    if (task != osg.running) {
+        os_printf("%s: d\n", task->name);
+    }
+    #endif
+
+    if ((task->flags & OS_TASK_FLAG_MUTEX) == OS_TASK_FLAG_MUTEX) {
+        OS_ASSERT(task->queue == NULL);
+        OS_ASSERT(task->mutex != NULL);
+        // OS_ASSERT(task->mutex->blocked.tasks == task);
+
+        #if defined(OS_CONFIG_DEBUG_MUTEXES)
+        os_printf("%s: removed from mutex %p\n", task->name, task->mutex);
+        #endif
+
+        task->mutex->blocked.tasks = task->mutex->blocked.tasks->nblocked;
+        task->nblocked = NULL;
+        task->queue = NULL;
+        task->mutex = NULL;
+        task->flags = 0;
+    }
+    if ((task->flags & OS_TASK_FLAG_QUEUE) == OS_TASK_FLAG_QUEUE) {
+        OS_ASSERT(task->mutex == NULL);
+        OS_ASSERT(task->queue != NULL);
+        // OS_ASSERT(task->queue->blocked.tasks == task);
+
+        #if defined(OS_CONFIG_DEBUG_QUEUES)
+        os_printf("%s: removed from queue %p\n", task->name, task->queue);
+        #endif
+
+        task->queue->blocked.tasks = task->queue->blocked.tasks->nblocked;
+        task->nblocked = NULL;
+        task->queue = NULL;
+        task->mutex = NULL;
+        task->flags = 0;
+    }
+
+    // If this task was waiting and is being given a chance, change queues.
+    if (task->status == OS_TASK_STATUS_WAIT) {
+        waitqueue_remove(&osg.waiting, task);
+        runqueue_add(&osg.queue, task);
+        #if defined(OS_CONFIG_DEBUG_SCHEDULE)
+        os_printf("%s: running\n", task->name);
+        #endif
+    }
+
+    task->delay = 0;
     task->flags = 0;
-
-    osg.scheduled = task;
+    task->status = OS_TASK_STATUS_ACTIVE;
 
     // NOTE: Should the status update happen in the PendSV?
-    switch (osg.running->status) {
+    os_task_t *running = (os_task_t *)osg.running;
+    switch (running->status) {
     case OS_TASK_STATUS_ACTIVE:
-        osg.running->status = OS_TASK_STATUS_IDLE;
+        running->status = OS_TASK_STATUS_IDLE;
         break;
     case OS_TASK_STATUS_IDLE:
+        // This would be weird?
+        break;
     case OS_TASK_STATUS_WAIT:
+        runqueue_remove(&osg.queue, running);
+        waitqueue_add(&osg.waiting, running);
+        #if defined(OS_CONFIG_DEBUG_SCHEDULE)
+        os_printf("%s: waiting\n", running->name);
+        #endif
+        break;
     case OS_TASK_STATUS_SUSPENDED:
     case OS_TASK_STATUS_FINISHED:
+        runqueue_remove(&osg.queue, running);
         break;
     }
-    osg.scheduled->status = OS_TASK_STATUS_ACTIVE;
+
+    osg.scheduled = task;
 
     osi_stack_check();
 
@@ -266,82 +353,28 @@ os_status_t osi_dispatch(os_task_t *task) {
 }
 
 os_status_t osi_schedule() {
-    os_task_t *running = os_task_self();
+    os_task_t *new_task = NULL;
 
-    /* May be unnecessary for us to be here... */
-    osg.scheduled = NULL;
-
-    #if defined(OS_CONFIG_DEBUG)
-    /* Calculate stack usage and update when debugging. */
-    uint32_t stack_usage = os_task_stack_usage((os_task_t *)running);
-    if (stack_usage > running->debug_stack_max) {
-        running->debug_stack_max = stack_usage;
-    }
-    #endif
-
-    // Schedule a new task to run...
-    os_task_t *iter = running;
-    while (true) {
-        if (iter->np != NULL) {
-            iter = iter->np;
-        }
-        else {
-            iter = osg.tasks;
-        }
-
-        // If no other tasks can run but the one that just did, just return.
-        // Technically, this should only happen to the idle task.
-        if (iter == osg.running) {
-            OS_ASSERT(iter == osg.idle);
-            return OSS_SUCCESS;
-        }
-
-        // Wake up tasks that are waiting if it's their time.
-        if (iter->status == OS_TASK_STATUS_WAIT) {
-            if (os_uptime() >= iter->delay) {
-                iter->status = OS_TASK_STATUS_IDLE;
-                if ((iter->flags & OS_TASK_FLAG_MUTEX) == OS_TASK_FLAG_MUTEX) {
-                    OS_ASSERT(iter->queue == NULL);
-                    OS_ASSERT(iter->mutex != NULL);
-                    OS_ASSERT(iter->mutex->blocked.tasks == iter);
-
-                    #if defined(OS_CONFIG_DEBUG_MUTEXES)
-                    os_printf("%s: removed from mutex %p\n", iter->name, iter->mutex);
-                    #endif
-
-                    iter->mutex->blocked.tasks = iter->mutex->blocked.tasks->nblocked;
-                    iter->nblocked = NULL;
-                    iter->queue = NULL;
-                    iter->mutex = NULL;
-                    iter->flags = 0;
-                }
-                if ((iter->flags & OS_TASK_FLAG_QUEUE) == OS_TASK_FLAG_QUEUE) {
-                    OS_ASSERT(iter->mutex == NULL);
-                    OS_ASSERT(iter->queue != NULL);
-                    OS_ASSERT(iter->queue->blocked.tasks == iter);
-
-                    #if defined(OS_CONFIG_DEBUG_QUEUES)
-                    os_printf("%s: removed from queue %p\n", iter->name, iter->queue);
-                    #endif
-
-                    iter->queue->blocked.tasks = iter->queue->blocked.tasks->nblocked;
-                    iter->nblocked = NULL;
-                    iter->queue = NULL;
-                    iter->mutex = NULL;
-                    iter->flags = 0;
-                }
-                iter->delay = 0;
-                osi_dispatch(iter);
-                break;
-            }
-        }
-
-        // Only run tasks that are idle.
-        if (iter->status == OS_TASK_STATUS_IDLE) {
-            osi_dispatch(iter);
+    // Check to see if anything in the waitqueue is free to go.
+    uint32_t now = os_uptime();
+    for (os_task_t *task = osg.waiting; task != NULL; task = task->nrp) {
+        if (now >= task->delay) {
+            new_task = task;
             break;
         }
     }
+
+    // Schedule the following task, or start at the head of the runqueue.
+    if (new_task == NULL) {
+        if (osg.running->nrp == NULL) {
+            new_task = osg.queue;
+        }
+        else {
+            new_task = osg.running->nrp;
+        }
+    }
+
+    osi_dispatch(new_task);
 
     OS_ASSERT(osg.running != NULL);
     OS_ASSERT(osg.scheduled != NULL);
@@ -463,5 +496,76 @@ static void infinite_loop() {
     volatile uint32_t i = 0;
     while (true) {
         i++;
+    }
+}
+
+static void runqueue_add(os_task_t **head, os_task_t *task) {
+    task->nrp = NULL;
+
+    if (*head == NULL) {
+        *head = task;
+        return;
+    }
+
+    for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {
+        if (iter->nrp == NULL) {
+            iter->nrp = task;
+            return;
+        }
+    }
+
+    OS_ASSERT(0);
+}
+static void runqueue_remove(os_task_t **head, os_task_t *task) {
+    os_task_t *previous = NULL;
+
+    for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {
+        if (iter == task) {
+            if (*head == iter) {
+                *head = iter->nrp;
+            }
+            else {
+                previous->nrp = iter->nrp;
+            }
+            iter->nrp = NULL;
+            break;
+        }
+        previous = iter;
+    }
+}
+
+static void waitqueue_add(os_task_t **head, os_task_t *task) {
+    task->nrp = NULL;
+
+    if (*head == NULL) {
+        *head = task;
+        return;
+    }
+
+    for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {
+        if (iter->nrp == NULL) {
+            iter->nrp = task;
+            return;
+        }
+    }
+
+    OS_ASSERT(0);
+}
+
+static void waitqueue_remove(os_task_t **head, os_task_t *task) {
+    os_task_t *previous = NULL;
+
+    for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {
+        if (iter == task) {
+            if (*head == iter) {
+                *head = iter->nrp;
+            }
+            else {
+                previous->nrp = iter->nrp;
+            }
+            iter->nrp = NULL;
+            break;
+        }
+        previous = iter;
     }
 }
