@@ -281,7 +281,7 @@ os_status_t osi_dispatch(os_task_t *task) {
 
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
     if (task != osg.running) {
-        os_printf("%s: d\n", task->name);
+        os_printf("%s\n", task->name);
     }
     #endif
 
@@ -314,6 +314,12 @@ os_status_t osi_dispatch(os_task_t *task) {
         task->mutex = NULL;
         task->flags = 0;
     }
+
+    #if defined(OS_CONFIG_PARANOIA)
+    if (task == osg.idle) {
+        // OS_ASSERT(runqueue_length(osg.queue) <= 1);
+    }
+    #endif
 
     // If this task was waiting and is being given a chance, change queues.
     if (task->status == OS_TASK_STATUS_WAIT) {
@@ -360,6 +366,64 @@ os_status_t osi_dispatch(os_task_t *task) {
 #define OS_WAITQUEUE_NEXT_WRAPPED(n)   (((n)->nrp == NULL) ? osg.waiting : (n)->nrp)
 #define OS_RUNQUEUE_NEXT_WRAPPED(n)    (((n)->nrp == NULL) ? osg.queue : (n)->nrp)
 
+static bool task_is_running(os_task_t *task) {
+    return task->status == OS_TASK_STATUS_ACTIVE || task->status == OS_TASK_STATUS_IDLE;
+}
+/*
+static bool is_higher_priority(os_priority_t a, os_priority_t b) {
+    return a > b;
+}
+
+static bool is_lower_priority(os_priority_t a, os_priority_t b) {
+    return a < b;
+}
+*/
+static bool is_equal_or_higher_priority(os_priority_t a, os_priority_t b) {
+    return a >= b;
+}
+
+static os_task_t *find_new_task(os_task_t *running) {
+    // Default to the running task just in case we don't go through the loop
+    // or we're the only task, etc...
+    os_task_t *new_task = running;
+
+    // Look for a task that's higher priority than us (lower number)
+    os_task_t *task = OS_RUNQUEUE_NEXT_WRAPPED(running);
+    os_task_t *lower_priority = NULL;
+    os_priority_t ours = running->priority;
+    for ( ; task != running; ) {
+        if (task_is_running(task)) {
+            if (is_equal_or_higher_priority(task->priority, ours)) {
+                new_task = task;
+                // os_printf("picked %s (%d %d)\n", task->name, ours, task->priority);
+                break;
+            }
+            else {
+                OS_ASSERT(lower_priority == NULL);
+                if (lower_priority == NULL) {
+                    lower_priority = task;
+                    // os_printf(" lp=%s\n", task->name);
+                }
+                // Go back to the beginning, which either has tasks of higher
+                // priority that should run or has more tasks of our own
+                // priority or we will find ourselves.
+                task = osg.queue;
+            }
+        }
+        else {
+            task = OS_RUNQUEUE_NEXT_WRAPPED(task);
+        }
+    }
+
+    if (new_task == running) {
+        if (!task_is_running(running)) {
+            new_task = lower_priority;
+        }
+    }
+
+    return new_task;
+}
+
 os_status_t osi_schedule() {
     os_task_t *new_task = NULL;
 
@@ -376,24 +440,7 @@ os_status_t osi_schedule() {
 
     // Look for a task that's got the same priority or higher.
     if (new_task == NULL) {
-        os_task_t *running = (os_task_t *)osg.running;
-        os_priority_t ours = running->status == OS_TASK_STATUS_WAIT ? OS_PRIORITY_HIGHEST : running->priority;
-        os_task_t *task = OS_RUNQUEUE_NEXT_WRAPPED(running);
-
-        // Default to the running task just in case we don't go through the loop
-        // or we're the only task, etc...
-        new_task = task;
-
-        // Look for a task that's higher priority than us (lower number)
-        for ( ; task != running; task = OS_RUNQUEUE_NEXT_WRAPPED(task)) {
-            if (ours >= task->priority) {
-                new_task = task;
-                break;
-            }
-            else {
-                break;
-            }
-        }
+        new_task = find_new_task((os_task_t *)osg.running);
     }
 
     osi_dispatch(new_task);

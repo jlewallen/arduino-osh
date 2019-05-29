@@ -36,6 +36,11 @@ extern "C" {
 */
 
 /**
+ * Include extra integrity checks, slower performance though helps in testing.
+ */
+#define OS_CONFIG_PARANOIA
+
+/**
  *
  */
 /*
