@@ -541,7 +541,8 @@ static void runqueue_add(os_task_t **head, os_task_t *task) {
 
     os_task_t *previous = NULL;
     for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {
-        if (task->priority < iter->priority) {
+        OS_ASSERT(iter != task);
+        if (task->priority > iter->priority) {
             task->nrp = iter;
             if (previous == NULL) {
                 *head = task;
@@ -588,6 +589,7 @@ static void waitqueue_add(os_task_t **head, os_task_t *task) {
 
     os_task_t *previous = NULL;
     for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {
+        OS_ASSERT(iter != task);
         if (task->delay < iter->delay) {
             task->nrp = iter;
             if (previous == NULL) {

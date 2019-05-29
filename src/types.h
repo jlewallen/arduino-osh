@@ -90,7 +90,7 @@ typedef enum os_task_status {
 struct os_queue_t;
 struct os_mutex_t;
 
-typedef uint8_t os_priority_t;
+typedef uint32_t os_priority_t;
 
 /**
  *
