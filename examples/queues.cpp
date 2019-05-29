@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <os.h>
+#include <malloc.h>
 
 #define NUMBER_OF_RECEIVERS            (4)
 #define RECEIVER_PROCESSING_MINIMUM    (10)
@@ -38,6 +39,7 @@ static void task_handler_sender(void *params) {
     os_printf("%s started (%d)\n", os_task_name(), __get_CONTROL());
 
     uint32_t counter = 0;
+    uint32_t memory_reported = os_uptime();
 
     while (true) {
         auto started = os_uptime();
@@ -53,6 +55,12 @@ static void task_handler_sender(void *params) {
             auto elapsed = os_uptime() - started;
             os_printf("%s: fail (%s) (after %lums)\n", os_task_name(), os_status_str(status), elapsed);
             os_delay(100);
+        }
+
+        if (os_uptime() - memory_reported > 10000) {
+            auto mi = mallinfo();
+            os_printf("memory: arena=%lu uordblks=%lu\n", mi.arena, mi.uordblks);
+            memory_reported = os_uptime();
         }
     }
 }
