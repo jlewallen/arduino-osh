@@ -44,6 +44,8 @@ static void infinite_loop() __attribute__ ((noreturn));
 
 static void task_finished() __attribute__ ((noreturn));
 
+static uint32_t runqueue_length(os_task_t *head);
+
 static void runqueue_add(os_task_t **head, os_task_t *task);
 
 static void runqueue_remove(os_task_t **head, os_task_t *task);
@@ -136,7 +138,7 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
     task->mutex = NULL;
     task->nblocked = NULL;
     task->nrp = NULL;
-    task->priority = OS_PRIORITY_LOWEST;
+    task->priority = OS_PRIORITY_NORMAL;
     #if defined(OS_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif
@@ -151,6 +153,7 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
      * gets a turn first. */
     if (osg.idle == NULL) {
         OS_ASSERT(task->status != OS_TASK_STATUS_SUSPENDED);
+        task->priority = OS_PRIORITY_IDLE;
         osg.idle = task;
     }
 
@@ -189,6 +192,9 @@ os_status_t os_task_start(os_task_t *task) {
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
     os_printf("%s: started\n", task->name);
     #endif
+
+    // Avoid a warning.
+    runqueue_length(osg.queue);
 
     return OSS_SUCCESS;
 }
@@ -297,7 +303,6 @@ os_status_t osi_dispatch(os_task_t *task) {
     if ((task->flags & OS_TASK_FLAG_QUEUE) == OS_TASK_FLAG_QUEUE) {
         OS_ASSERT(task->mutex == NULL);
         OS_ASSERT(task->queue != NULL);
-        // OS_ASSERT(task->queue->blocked.tasks == task);
 
         #if defined(OS_CONFIG_DEBUG_QUEUES)
         os_printf("%s: removed from queue %p\n", task->name, task->queue);
@@ -352,6 +357,9 @@ os_status_t osi_dispatch(os_task_t *task) {
     return OSS_SUCCESS;
 }
 
+#define OS_WAITQUEUE_NEXT_WRAPPED(n)   (((n)->nrp == NULL) ? osg.waiting : (n)->nrp)
+#define OS_RUNQUEUE_NEXT_WRAPPED(n)    (((n)->nrp == NULL) ? osg.queue : (n)->nrp)
+
 os_status_t osi_schedule() {
     os_task_t *new_task = NULL;
 
@@ -364,13 +372,27 @@ os_status_t osi_schedule() {
         }
     }
 
-    // Schedule the following task, or start at the head of the runqueue.
+    // We always give just awoken tasks an immediate chance, for now.
+
+    // Look for a task that's got the same priority or higher.
     if (new_task == NULL) {
-        if (osg.running->nrp == NULL) {
-            new_task = osg.queue;
-        }
-        else {
-            new_task = osg.running->nrp;
+        os_task_t *running = (os_task_t *)osg.running;
+        os_priority_t ours = running->status == OS_TASK_STATUS_WAIT ? OS_PRIORITY_HIGHEST : running->priority;
+        os_task_t *task = OS_RUNQUEUE_NEXT_WRAPPED(running);
+
+        // Default to the running task just in case we don't go through the loop
+        // or we're the only task, etc...
+        new_task = task;
+
+        // Look for a task that's higher priority than us (lower number)
+        for ( ; task != running; task = OS_RUNQUEUE_NEXT_WRAPPED(task)) {
+            if (ours >= task->priority) {
+                new_task = task;
+                break;
+            }
+            else {
+                break;
+            }
         }
     }
 
@@ -499,6 +521,16 @@ static void infinite_loop() {
     }
 }
 
+static uint32_t runqueue_length(os_task_t *head) {
+    uint32_t l = 0;
+
+    for ( ; head != NULL; head = head->nrp) {
+        l++;
+    }
+
+    return l;
+}
+
 static void runqueue_add(os_task_t **head, os_task_t *task) {
     task->nrp = NULL;
 
@@ -507,11 +539,23 @@ static void runqueue_add(os_task_t **head, os_task_t *task) {
         return;
     }
 
+    os_task_t *previous = NULL;
     for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {
+        if (task->priority < iter->priority) {
+            task->nrp = iter;
+            if (previous == NULL) {
+                *head = task;
+            }
+            else {
+                previous->nrp = task;
+            }
+            return;
+        }
         if (iter->nrp == NULL) {
             iter->nrp = task;
             return;
         }
+        previous  = iter;
     }
 
     OS_ASSERT(0);

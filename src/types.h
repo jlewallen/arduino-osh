@@ -96,6 +96,8 @@ typedef uint8_t os_priority_t;
  *
  */
 #define OS_PRIORITY_LOWEST                            (os_priority_t)0x00
+#define OS_PRIORITY_IDLE                              (os_priority_t)0x00
+#define OS_PRIORITY_NORMAL                            (os_priority_t)0x10
 #define OS_PRIORITY_HIGHEST                           (os_priority_t)0xff
 
 /**
