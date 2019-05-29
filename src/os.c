@@ -542,11 +542,23 @@ static void waitqueue_add(os_task_t **head, os_task_t *task) {
         return;
     }
 
+    os_task_t *previous = NULL;
     for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {
+        if (task->delay < iter->delay) {
+            task->nrp = iter;
+            if (previous == NULL) {
+                *head = task;
+            }
+            else {
+                previous->nrp = task;
+            }
+            return;
+        }
         if (iter->nrp == NULL) {
             iter->nrp = task;
             return;
         }
+        previous  = iter;
     }
 
     OS_ASSERT(0);
