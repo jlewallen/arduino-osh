@@ -14,7 +14,6 @@ static os_task_t *blocked_deq(os_queue_t *queue) {
     }
     OS_ASSERT(task->queue == queue);
     queue->blocked.tasks = task->nblocked;
-    task->queue = NULL;
     task->nblocked = NULL;
     return task;
 }

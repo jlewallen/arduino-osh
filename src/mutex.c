@@ -14,7 +14,6 @@ static os_task_t *blocked_deq(os_mutex_t *mutex) {
     }
     OS_ASSERT(task->mutex == mutex);
     mutex->blocked.tasks = task->nblocked;
-    task->mutex = NULL;
     task->nblocked = NULL;
     return task;
 }
