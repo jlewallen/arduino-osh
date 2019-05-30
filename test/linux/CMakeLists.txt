@@ -1,3 +1,9 @@
+#
+#
+#
+
+if(TARGET_LINUX)
+
 # GTest requires this.
 find_package(Threads REQUIRED)
 
@@ -53,3 +59,5 @@ set_target_properties(hostedtests PROPERTIES C_STANDARD 11)
 set_target_properties(hostedtests PROPERTIES CXX_STANDARD 11)
 
 add_test(NAME hostedtests COMMAND hostedtests)
+
+endif()

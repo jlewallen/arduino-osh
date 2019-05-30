@@ -1,3 +1,7 @@
+#
+#
+#
+
 include(Arduino)
 
 enable_arduino_toolchain()
@@ -11,6 +15,8 @@ endif()
 if(TARGET_M0)
   enable_m0()
 endif()
+
+if(TARGET_M0 OR TARGET_M4)
 
 file(GLOB osh_sources ../src/*.cpp ../src/*.c ../src/*.s ../src/*.h ../src/segger/*.c)
 
@@ -37,3 +43,5 @@ add_arduino_library(osh-mutexes "${osh_sources};${mutexes_sources}")
 target_compile_options(osh-mutexes PRIVATE -Wall -Werror)
 target_include_directories(osh-mutexes PUBLIC ./ ../src)
 add_arduino_firmware(osh-mutexes)
+
+endif()
