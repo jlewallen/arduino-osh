@@ -289,7 +289,6 @@ os_status_t os_start(void) {
 os_status_t osi_dispatch(os_task_t *task) {
     OS_ASSERT(task != NULL);
     OS_ASSERT(osg.running != NULL);
-    // OS_ASSERT(task != osg.running);
 
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
     if (task != osg.running) {
@@ -300,13 +299,16 @@ os_status_t osi_dispatch(os_task_t *task) {
     if ((task->flags & OS_TASK_FLAG_MUTEX) == OS_TASK_FLAG_MUTEX) {
         OS_ASSERT(task->queue == NULL);
         OS_ASSERT(task->mutex != NULL);
-        // OS_ASSERT(task->mutex->blocked.tasks != NULL);
 
         #if defined(OS_CONFIG_DEBUG_MUTEXES)
         os_printf("%s: removed from mutex %p\n", task->name, task->mutex);
         #endif
 
-        task->nblocked = NULL;
+        if (task->mutex->blocked.tasks == task) {
+            task->mutex->blocked.tasks = task->nblocked;
+            task->nblocked = NULL;
+        }
+
         task->queue = NULL;
         task->mutex = NULL;
         task->flags = 0;
@@ -314,13 +316,16 @@ os_status_t osi_dispatch(os_task_t *task) {
     if ((task->flags & OS_TASK_FLAG_QUEUE) == OS_TASK_FLAG_QUEUE) {
         OS_ASSERT(task->mutex == NULL);
         OS_ASSERT(task->queue != NULL);
-        // OS_ASSERT(task->queue->blocked.tasks != NULL);
 
         #if defined(OS_CONFIG_DEBUG_QUEUES)
         os_printf("%s: removed from queue %p\n", task->name, task->queue);
         #endif
 
-        task->nblocked = NULL;
+        if (task->queue->blocked.tasks == task) {
+            task->queue->blocked.tasks = task->nblocked;
+            task->nblocked = NULL;
+        }
+
         task->queue = NULL;
         task->mutex = NULL;
         task->flags = 0;
@@ -489,7 +494,7 @@ uint32_t *osi_task_return_regs(os_task_t *task) {
     #endif
 }
 
-os_tuple_t *osi_task_return_tuple(os_task_t *task) {
+os_tuple_t *osi_task_stacked_return_tuple(os_task_t *task) {
     return (os_tuple_t *)osi_task_return_regs(task);
 }
 

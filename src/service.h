@@ -83,7 +83,7 @@ os_status_t os_mutex_release(os_mutex_t *mutex);
 /**
  *
  */
-#define os_queue(name)                (os_queue_t *)_os_queue_##name
+#define os_queue(name)                ((os_queue_t *)_os_queue_##name)
 
 /**
  *

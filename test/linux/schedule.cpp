@@ -13,6 +13,7 @@ protected:
 };
 
 void ScheduleSuite::SetUp() {
+    tests_platform_time(0);
 }
 
 void ScheduleSuite::TearDown() {

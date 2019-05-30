@@ -25,6 +25,8 @@ os_status_t osi_queue_create(os_queue_t *queue, os_queue_definition_t *def) {
     queue->first = 0;
     queue->last = 0;
     queue->status = OS_QUEUE_FINE;
+    queue->blocked.type = 0;
+    queue->blocked.tasks = NULL;
     for (uint16_t i = 0; i < queue->size; ++i) {
         queue->messages[i] = NULL;
     }
@@ -41,7 +43,7 @@ os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
     if (queue->blocked.tasks != NULL && queue->status == OS_QUEUE_BLOCKED_RECEIVE) {
         os_task_t *blocked_receiver = blocked_deq(queue);
 
-        os_tuple_t *receive_rv = osi_task_return_tuple(blocked_receiver);
+        os_tuple_t *receive_rv = osi_task_stacked_return_tuple(blocked_receiver);
         receive_rv->status = OSS_SUCCESS;
         receive_rv->value.ptr = message;
 
@@ -100,7 +102,7 @@ os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint16_t to) {
             queue->number++;
             blocked_sender->message = NULL;
 
-            os_tuple_t *send_rv = osi_task_return_tuple(blocked_sender);
+            os_tuple_t *send_rv = osi_task_stacked_return_tuple(blocked_sender);
             send_rv->status = OSS_SUCCESS;
             send_rv->value.ptr = NULL;
 

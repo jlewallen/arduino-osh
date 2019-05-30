@@ -75,7 +75,7 @@ uint32_t *osi_task_return_regs(os_task_t *task);
 /**
  *
  */
-os_tuple_t *osi_task_return_tuple(os_task_t *task);
+os_tuple_t *osi_task_stacked_return_tuple(os_task_t *task);
 
 /**
  *
