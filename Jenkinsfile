@@ -4,6 +4,6 @@ conservifyProperties()
 
 timestamps {
     node () {
-        conservifyBuild(name: 'arduino-osh')
+        conservifyBuild(name: 'arduino-osh', test: true)
     }
 }
