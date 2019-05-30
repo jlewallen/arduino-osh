@@ -315,12 +315,6 @@ os_status_t osi_dispatch(os_task_t *task) {
         task->flags = 0;
     }
 
-    #if defined(OS_CONFIG_PARANOIA)
-    if (task == osg.idle) {
-        // OS_ASSERT(runqueue_length(osg.queue) <= 1);
-    }
-    #endif
-
     // If this task was waiting and is being given a chance, change queues.
     if (task->status == OS_TASK_STATUS_WAIT) {
         waitqueue_remove(&osg.waiting, task);
@@ -334,14 +328,14 @@ os_status_t osi_dispatch(os_task_t *task) {
     task->flags = 0;
     task->status = OS_TASK_STATUS_ACTIVE;
 
-    // NOTE: Should the status update happen in the PendSV?
+    // NOTE: Should the status update happen when we actually switch?
     os_task_t *running = (os_task_t *)osg.running;
     switch (running->status) {
     case OS_TASK_STATUS_ACTIVE:
         running->status = OS_TASK_STATUS_IDLE;
         break;
     case OS_TASK_STATUS_IDLE:
-        // This would be weird?
+        OS_ASSERT(running->status != OS_TASK_STATUS_IDLE);
         break;
     case OS_TASK_STATUS_WAIT:
         runqueue_remove(&osg.queue, running);
@@ -356,11 +350,15 @@ os_status_t osi_dispatch(os_task_t *task) {
         break;
     }
 
+    #if defined(OS_CONFIG_PARANOIA)
+    if (task == osg.idle) {
+        OS_ASSERT(runqueue_length(osg.queue) == 1);
+    }
+    #endif
+
     if (osg.running != task) {
         osg.scheduled = task;
     }
-
-    osi_stack_check();
 
     return OSS_SUCCESS;
 }
@@ -371,15 +369,7 @@ os_status_t osi_dispatch(os_task_t *task) {
 static bool task_is_running(os_task_t *task) {
     return task->status == OS_TASK_STATUS_ACTIVE || task->status == OS_TASK_STATUS_IDLE;
 }
-/*
-static bool is_higher_priority(os_priority_t a, os_priority_t b) {
-    return a > b;
-}
 
-static bool is_lower_priority(os_priority_t a, os_priority_t b) {
-    return a < b;
-}
-*/
 static bool is_equal_or_higher_priority(os_priority_t a, os_priority_t b) {
     return a >= b;
 }
@@ -397,14 +387,12 @@ static os_task_t *find_new_task(os_task_t *running) {
         if (task_is_running(task)) {
             if (is_equal_or_higher_priority(task->priority, ours)) {
                 new_task = task;
-                // os_printf("picked %s (%d %d)\n", task->name, ours, task->priority);
                 break;
             }
             else {
                 OS_ASSERT(lower_priority == NULL);
                 if (lower_priority == NULL) {
                     lower_priority = task;
-                    // os_printf(" lp=%s\n", task->name);
                 }
                 // Go back to the beginning, which either has tasks of higher
                 // priority that should run or has more tasks of our own
@@ -417,7 +405,9 @@ static os_task_t *find_new_task(os_task_t *running) {
         }
     }
 
+    /* If we ended up looping around w/o finding somebody of equal or higher... */
     if (new_task == running) {
+        /* If we're no longer running, then we can drop down in priority. */
         if (!task_is_running(running)) {
             new_task = lower_priority;
         }
@@ -439,14 +429,14 @@ os_status_t osi_schedule() {
     }
 
     // We always give just awoken tasks an immediate chance, for now.
-
-    // Look for a task that's got the same priority or higher.
     if (new_task == NULL) {
+        // Look for a task that's got the same priority or higher.
         new_task = find_new_task((os_task_t *)osg.running);
     }
 
     osi_dispatch(new_task);
 
+    // If we didn't schedule anything, don't bother with PendSV IRQ.
     if (osg.scheduled != NULL) {
         SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
     }
