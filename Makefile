@@ -12,7 +12,7 @@ m4:
 
 linux:
 	mkdir -p build/linux
-	cd build/linux && cmake -D TARGET_LINUX=ON ../../
+	cd build/linux && cmake -D TARGET_LINUX=ON -DCMAKE_BUILD_TYPE=Debug ../../
 	$(MAKE) -C build/linux
 
 test: linux
