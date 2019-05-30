@@ -51,7 +51,7 @@ add_executable(hostedtests ${SRCS})
 
 target_include_directories(hostedtests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(hostedtests PUBLIC ${source_dir})
-target_include_directories(hostedtests PUBLIC "../src")
+target_include_directories(hostedtests PUBLIC "../../src")
 
 target_link_libraries(hostedtests libgtest libgmock)
 
