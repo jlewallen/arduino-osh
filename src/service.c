@@ -74,6 +74,11 @@ os_status_t svc_mutex_release(os_mutex_t *mutex) {
  * Application facing service call wrappers.
  */
 
+#if !(defined(__SAMD21__) || defined(__SAMD51__))
+#define __get_CONTROL()  0x0
+#define __get_IPSR()     0
+#endif
+
 /**
  * Returns true if the current execution context is privileged.
  */

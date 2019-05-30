@@ -16,6 +16,8 @@
 #ifndef OS_SYSCALLS_H
 #define OS_SYSCALLS_H
 
+#if defined(__SAMD21__) || defined(__SAMD51__)
+
 #define SVC_ArgN(n)                                                            \
   register int __r##n __asm("r"#n);
 
@@ -132,6 +134,39 @@ typedef uint32_t __attribute__((vector_size(16))) ret128;
 
 #define os_tuple_return_type_t         __attribute__((pcs("aapcs"))) ret64
 #define os_tuple_return_value(r)       (ret64){ r.status, r.value.u32 }
+
+#else
+
+#define SVC_0_1(f,t,rv)                                                        \
+static inline  t __##f(void) {                                                 \
+    return f();                                                                \
+}
+
+#define SVC_1_0(f,t,t1)                                                        \
+static inline  t __##f (t1 a1) {                                               \
+    f(a1);                                                                     \
+}
+
+#define SVC_1_1(f,t,t1,rv)                                                     \
+static inline  t __##f (t1 a1) {                                               \
+    return f(a1);                                                              \
+}
+
+#define SVC_2_1(f,t,t1,t2,rv)                                                  \
+static inline  t __##f (t1 a1, t2 a2) {                                        \
+    return f(a1, a2);                                                          \
+}
+
+#define SVC_3_1(f,t,t1,t2,t3,rv)                                               \
+static inline  t __##f (t1 a1, t2 a2, t3 a3) {                                 \
+    return f(a1, a2, a3);                                                      \
+}
+
+#define os_tuple_return_type_t         os_tuple_t
+
+#define os_tuple_return_value(r)       r
+
+#endif
 
 uint32_t svc_example(void);
 uint32_t svc_delay(uint32_t ms);

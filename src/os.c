@@ -81,7 +81,7 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
 
     // Check alignment. May not be necessary?
     uint32_t *stk = stack + stack_offset;
-    if ((uint32_t)stk & 0x04U) {
+    if ((uintptr_t)stk & 0x04U) {
         stk--;
     }
     stk -= OS_STACK_BASIC_FRAME_SIZE;
@@ -92,9 +92,9 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
        - LR: Point to a function to be called when the handler returns
        - R0: Point to the handler function's parameter */
     stk[15] = 0x01000000;
-    stk[14] = (uint32_t)task->handler & ~0x01UL;
-    stk[13] = (uint32_t)&task_finished;
-    stk[ 8] = (uint32_t)task->params;
+    stk[14] = (uintptr_t)task->handler & ~0x01UL;
+    stk[13] = (uintptr_t)&task_finished;
+    stk[ 8] = (uintptr_t)task->params;
     #if defined(OS_CONFIG_DEBUG)
     uint32_t base = 1000 * (osg.ntasks + 1);
     stk[12] = base + 12; /* R12 */
@@ -249,11 +249,12 @@ os_status_t os_start(void) {
     OS_ASSERT(osi_platform_setup() == OSS_SUCCESS);
     OS_ASSERT(osg.runqueue != NULL);
 
-    NVIC_SetPriority(PendSV_IRQn, 0xff);
-    NVIC_SetPriority(SysTick_IRQn, 0x00);
-
     /* Running task is the first task in the runqueue. */
     osg.running = osg.runqueue;
+
+    #if defined(__SAMD21__) || defined(__SAMD51__)
+    NVIC_SetPriority(PendSV_IRQn, 0xff);
+    NVIC_SetPriority(SysTick_IRQn, 0x00);
 
     /* Set PSP to the top of task's stack */
     __set_PSP((uint32_t)osg.running->sp + OS_STACK_BASIC_FRAME_SIZE);
@@ -262,6 +263,7 @@ os_status_t os_start(void) {
     /* Execute DSB/ISB after changing CONTORL (recommended) */
     __DSB();
     __ISB();
+    #endif
 
     osg.state = OS_STATE_STARTED;
     osg.running->handler(osg.running->params);
@@ -435,7 +437,9 @@ os_status_t osi_schedule() {
 
     // If we didn't schedule anything, don't bother with PendSV IRQ.
     if (osg.scheduled != NULL) {
+        #if defined(__SAMD21__) || defined(__SAMD51__)
         SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+        #endif
     }
 
     return OSS_SUCCESS;
@@ -448,7 +452,11 @@ inline uint32_t os_uptime() {
 extern char *sbrk(int32_t i);
 
 uint32_t os_free_memory() {
+    #if defined(__SAMD21__) || defined(__SAMD51__)
     return (uint32_t)__get_MSP() - (uint32_t)sbrk(0);
+    #else
+    return 0;
+    #endif
 }
 
 uint32_t *osi_task_return_regs(os_task_t *task) {
@@ -490,8 +498,10 @@ inline void os_assert(const char *assertion, const char *file, int line) {
     osi_error(OS_ERROR_ASSERTION);
 }
 
-void osi_error(uint8_t code) {
+void osi_error(os_error_kind_t code) {
+    #if defined(__SAMD21__) || defined(__SAMD51__)
     __asm__("BKPT");
+    #endif
     infinite_loop();
 }
 
@@ -501,13 +511,13 @@ void osi_stack_check() {
     }
 }
 
-void osi_hard_fault_report(uint32_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {
+void osi_hard_fault_report(uintptr_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {
     volatile uint32_t looping = 1;
     while (looping) {
     }
 }
 
-void osi_hard_fault_handler(uint32_t *stack, uint32_t lr) {
+void osi_hard_fault_handler(uintptr_t *stack, uint32_t lr) {
     if (NVIC_HFSR & (1uL << 31)) {
         NVIC_HFSR |= (1uL << 31);         // Reset Hard Fault status
         *(stack + 6u) += 2u;              // PC is located on stack at SP + 24 bytes; increment PC by 2 to skip break instruction.

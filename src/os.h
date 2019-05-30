@@ -23,7 +23,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#if defined(ARDUINO)
 #include <sam.h>
+#else
+#endif
 
 #include "printf.h"
 #include "segger/SEGGER_RTT.h"
@@ -50,9 +53,12 @@ inline const char *os_status_str(os_status_t status) {
 /**
  * Return the currently executing task.
  */
+#define os_task_self()    (os_task_t *)osg.running
+/*
 inline os_task_t *os_task_self() {
     return (os_task_t *)osg.running;
 }
+*/
 
 /**
  * Return the name of the currently executing task.
