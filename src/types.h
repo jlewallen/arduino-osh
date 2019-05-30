@@ -213,8 +213,8 @@ typedef struct os_globals_t {
     uint8_t ntasks;
     os_task_t *idle;                 //! The idle task. */
     os_task_t *tasks;                //! Immutable, every task in order of creation. */
-    os_task_t *queue;                //! Queue of tasks waiting for a turn to run. */
-    os_task_t *waiting;              //! Tasks waiting for something. */
+    os_task_t *runqueue;             //! Queue of tasks waiting for a turn to run. */
+    os_task_t *waitqueue;            //! Tasks waiting for something. */
 } os_globals_t;
 
 /**

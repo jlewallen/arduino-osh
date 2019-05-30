@@ -159,7 +159,7 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
 
     /* If the task is ready to go, add to the runqueue. */
     if (task->status == OS_TASK_STATUS_IDLE) {
-        runqueue_add(&osg.queue, task);
+        runqueue_add(&osg.runqueue, task);
     }
 
     osg.state = OS_STATE_TASKS_INITIALIZED;
@@ -185,16 +185,13 @@ os_status_t os_task_start(os_task_t *task) {
     task->status = OS_TASK_STATUS_IDLE;
 
     // Kind of a hack :)
-    waitqueue_remove(&osg.waiting, task);
-    waitqueue_remove(&osg.queue, task);
-    waitqueue_add(&osg.queue, task);
+    waitqueue_remove(&osg.waitqueue, task);
+    waitqueue_remove(&osg.runqueue, task);
+    waitqueue_add(&osg.runqueue, task);
 
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
     os_printf("%s: started\n", task->name);
     #endif
-
-    // Avoid a warning.
-    runqueue_length(osg.queue);
 
     return OSS_SUCCESS;
 }
@@ -209,8 +206,8 @@ os_status_t os_task_suspend(os_task_t *task) {
 
     task->status = OS_TASK_STATUS_SUSPENDED;
 
-    waitqueue_remove(&osg.queue, task);
-    runqueue_remove(&osg.queue, task);
+    waitqueue_remove(&osg.waitqueue, task);
+    runqueue_remove(&osg.runqueue, task);
 
     return OSS_SUCCESS;
 }
@@ -225,7 +222,7 @@ os_status_t os_task_resume(os_task_t *task) {
 
     task->status = OS_TASK_STATUS_IDLE;
 
-    runqueue_add(&osg.queue, task);
+    runqueue_add(&osg.runqueue, task);
 
     return OSS_SUCCESS;
 }
@@ -250,13 +247,13 @@ os_status_t os_start(void) {
     }
 
     OS_ASSERT(osi_platform_setup() == OSS_SUCCESS);
-    OS_ASSERT(osg.queue != NULL);
+    OS_ASSERT(osg.runqueue != NULL);
 
     NVIC_SetPriority(PendSV_IRQn, 0xff);
     NVIC_SetPriority(SysTick_IRQn, 0x00);
 
     /* Running task is the first task in the runqueue. */
-    osg.running = osg.queue;
+    osg.running = osg.runqueue;
 
     /* Set PSP to the top of task's stack */
     __set_PSP((uint32_t)osg.running->sp + OS_STACK_BASIC_FRAME_SIZE);
@@ -317,16 +314,12 @@ os_status_t osi_dispatch(os_task_t *task) {
 
     // If this task was waiting and is being given a chance, change queues.
     if (task->status == OS_TASK_STATUS_WAIT) {
-        waitqueue_remove(&osg.waiting, task);
-        runqueue_add(&osg.queue, task);
+        waitqueue_remove(&osg.waitqueue, task);
+        runqueue_add(&osg.runqueue, task);
         #if defined(OS_CONFIG_DEBUG_SCHEDULE)
         os_printf("%s: running\n", task->name);
         #endif
     }
-
-    task->delay = 0;
-    task->flags = 0;
-    task->status = OS_TASK_STATUS_ACTIVE;
 
     // NOTE: Should the status update happen when we actually switch?
     os_task_t *running = (os_task_t *)osg.running;
@@ -338,21 +331,25 @@ os_status_t osi_dispatch(os_task_t *task) {
         OS_ASSERT(running->status != OS_TASK_STATUS_IDLE);
         break;
     case OS_TASK_STATUS_WAIT:
-        runqueue_remove(&osg.queue, running);
-        waitqueue_add(&osg.waiting, running);
+        runqueue_remove(&osg.runqueue, running);
+        waitqueue_add(&osg.waitqueue, running);
         #if defined(OS_CONFIG_DEBUG_SCHEDULE)
         os_printf("%s: waiting\n", running->name);
         #endif
         break;
     case OS_TASK_STATUS_SUSPENDED:
     case OS_TASK_STATUS_FINISHED:
-        runqueue_remove(&osg.queue, running);
+        runqueue_remove(&osg.runqueue, running);
         break;
     }
 
+    task->delay = 0;
+    task->flags = 0;
+    task->status = OS_TASK_STATUS_ACTIVE;
+
     #if defined(OS_CONFIG_PARANOIA)
     if (task == osg.idle) {
-        OS_ASSERT(runqueue_length(osg.queue) == 1);
+        OS_ASSERT(runqueue_length(osg.runqueue) == 1);
     }
     #endif
 
@@ -363,8 +360,8 @@ os_status_t osi_dispatch(os_task_t *task) {
     return OSS_SUCCESS;
 }
 
-#define OS_WAITQUEUE_NEXT_WRAPPED(n)   (((n)->nrp == NULL) ? osg.waiting : (n)->nrp)
-#define OS_RUNQUEUE_NEXT_WRAPPED(n)    (((n)->nrp == NULL) ? osg.queue : (n)->nrp)
+#define OS_WAITQUEUE_NEXT_WRAPPED(n)   (((n)->nrp == NULL) ? osg.waitqueue : (n)->nrp)
+#define OS_RUNQUEUE_NEXT_WRAPPED(n)    (((n)->nrp == NULL) ? osg.runqueue : (n)->nrp)
 
 static bool task_is_running(os_task_t *task) {
     return task->status == OS_TASK_STATUS_ACTIVE || task->status == OS_TASK_STATUS_IDLE;
@@ -397,7 +394,7 @@ static os_task_t *find_new_task(os_task_t *running) {
                 // Go back to the beginning, which either has tasks of higher
                 // priority that should run or has more tasks of our own
                 // priority or we will find ourselves.
-                task = osg.queue;
+                task = osg.runqueue;
             }
         }
         else {
@@ -421,7 +418,7 @@ os_status_t osi_schedule() {
 
     // Check to see if anything in the waitqueue is free to go.
     uint32_t now = os_uptime();
-    for (os_task_t *task = osg.waiting; task != NULL; task = task->nrp) {
+    for (os_task_t *task = osg.waitqueue; task != NULL; task = task->nrp) {
         if (now >= task->delay) {
             new_task = task;
             break;
