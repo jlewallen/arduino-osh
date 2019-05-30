@@ -34,10 +34,8 @@ os_status_t osi_mutex_acquire(os_mutex_t *mutex, uint16_t to) {
 
     // Check for an easy acquire.
     if (mutex->level == 0) {
-        // osi_printf("%s: immediate acq\n", task->name);
         mutex->owner = task;
         mutex->level = 1;
-        task->mutex = mutex;
         return OSS_SUCCESS;
     }
 
@@ -69,18 +67,15 @@ os_status_t osi_mutex_release(os_mutex_t *mutex) {
     }
 
     /* Free the mutex and the check for blocked tasks. */
-    OS_ASSERT(mutex->owner->mutex == mutex);
-    mutex->owner->mutex = NULL;
+    OS_ASSERT(mutex->owner->mutex == NULL);
     mutex->owner = NULL;
 
     /* Is somebody waiting for this mutex? */
     if (mutex->blocked.tasks != NULL) {
         os_task_t *blocked_task = blocked_deq(mutex);
-        // osi_printf("%s: waking to acquire %p\n", blocked_task->name, mutex);
         mutex->owner = blocked_task;
         mutex->level = 1;
-        blocked_task->mutex = mutex;
-        osi_task_return_value(blocked_task, OSS_SUCCESS);
+        osi_task_set_stacked_return(blocked_task, OSS_SUCCESS);
         osi_dispatch(blocked_task);
     }
 

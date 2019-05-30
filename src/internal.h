@@ -40,6 +40,16 @@ os_status_t osi_platform_setup();
 /**
  *
  */
+uint32_t osi_platform_uptime();
+
+/**
+ *
+ */
+uint32_t osi_platform_delay(uint32_t ms);
+
+/**
+ *
+ */
 os_status_t osi_dispatch(os_task_t *task);
 
 /**
@@ -70,7 +80,12 @@ os_tuple_t *osi_task_return_tuple(os_task_t *task);
 /**
  *
  */
-uint32_t osi_task_return_value(os_task_t *task, uint32_t v0);
+uint32_t osi_task_get_stacked_return(os_task_t *task);
+
+/**
+ *
+ */
+uint32_t osi_task_set_stacked_return(os_task_t *task, uint32_t v0);
 
 typedef enum {
     OS_ERROR_NONE,

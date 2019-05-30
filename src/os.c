@@ -148,6 +148,7 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
     task->queue = NULL;
     task->mutex = NULL;
     task->nblocked = NULL;
+    task->message = NULL;
     task->nrp = NULL;
     task->priority = OS_PRIORITY_NORMAL;
     #if defined(OS_CONFIG_DEBUG)
@@ -299,13 +300,12 @@ os_status_t osi_dispatch(os_task_t *task) {
     if ((task->flags & OS_TASK_FLAG_MUTEX) == OS_TASK_FLAG_MUTEX) {
         OS_ASSERT(task->queue == NULL);
         OS_ASSERT(task->mutex != NULL);
-        // OS_ASSERT(task->mutex->blocked.tasks == task);
+        // OS_ASSERT(task->mutex->blocked.tasks != NULL);
 
         #if defined(OS_CONFIG_DEBUG_MUTEXES)
         os_printf("%s: removed from mutex %p\n", task->name, task->mutex);
         #endif
 
-        task->mutex->blocked.tasks = task->mutex->blocked.tasks->nblocked;
         task->nblocked = NULL;
         task->queue = NULL;
         task->mutex = NULL;
@@ -314,12 +314,12 @@ os_status_t osi_dispatch(os_task_t *task) {
     if ((task->flags & OS_TASK_FLAG_QUEUE) == OS_TASK_FLAG_QUEUE) {
         OS_ASSERT(task->mutex == NULL);
         OS_ASSERT(task->queue != NULL);
+        // OS_ASSERT(task->queue->blocked.tasks != NULL);
 
         #if defined(OS_CONFIG_DEBUG_QUEUES)
         os_printf("%s: removed from queue %p\n", task->name, task->queue);
         #endif
 
-        task->queue->blocked.tasks = task->queue->blocked.tasks->nblocked;
         task->nblocked = NULL;
         task->queue = NULL;
         task->mutex = NULL;
@@ -493,10 +493,15 @@ os_tuple_t *osi_task_return_tuple(os_task_t *task) {
     return (os_tuple_t *)osi_task_return_regs(task);
 }
 
-uint32_t osi_task_return_value(os_task_t *task, uint32_t v0) {
+uint32_t osi_task_set_stacked_return(os_task_t *task, uint32_t v0) {
     uint32_t *regs = osi_task_return_regs(task);
     regs[0] = v0;
     return v0;
+}
+
+uint32_t osi_task_get_stacked_return(os_task_t *task) {
+    uint32_t *regs = osi_task_return_regs(task);
+    return regs[0];
 }
 
 os_status_t osi_irs_systick() {

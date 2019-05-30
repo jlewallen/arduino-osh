@@ -19,9 +19,6 @@ void ScheduleSuite::TearDown() {
     ASSERT_EQ(os_teardown(), OSS_SUCCESS);
 }
 
-static void task_handler_idle(void *p);
-static void task_handler_test(void *p);
-
 TEST_F(ScheduleSuite, OneTask_Initialize) {
     os_task_t tasks[1];
     uint32_t stacks[1][OS_STACK_MINIMUM_SIZE_WORDS];
@@ -47,6 +44,7 @@ TEST_F(ScheduleSuite, OneTask_Initialize) {
     ASSERT_EQ(tasks[0].delay, 0);
     ASSERT_EQ(tasks[0].queue, nullptr);
     ASSERT_EQ(tasks[0].mutex, nullptr);
+    ASSERT_EQ(tasks[0].message, nullptr);
     ASSERT_EQ(tasks[0].nblocked, nullptr);
     ASSERT_EQ(tasks[0].nrp, nullptr);
     ASSERT_EQ(tasks[0].np, nullptr);
@@ -68,8 +66,8 @@ TEST_F(ScheduleSuite, OneTask_Schedule) {
     ASSERT_EQ(os_start(), OSS_SUCCESS);
 
     ASSERT_EQ(osg.scheduled, nullptr);
-    ASSERT_EQ(osi_schedule(), OSS_SUCCESS);
 
+    ASSERT_EQ(osi_schedule(), OSS_SUCCESS);
     /* No other tasks to schedule. */
     ASSERT_EQ(osg.scheduled, nullptr);
 }
@@ -78,10 +76,7 @@ TEST_F(ScheduleSuite, TwoTasks_Initialize) {
     os_task_t tasks[2];
     uint32_t stacks[2][OS_STACK_MINIMUM_SIZE_WORDS];
 
-    ASSERT_EQ(os_initialize(), OSS_SUCCESS);
-    ASSERT_EQ(os_task_initialize(&tasks[0], "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, stacks[0], sizeof(stacks[0])), OSS_SUCCESS);
-    ASSERT_EQ(os_task_initialize(&tasks[1], "task0", OS_TASK_START_RUNNING, &task_handler_test, NULL, stacks[1], sizeof(stacks[1])), OSS_SUCCESS);
-    ASSERT_EQ(os_start(), OSS_SUCCESS);
+    two_tasks_setup(tasks, stacks);
 
     ASSERT_EQ(osg.ntasks, 2);
     ASSERT_EQ(osg.idle, &tasks[0]);
@@ -103,20 +98,111 @@ TEST_F(ScheduleSuite, TwoTasks_Schedule) {
     os_task_t tasks[2];
     uint32_t stacks[2][OS_STACK_MINIMUM_SIZE_WORDS];
 
-    ASSERT_EQ(os_initialize(), OSS_SUCCESS);
-    ASSERT_EQ(os_task_initialize(&tasks[0], "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, stacks[0], sizeof(stacks[0])), OSS_SUCCESS);
-    ASSERT_EQ(os_task_initialize(&tasks[1], "task0", OS_TASK_START_RUNNING, &task_handler_test, NULL, stacks[1], sizeof(stacks[1])), OSS_SUCCESS);
-    ASSERT_EQ(os_start(), OSS_SUCCESS);
+    two_tasks_setup(tasks, stacks);
 
     ASSERT_EQ(osg.scheduled, nullptr);
+
+    /* Run scheduler, no scheduled task though, no lower priority tasks. */
     ASSERT_EQ(osi_schedule(), OSS_SUCCESS);
-
-    /* No other tasks to schedule. */
     ASSERT_EQ(osg.scheduled, nullptr);
+
+    /* Current task is waiting, idle can be scheduled now. */
+    tests_sleep_task(tasks[1]);
+
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[0]);
 }
 
-static void task_handler_idle(void *p) {
+TEST_F(ScheduleSuite, TwoTasks_SleepsThenWakes) {
+    os_task_t tasks[2];
+    uint32_t stacks[2][OS_STACK_MINIMUM_SIZE_WORDS];
+
+    two_tasks_setup(tasks, stacks);
+
+    ASSERT_EQ(osg.scheduled, nullptr);
+
+    /* Run scheduler, no scheduled task though, no lower priority tasks. */
+    ASSERT_EQ(osi_schedule(), OSS_SUCCESS);
+    ASSERT_EQ(osg.scheduled, nullptr);
+
+    tests_platform_time(1000);
+
+    /* Current task is waiting, idle can be scheduled now. */
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[1]);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[0]);
+
+    /* Just before the time the other task is supposed to awake. */
+    tests_platform_time(1999);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[0]);
+
+    ASSERT_EQ(tasks[1].delay, 2000);
+
+    /* Task should awake now. */
+    tests_platform_time(2000);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[1]);
+    ASSERT_EQ(tasks[1].delay, 0);
 }
 
-static void task_handler_test(void *p) {
+TEST_F(ScheduleSuite, TwoCompetingTasks_Schedule) {
+    os_task_t tasks[3];
+    uint32_t stacks[3][OS_STACK_MINIMUM_SIZE_WORDS];
+
+    three_tasks_setup(tasks, stacks);
+
+    ASSERT_EQ(osg.scheduled, nullptr);
+
+    /* task-b will get a chance. */
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[2]);
+
+    /* task-a will get a chance. */
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[1]);
+}
+
+TEST_F(ScheduleSuite, ManyTasks_ScheduleAsTasksGraduallySleep) {
+    os_task_t tasks[5];
+    uint32_t stacks[5][OS_STACK_MINIMUM_SIZE_WORDS];
+
+    five_tasks_setup(tasks, stacks);
+
+    ASSERT_EQ(osg.scheduled, nullptr);
+
+    /* Tasks get a chance in order. */
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[2]);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[3]);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[4]);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[1]);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[2]);
+
+    /* Gradually sleep tasks... */
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[2]);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[3]);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[4]);
+
+    /* Gradually sleep tasks... */
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[4]);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[1]);
+
+    /* Gradually sleep tasks... */
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[1]);
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[3]);
+
+    /* Gradually sleep tasks... */
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[3]);
+
+    tests_schedule_task_and_switch();
+    ASSERT_EQ(osg.running, &tasks[0]);
 }

@@ -31,6 +31,8 @@
 #include "printf.h"
 #include "segger/SEGGER_RTT.h"
 #include "types.h"
+#include "arduino.h"
+#include "linux.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -46,6 +48,20 @@ inline const char *os_status_str(os_status_t status) {
     case OSS_ERROR_MEM: return "OSS_ERROR_MEM";
     case OSS_ERROR_INT: return "OSS_ERROR_INT";
     case OSS_ERROR_INVALID: return "OSS_ERROR_INVALID";
+    default: return "UNKNOWN";
+    }
+}
+
+/**
+ * Map an os_task_status_t to a string for display/logging.
+ */
+inline const char *os_task_status_str(os_task_status status) {
+    switch (status) {
+    case OS_TASK_STATUS_IDLE: return "OS_TASK_STATUS_IDLE";
+    case OS_TASK_STATUS_ACTIVE: return "OS_TASK_STATUS_ACTIVE";
+    case OS_TASK_STATUS_WAIT: return "OS_TASK_STATUS_WAIT";
+    case OS_TASK_STATUS_SUSPENDED: return "OS_TASK_STATUS_SUSPENDED";
+    case OS_TASK_STATUS_FINISHED: return "OS_TASK_STATUS_FINISHED";
     default: return "UNKNOWN";
     }
 }
@@ -144,7 +160,6 @@ void osi_assert(const char *assertion, const char *file, int line);
 }
 #endif
 
-#include "arduino.h"
 #include "service.h"
 
 #endif /* OS_H */

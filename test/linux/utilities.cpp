@@ -13,6 +13,8 @@
  */
 #include "utilities.h"
 
+#include <internal.h>
+
 void PrintTo(os_task_t *task, std::ostream* os) {
     if (task == NULL) {
         *os << "<null>";
@@ -20,6 +22,69 @@ void PrintTo(os_task_t *task, std::ostream* os) {
     else {
         *os << "T<'" << task->name << "'>";
     }
+}
+
+void PrintTo(volatile os_task_t *task, std::ostream* os) {
+    if (task == NULL) {
+        *os << "<null>";
+    }
+    else {
+        *os << "T<'" << task->name << "'>";
+    }
+}
+
+os_task_t *tests_task_switch(void) {
+    OS_ASSERT(osg.scheduled != NULL);
+
+    osg.running = osg.scheduled;
+    osg.scheduled = NULL;
+
+    return (os_task_t *)osg.running;
+}
+
+os_task_t *tests_schedule_task_and_switch() {
+    osi_schedule();
+    if (osg.scheduled != NULL) {
+        return tests_task_switch();
+    }
+    return (os_task_t *)osg.running;
+}
+
+os_task_t *tests_sleep_task(os_task_t &task) {
+    task.status = OS_TASK_STATUS_WAIT;
+    task.delay = os_uptime() + 1000;
+    return &task;
+}
+
+os_task_t *tests_sleep_running_task() {
+    tests_sleep_task(*(os_task_t *)osg.running);
+    return (os_task_t *)osg.running;
+}
+
+void tests_dump_runqueue() {
+    std::cerr << "osg.rq =";
+    for (auto iter = osg.runqueue; iter != NULL; iter = iter->nrp) {
+        std::cerr << " T<'" << iter->name << "' " << os_task_status_str(iter->status) << ">";
+        if (osg.running == iter) std::cerr << "*R*";
+        if (osg.scheduled == iter) std::cerr << "*S*";
+    }
+    std::cerr << std::endl;
+}
+
+void tests_dump_waitqueue() {
+    std::cerr << "osg.wq =";
+    for (auto iter = osg.waitqueue; iter != NULL; iter = iter->nrp) {
+        std::cerr << " T<'" << iter->name << "' " << os_task_status_str(iter->status) << ">";
+        if (osg.running == iter) std::cerr << "*R*";
+        if (osg.scheduled == iter) std::cerr << "*S*";
+    }
+    std::cerr << std::endl;
+}
+
+void task_handler_idle(void *p) {
+}
+
+void task_handler_test(void *p) {
 }
 
 extern "C" {
