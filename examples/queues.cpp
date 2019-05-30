@@ -54,6 +54,7 @@ static void task_handler_sender(void *params) {
         else {
             auto elapsed = os_uptime() - started;
             os_printf("%s: fail (%s) (after %lums)\n", os_task_name(), os_status_str(status), elapsed);
+            free(message);
             os_delay(100);
         }
 
