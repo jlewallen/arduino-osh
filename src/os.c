@@ -30,15 +30,13 @@ os_globals_t osg = {
     0,     /* ntasks */
     NULL,  /* idle */
     NULL,  /* tasks */
-    NULL,  /* delayed */
+    NULL,  /* runqueue */
+    NULL,  /* waitqueue */
 };
 
 #if defined(OSH_MTB)
 __attribute__((__aligned__(DEBUG_MTB_SIZE_BYTES))) uint32_t mtb[DEBUG_MTB_SIZE];
 #endif
-
-#define OSH_STACK_MAGIC_WORD     0xE25A2EA5U
-#define OSH_STACK_MAGIC_PATTERN  0xCCCCCCCCU
 
 static void infinite_loop() __attribute__ ((noreturn));
 
@@ -66,6 +64,19 @@ os_status_t os_initialize() {
     #endif
 
     osg.state = OS_STATE_INITIALIZED;
+
+    return OSS_SUCCESS;
+}
+
+os_status_t os_teardown() {
+    osg.running = NULL;
+    osg.scheduled = NULL;
+    osg.state = OS_STATE_DEFAULT;
+    osg.ntasks = 0;
+    osg.idle = NULL;
+    osg.tasks = NULL;
+    osg.runqueue = NULL;
+    osg.waitqueue = NULL;
 
     return OSS_SUCCESS;
 }
@@ -263,14 +274,14 @@ os_status_t os_start(void) {
     /* Execute DSB/ISB after changing CONTORL (recommended) */
     __DSB();
     __ISB();
-    #endif
 
     osg.state = OS_STATE_STARTED;
     osg.running->handler(osg.running->params);
 
     OS_ASSERT(0);
+    #endif
 
-    return true;
+    return OSS_SUCCESS;
 }
 
 os_status_t osi_dispatch(os_task_t *task) {

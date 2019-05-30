@@ -88,6 +88,11 @@ os_status_t os_start();
 /**
  *
  */
+os_status_t os_teardown();
+
+/**
+ *
+ */
 os_task_status os_task_get_status(os_task_t *task);
 
 /**

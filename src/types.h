@@ -62,6 +62,16 @@ extern "C" {
 /**
  *
  */
+#define OSH_STACK_MAGIC_WORD                          (0xE25A2EA5U)
+
+/**
+ *
+ */
+#define OSH_STACK_MAGIC_PATTERN                       (0xCCCCCCCCU)
+
+/**
+ *
+ */
 #define OS_ASSERT(expression)                         (void)((expression) || (os_assert(#expression, __FILE__, __LINE__), 0))
 
 /**
@@ -253,8 +263,8 @@ typedef struct os_basic_sframe_t {
     uint32_t r2;
     uint32_t r3;
     uint32_t r12;
-    void *lr;
-    void *pc;
+    uint32_t lr;
+    uint32_t pc;
     uint32_t xpsr;
 } os_basic_sframe_t;
 
