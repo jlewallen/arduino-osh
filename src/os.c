@@ -169,7 +169,7 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
     }
 
     /* If the task is ready to go, add to the runqueue. */
-    if (task->status == OS_TASK_STATUS_IDLE) {
+    if (task->status != OS_TASK_STATUS_SUSPENDED) {
         runqueue_add(&osg.runqueue, task);
     }
 
@@ -262,6 +262,7 @@ os_status_t os_start(void) {
 
     /* Running task is the first task in the runqueue. */
     osg.running = osg.runqueue;
+    osg.running->status = OS_TASK_STATUS_ACTIVE;
 
     #if defined(__SAMD21__) || defined(__SAMD51__)
     NVIC_SetPriority(PendSV_IRQn, 0xff);
@@ -492,9 +493,10 @@ os_tuple_t *osi_task_return_tuple(os_task_t *task) {
     return (os_tuple_t *)osi_task_return_regs(task);
 }
 
-void osi_task_return_value(os_task_t *task, uint32_t v0) {
+uint32_t osi_task_return_value(os_task_t *task, uint32_t v0) {
     uint32_t *regs = osi_task_return_regs(task);
     regs[0] = v0;
+    return v0;
 }
 
 os_status_t osi_irs_systick() {
@@ -504,16 +506,18 @@ os_status_t osi_irs_systick() {
     return OSS_SUCCESS;
 }
 
-inline void os_assert(const char *assertion, const char *file, int line) {
+#if defined(__SAMD21__) || defined(__SAMD51__)
+inline void osi_assert(const char *assertion, const char *file, int line) {
     os_printf("Assertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
     osi_error(OS_ERROR_ASSERTION);
 }
+#endif
 
 void osi_error(os_error_kind_t code) {
     #if defined(__SAMD21__) || defined(__SAMD51__)
     __asm__("BKPT");
-    #endif
     infinite_loop();
+    #endif
 }
 
 void osi_stack_check() {

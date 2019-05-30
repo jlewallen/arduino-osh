@@ -72,7 +72,7 @@ extern "C" {
 /**
  *
  */
-#define OS_ASSERT(expression)                         (void)((expression) || (os_assert(#expression, __FILE__, __LINE__), 0))
+#define OS_ASSERT(expression)                         (void)((expression) || (osi_assert(#expression, __FILE__, __LINE__), 0))
 
 /**
  *

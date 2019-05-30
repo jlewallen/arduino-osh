@@ -1,6 +1,9 @@
-#include <os.h>
-
 #include <gtest/gtest.h>
+
+#include <os.h>
+#include <internal.h>
+
+#include "utilities.h"
 
 class ScheduleSuite : public ::testing::Test {
 protected:
@@ -19,7 +22,7 @@ void ScheduleSuite::TearDown() {
 static void task_handler_idle(void *p);
 static void task_handler_test(void *p);
 
-TEST_F(ScheduleSuite, Initialize_OneTask) {
+TEST_F(ScheduleSuite, OneTask_Initialize) {
     os_task_t tasks[1];
     uint32_t stacks[1][OS_STACK_MINIMUM_SIZE_WORDS];
 
@@ -33,7 +36,7 @@ TEST_F(ScheduleSuite, Initialize_OneTask) {
     ASSERT_EQ(osg.running, &tasks[0]);
     ASSERT_EQ(osg.scheduled, nullptr);
 
-    ASSERT_EQ(tasks[0].status, OS_TASK_STATUS_IDLE);
+    ASSERT_EQ(tasks[0].status, OS_TASK_STATUS_ACTIVE);
     ASSERT_EQ(tasks[0].stack_size, sizeof(stacks[0]));
     ASSERT_EQ(tasks[0].stack, &stacks[0][0]);
     ASSERT_EQ(tasks[0].sp, &stacks[0][OS_STACK_MINIMUM_SIZE_WORDS - OS_STACK_BASIC_FRAME_SIZE]);
@@ -50,13 +53,28 @@ TEST_F(ScheduleSuite, Initialize_OneTask) {
 
     auto sp = (os_our_sframe_t *)tasks[0].sp;
     ASSERT_EQ(sp->basic.xpsr, 0x01000000);
-    ASSERT_EQ(sp->basic.pc, (uint32_t)(uintptr_t)task_handler_idle);
+    ASSERT_EQ(sp->basic.pc, ((uint32_t)(uintptr_t)task_handler_idle) & ~0x01UL);
     ASSERT_NE(sp->basic.lr, 0x0);
     ASSERT_EQ(sp->basic.r0, 0x0);
     ASSERT_EQ(stacks[0][0], OSH_STACK_MAGIC_WORD);
 }
 
-TEST_F(ScheduleSuite, Initialize_TwoTasks) {
+TEST_F(ScheduleSuite, OneTask_Schedule) {
+    os_task_t tasks[1];
+    uint32_t stacks[1][OS_STACK_MINIMUM_SIZE_WORDS];
+
+    ASSERT_EQ(os_initialize(), OSS_SUCCESS);
+    ASSERT_EQ(os_task_initialize(&tasks[0], "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, stacks[0], sizeof(stacks[0])), OSS_SUCCESS);
+    ASSERT_EQ(os_start(), OSS_SUCCESS);
+
+    ASSERT_EQ(osg.scheduled, nullptr);
+    ASSERT_EQ(osi_schedule(), OSS_SUCCESS);
+
+    /* No other tasks to schedule. */
+    ASSERT_EQ(osg.scheduled, nullptr);
+}
+
+TEST_F(ScheduleSuite, TwoTasks_Initialize) {
     os_task_t tasks[2];
     uint32_t stacks[2][OS_STACK_MINIMUM_SIZE_WORDS];
 
@@ -75,23 +93,30 @@ TEST_F(ScheduleSuite, Initialize_TwoTasks) {
     ASSERT_EQ(osg.tasks->np, &tasks[0]);
 
     ASSERT_EQ(tasks[0].status, OS_TASK_STATUS_IDLE);
-    ASSERT_EQ(tasks[1].status, OS_TASK_STATUS_IDLE);
+    ASSERT_EQ(tasks[1].status, OS_TASK_STATUS_ACTIVE);
 
     ASSERT_EQ(tasks[0].priority, OS_PRIORITY_IDLE);
     ASSERT_EQ(tasks[1].priority, OS_PRIORITY_NORMAL);
+}
+
+TEST_F(ScheduleSuite, TwoTasks_Schedule) {
+    os_task_t tasks[2];
+    uint32_t stacks[2][OS_STACK_MINIMUM_SIZE_WORDS];
+
+    ASSERT_EQ(os_initialize(), OSS_SUCCESS);
+    ASSERT_EQ(os_task_initialize(&tasks[0], "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, stacks[0], sizeof(stacks[0])), OSS_SUCCESS);
+    ASSERT_EQ(os_task_initialize(&tasks[1], "task0", OS_TASK_START_RUNNING, &task_handler_test, NULL, stacks[1], sizeof(stacks[1])), OSS_SUCCESS);
+    ASSERT_EQ(os_start(), OSS_SUCCESS);
+
+    ASSERT_EQ(osg.scheduled, nullptr);
+    ASSERT_EQ(osi_schedule(), OSS_SUCCESS);
+
+    /* No other tasks to schedule. */
+    ASSERT_EQ(osg.scheduled, nullptr);
 }
 
 static void task_handler_idle(void *p) {
 }
 
 static void task_handler_test(void *p) {
-}
-
-void PrintTo(os_task_t *task, std::ostream* os) {
-    if (task == NULL) {
-        *os << "<null>";
-    }
-    else {
-        *os << "T<'" << task->name << "'>";
-    }
 }

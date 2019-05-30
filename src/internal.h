@@ -22,6 +22,12 @@
 #include "faults.h"
 #include "utilities.h"
 
+#if defined(ARDUINO)
+#define OS_NORETURN  __attribute__ ((noreturn))
+#else
+#define OS_NORETURN
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -64,7 +70,7 @@ os_tuple_t *osi_task_return_tuple(os_task_t *task);
 /**
  *
  */
-void osi_task_return_value(os_task_t *task, uint32_t v0);
+uint32_t osi_task_return_value(os_task_t *task, uint32_t v0);
 
 typedef enum {
     OS_ERROR_NONE,
@@ -76,7 +82,7 @@ typedef enum {
 /**
  *
  */
-void osi_error(os_error_kind_t code) __attribute__ ((noreturn));
+void osi_error(os_error_kind_t code) OS_NORETURN;
 
 #if defined(__cplusplus)
 }

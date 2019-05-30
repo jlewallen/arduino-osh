@@ -138,7 +138,7 @@ uint32_t os_free_memory();
 /**
  *
  */
-void os_assert(const char *assertion, const char *file, int line) __attribute__ ((noreturn));
+void osi_assert(const char *assertion, const char *file, int line);
 
 #if defined(__cplusplus)
 }
