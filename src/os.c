@@ -145,6 +145,8 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
     task->delay = 0;
     task->flags = 0;
     task->started = os_uptime();
+    task->runtime = 0;
+    task->scheduled = 0;
     task->queue = NULL;
     task->mutex = NULL;
     task->nblocked = NULL;
@@ -190,6 +192,8 @@ os_status_t os_task_start(os_task_t *task) {
     task->mutex = NULL;
     task->nblocked = NULL;
     task->started = os_uptime();
+    task->runtime = 0;
+    task->scheduled = 0;
     #if defined(OS_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif
@@ -290,8 +294,11 @@ os_status_t osi_dispatch(os_task_t *task) {
     OS_ASSERT(task != NULL);
     OS_ASSERT(osg.running != NULL);
 
+    if (osg.running == task) {
+        return OSS_ERROR_NOP;
+    }
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
-    if (task != osg.running) {
+    else {
         os_printf("%s\n", task->name);
     }
     #endif
@@ -366,15 +373,21 @@ os_status_t osi_dispatch(os_task_t *task) {
     task->flags = 0;
     task->status = OS_TASK_STATUS_ACTIVE;
 
+    /* Update the time the task has been running and prepare the new task. */
+    uint32_t now = os_uptime();
+    if (running->scheduled > 0) {
+        running->runtime += now - running->scheduled;
+        running->scheduled = 0;
+    }
+    task->scheduled = now;
+
     #if defined(OS_CONFIG_PARANOIA)
     if (task == osg.idle) {
         OS_ASSERT(runqueue_length(osg.runqueue) == 1);
     }
     #endif
 
-    if (osg.running != task) {
-        osg.scheduled = task;
-    }
+    osg.scheduled = task;
 
     return OSS_SUCCESS;
 }

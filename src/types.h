@@ -139,6 +139,8 @@ typedef struct os_task_t {
     os_priority_t priority;
     void *message;
     uint32_t started;
+    uint32_t runtime;
+    uint32_t scheduled;
     uint32_t delay;
     uint32_t flags;
     #if defined(OS_CONFIG_DEBUG)
@@ -241,6 +243,7 @@ typedef uint32_t os_status_t;
 #define OSS_ERROR_MEM                                 (0x3) /** Insufficient memory. */
 #define OSS_ERROR_INT                                 (0x4) /** Operation was interrupted. */
 #define OSS_ERROR_INVALID                             (0x5) /** Invalid operation. */
+#define OSS_ERROR_NOP                                 (0x6) /** No operation. */
 
 /**
  * Tuple for returning multiple values from a service call. This is modified in
