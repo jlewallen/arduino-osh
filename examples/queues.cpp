@@ -1,21 +1,22 @@
 #include <Arduino.h>
 #include <os.h>
 #include <malloc.h>
+#include <sam.h>
 
-#define NUMBER_OF_RECEIVERS            (4)
-#define RECEIVER_PROCESSING_MINIMUM    (10)
-#define RECEIVER_PROCESSING_MAXIMUM    (500)
+#define NUMBER_OF_RECEIVERS            (8)
+#define RECEIVER_PROCESSING_MINIMUM    (400)
+#define RECEIVER_PROCESSING_MAXIMUM    (800)
 
-#define NUMBER_OF_SENDERS              (6)
-#define SENDER_DELAY_MINIMUM           (10)
-#define SENDER_DELAY_MAXIMUM           (200)
+#define NUMBER_OF_SENDERS              (2)
+#define SENDER_DELAY_MINIMUM           (100)
+#define SENDER_DELAY_MAXIMUM           (500)
 
 static os_task_t idle_task;
 static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];
 static os_task_t sender_tasks[NUMBER_OF_SENDERS];
 static os_task_t receiver_tasks[NUMBER_OF_RECEIVERS];
 
-os_queue_define(queue, 4);
+os_queue_define(queue, 10);
 
 static const char *os_pstrdup(const char *f, ...) {
     char message[64];
@@ -44,7 +45,7 @@ static void task_handler_sender(void *params) {
     while (true) {
         auto started = os_uptime();
         auto message = (char *)os_pstrdup("message<%d>", counter++);
-        auto tuple = os_queue_enqueue(os_queue(queue), message, 1000);
+        auto tuple = os_queue_enqueue(os_queue(queue), message, 250);
         auto status = tuple.status;
         if (status == OSS_SUCCESS) {
             auto wms = random(SENDER_DELAY_MINIMUM, SENDER_DELAY_MAXIMUM);
@@ -73,7 +74,7 @@ static void task_handler_receiver(void *params) {
 
     while (true) {
         auto started = os_uptime();
-        auto tuple = os_queue_dequeue(os_queue(queue), 1000);
+        auto tuple = os_queue_dequeue(os_queue(queue), 250);
         if (tuple.status == OSS_SUCCESS) {
             auto message = (const char *)tuple.value.ptr;
             auto wms = random(RECEIVER_PROCESSING_MINIMUM, RECEIVER_PROCESSING_MAXIMUM);
@@ -104,6 +105,10 @@ void setup() {
     os_printf("starting: %d (0x%p + %lu) (%lu used) (%d)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory(), __get_CONTROL());
     #else
     os_printf("starting: %d\n", os_free_memory());
+    #endif
+
+    #if defined(__SAMD51__)
+    os_printf("starting: dhcsr: %x\n", CoreDebug->DHCSR);
     #endif
 
     OS_CHECK(os_initialize());
