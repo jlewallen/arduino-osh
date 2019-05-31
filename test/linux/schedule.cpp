@@ -110,8 +110,7 @@ TEST_F(ScheduleSuite, TwoTasks_Schedule) {
     /* Current task is waiting, idle can be scheduled now. */
     tests_sleep_task(tasks[1]);
 
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[0]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[0]);
 }
 
 TEST_F(ScheduleSuite, TwoTasks_SleepsThenWakes) {
@@ -133,15 +132,13 @@ TEST_F(ScheduleSuite, TwoTasks_SleepsThenWakes) {
 
     /* Just before the time the other task is supposed to awake. */
     tests_platform_time(1999);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[0]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[0]);
 
     ASSERT_EQ(tasks[1].delay, 2000);
 
     /* Task should awake now. */
     tests_platform_time(2000);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[1]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
     ASSERT_EQ(tasks[1].delay, 0);
 }
 
@@ -154,12 +151,10 @@ TEST_F(ScheduleSuite, TwoCompetingTasks_Schedule) {
     ASSERT_EQ(osg.scheduled, nullptr);
 
     /* task-b will get a chance. */
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[2]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[2]);
 
     /* task-a will get a chance. */
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[1]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
 }
 
 TEST_F(ScheduleSuite, ManyTasks_ScheduleAsTasksGraduallySleep) {
@@ -171,16 +166,11 @@ TEST_F(ScheduleSuite, ManyTasks_ScheduleAsTasksGraduallySleep) {
     ASSERT_EQ(osg.scheduled, nullptr);
 
     /* Tasks get a chance in order. */
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[2]);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[3]);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[4]);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[1]);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[2]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[2]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[3]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[4]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[2]);
 
     /* Gradually sleep tasks... */
     ASSERT_EQ(tests_sleep_running_task(), &tasks[3]);

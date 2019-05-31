@@ -84,13 +84,7 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_SendBlock) {
 TEST_F(QueuesSuite, ThreeTasks_Queue_ReceiveBlock) {
     os_task_t tasks[3];
     uint32_t stacks[3][OS_STACK_MINIMUM_SIZE_WORDS];
-    const char *messages[5] = {
-        "message-0",
-        "message-1",
-        "message-2",
-        "message-3",
-        "message-4",
-    };
+    const char *message = "message-0";
 
     three_tasks_setup(tasks, stacks);
 
@@ -109,7 +103,7 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_ReceiveBlock) {
     ASSERT_EQ(os_queue(queue)->status, OS_QUEUE_BLOCKED_RECEIVE);
     ASSERT_EQ(tasks[1].queue, os_queue(queue));
 
-    ASSERT_EQ(osi_queue_enqueue(os_queue(queue), (void *)messages[0], 500), OSS_SUCCESS);
+    ASSERT_EQ(osi_queue_enqueue(os_queue(queue), (void *)message, 500), OSS_SUCCESS);
     ASSERT_EQ(tests_task_switch(), &tasks[1]);
 
     ASSERT_EQ(os_queue(queue)->blocked.tasks, nullptr);
@@ -117,18 +111,15 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_ReceiveBlock) {
 
     auto tuple = osi_task_stacked_return_tuple(&tasks[1]);
     ASSERT_EQ(tuple->status, OSS_SUCCESS);
-    ASSERT_EQ(tuple->value.ptr, messages[0]);
+    ASSERT_EQ(tuple->value.ptr, message);
 }
 
 TEST_F(QueuesSuite, ThreeTasks_Queue_TwoReceiveBlock) {
     os_task_t tasks[4];
     uint32_t stacks[4][OS_STACK_MINIMUM_SIZE_WORDS];
-    const char *messages[5] = {
+    const char *messages[2] = {
         "message-0",
         "message-1",
-        "message-2",
-        "message-3",
-        "message-4",
     };
 
     four_tasks_setup(tasks, stacks);
@@ -187,12 +178,11 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_TwoReceiveBlock) {
 TEST_F(QueuesSuite, ThreeTasks_Queue_TwoSendBlock) {
     os_task_t tasks[4];
     uint32_t stacks[4][OS_STACK_MINIMUM_SIZE_WORDS];
-    const char *messages[5] = {
+    const char *messages[4] = {
         "message-0",
         "message-1",
         "message-2",
         "message-3",
-        "message-4",
     };
 
     four_tasks_setup(tasks, stacks);
@@ -270,11 +260,11 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_SendBlockTimeOut) {
     tests_platform_time(500);
     ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
 
-    void *received = nullptr;
-    ASSERT_EQ(osi_queue_dequeue(os_queue(queue), &received, 500), OSS_SUCCESS);
-
     ASSERT_EQ(os_queue(queue)->blocked.tasks, nullptr);
     ASSERT_EQ(tasks[1].queue, nullptr);
+
+    void *received = nullptr;
+    ASSERT_EQ(osi_queue_dequeue(os_queue(queue), &received, 500), OSS_SUCCESS);
 
     ASSERT_EQ(received, message);
 }
@@ -305,10 +295,10 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_ReceiveBlockTimeOut) {
     tests_platform_time(500);
     ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
 
-    ASSERT_EQ(osi_queue_enqueue(os_queue(queue), (void *)message, 500), OSS_SUCCESS);
-
     ASSERT_EQ(os_queue(queue)->blocked.tasks, nullptr);
     ASSERT_EQ(tasks[1].queue, nullptr);
+
+    ASSERT_EQ(osi_queue_enqueue(os_queue(queue), (void *)message, 500), OSS_SUCCESS);
 
     // auto tuple = osi_task_stacked_return_tuple(&tasks[1]);
     // ASSERT_EQ(tuple->status, OSS_ERROR_TO);
