@@ -399,7 +399,7 @@ static os_task_t *find_new_task(os_task_t *running) {
     os_task_t *task = OS_RUNQUEUE_NEXT_WRAPPED(running);
     os_task_t *lower_priority = NULL;
     os_priority_t ours = running->priority;
-    for ( ; task != running; ) {
+    for ( ; task != running && task != lower_priority; ) {
         if (task_is_running(task)) {
             if (is_equal_or_higher_priority(task->priority, ours)) {
                 new_task = task;

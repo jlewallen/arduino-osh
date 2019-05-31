@@ -129,9 +129,7 @@ TEST_F(ScheduleSuite, TwoTasks_SleepsThenWakes) {
     tests_platform_time(1000);
 
     /* Current task is waiting, idle can be scheduled now. */
-    ASSERT_EQ(tests_sleep_running_task(), &tasks[1]);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[0]);
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[0]);
 
     /* Just before the time the other task is supposed to awake. */
     tests_platform_time(1999);
@@ -185,25 +183,70 @@ TEST_F(ScheduleSuite, ManyTasks_ScheduleAsTasksGraduallySleep) {
     ASSERT_EQ(osg.running, &tasks[2]);
 
     /* Gradually sleep tasks... */
-    ASSERT_EQ(tests_sleep_running_task(), &tasks[2]);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[3]);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[4]);
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[3]);
 
-    /* Gradually sleep tasks... */
-    ASSERT_EQ(tests_sleep_running_task(), &tasks[4]);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[1]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[4]);;
 
     /* Gradually sleep tasks... */
     ASSERT_EQ(tests_sleep_running_task(), &tasks[1]);
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[3]);
 
     /* Gradually sleep tasks... */
     ASSERT_EQ(tests_sleep_running_task(), &tasks[3]);
 
-    tests_schedule_task_and_switch();
-    ASSERT_EQ(osg.running, &tasks[0]);
+    /* Gradually sleep tasks... */
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[0]);
+}
+
+TEST_F(ScheduleSuite, ThreeTasks_HigherPrioritySuspended) {
+    os_task_t tasks[3];
+    uint32_t stacks[3][OS_STACK_MINIMUM_SIZE_WORDS];
+
+    three_tasks_setup(tasks, stacks);
+
+    // Give task-1 higher priority, this works because it's already the first
+    // one in the runqueue, otherwise we'd need to resort.
+    tasks[1].priority += 0x10;
+
+    // Really drive the point home.
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+
+    ASSERT_EQ(os_task_suspend(&tasks[1]), OSS_SUCCESS);
+
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[2]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[2]);
+
+    ASSERT_EQ(os_task_resume(&tasks[1]), OSS_SUCCESS);
+
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+}
+
+TEST_F(ScheduleSuite, ThreeTasks_HigherPrioritySleeps) {
+    os_task_t tasks[3];
+    uint32_t stacks[3][OS_STACK_MINIMUM_SIZE_WORDS];
+
+    three_tasks_setup(tasks, stacks);
+
+    // Give task-1 higher priority, this works because it's already the first
+    // one in the runqueue, otherwise we'd need to resort.
+    tasks[1].priority += 0x10;
+
+    // Really drive the point home.
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+
+    // Alright, sleep the task.
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[2]);
+
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[2]);
+
+    tests_platform_time(999);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[2]);
+
+    tests_platform_time(1000);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
 }

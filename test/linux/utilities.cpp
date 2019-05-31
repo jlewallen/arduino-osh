@@ -58,7 +58,7 @@ os_task_t *tests_sleep_task(os_task_t &task) {
 
 os_task_t *tests_sleep_running_task() {
     tests_sleep_task(*(os_task_t *)osg.running);
-    return (os_task_t *)osg.running;
+    return tests_schedule_task_and_switch();
 }
 
 void tests_dump_runqueue() {

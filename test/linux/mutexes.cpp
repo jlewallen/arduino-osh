@@ -192,5 +192,33 @@ TEST_F(MutexesSuite, ThreeTasks_Mutex_AcquireBlockTimeOut) {
     ASSERT_EQ(mutex.blocked.tasks, nullptr);
 }
 
-TEST_F(MutexesSuite, ThreeTasks_LowerPriorityTaskUnblocked) {
+TEST_F(MutexesSuite, ThreeTasks_HigherPriorityTaskBlockedAcquiring) {
+    os_task_t tasks[3];
+    uint32_t stacks[3][OS_STACK_MINIMUM_SIZE_WORDS];
+
+    three_tasks_setup(tasks, stacks);
+
+    os_mutex_t mutex;
+    os_mutex_definition_t def = { "mutex" };
+    ASSERT_EQ(osi_mutex_create(&mutex, &def), OSS_SUCCESS);
+
+    // Give task-1 higher priority, this works because it's already the first
+    // one in the runqueue, otherwise we'd need to resort.
+    tasks[1].priority += 0x10;
+    // Sleep, so that a lower priority task can grab the mutex.
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[2]);
+
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[2]);
+
+    ASSERT_EQ(osi_mutex_acquire(&mutex, 500), OSS_SUCCESS);
+    ASSERT_EQ(mutex.owner, &tasks[2]);
+
+    // Bring back the higher priority task.
+    tests_platform_time(1000);
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[1]);
+
+    // Try acquiring the mutex.
+    ASSERT_EQ(osi_mutex_acquire(&mutex, 500), OSS_ERROR_TO);
+
+    // TODO: DEADLOCK
 }
