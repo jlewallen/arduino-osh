@@ -16,10 +16,6 @@
  * You should have received a copy of the GNU General Public License
  * along with os.h.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-//#include <inttypes.h>
-// #include <sam.h>
-
 #include "os.h"
 #include "internal.h"
 
@@ -33,6 +29,9 @@ os_globals_t osg = {
     NULL,  /* runqueue */
     NULL,  /* waitqueue */
 };
+
+#define MIN(x, y)   (x < y) ? (x) : (y)
+#define MAX(x, y)   (x > y) ? (x) : (y)
 
 #if defined(OSH_MTB)
 __attribute__((__aligned__(DEBUG_MTB_SIZE_BYTES))) uint32_t mtb[DEBUG_MTB_SIZE];
@@ -376,7 +375,7 @@ os_status_t osi_dispatch(os_task_t *task) {
     /* Update the time the task has been running and prepare the new task. */
     uint32_t now = os_uptime();
     if (running->scheduled > 0) {
-        running->runtime += now - running->scheduled;
+        running->runtime += MIN(1, now - running->scheduled);
         running->scheduled = 0;
     }
     task->scheduled = now;
@@ -463,7 +462,9 @@ os_status_t osi_schedule() {
         new_task = find_new_task((os_task_t *)osg.running);
     }
 
-    osi_dispatch(new_task);
+    if (osg.running != new_task) {
+        osi_dispatch(new_task);
+    }
 
     // If we didn't schedule anything, don't bother with PendSV IRQ.
     if (osg.scheduled != NULL) {

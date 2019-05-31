@@ -108,7 +108,9 @@ void setup() {
     #endif
 
     #if defined(__SAMD51__)
-    os_printf("starting: dhcsr: %x\n", CoreDebug->DHCSR);
+    os_printf("starting: DHCSR = %x\n", CoreDebug->DHCSR);
+    os_printf("starting: SystemCoreClock = %lu\n", SystemCoreClock);
+    os_printf("starting: SysTick=%lu CYCCNT = %lu\n", SysTick->VAL, DWT->CYCCNT);
     #endif
 
     OS_CHECK(os_initialize());
