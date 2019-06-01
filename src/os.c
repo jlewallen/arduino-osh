@@ -205,7 +205,7 @@ os_status_t os_task_start(os_task_t *task) {
     waitqueue_add(&osg.runqueue, task);
 
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
-    os_printf("%s: started\n", task->name);
+    osi_printf("%s: started\n", task->name);
     #endif
 
     return OSS_SUCCESS;
@@ -216,7 +216,7 @@ os_status_t os_task_suspend(os_task_t *task) {
     OS_ASSERT(task->status == OS_TASK_STATUS_IDLE || task->status == OS_TASK_STATUS_ACTIVE);
 
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
-    os_printf("%s: suspended\n", task->name);
+    osi_printf("%s: suspended\n", task->name);
     #endif
 
     task->status = OS_TASK_STATUS_SUSPENDED;
@@ -232,7 +232,7 @@ os_status_t os_task_resume(os_task_t *task) {
     OS_ASSERT(task->status == OS_TASK_STATUS_SUSPENDED);
 
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
-    os_printf("%s: resumed\n", task->name);
+    osi_printf("%s: resumed\n", task->name);
     #endif
 
     task->status = OS_TASK_STATUS_IDLE;
@@ -298,7 +298,7 @@ os_status_t osi_dispatch(os_task_t *task) {
     }
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
     else {
-        os_printf("%s\n", task->name);
+        osi_printf("%s\n", task->name);
     }
     #endif
 
@@ -307,7 +307,7 @@ os_status_t osi_dispatch(os_task_t *task) {
         OS_ASSERT(task->mutex != NULL);
 
         #if defined(OS_CONFIG_DEBUG_MUTEXES)
-        os_printf("%s: removed from mutex %p\n", task->name, task->mutex);
+        osi_printf("%s: removed from mutex %p\n", task->name, task->mutex);
         #endif
 
         if (task->mutex->blocked.tasks == task) {
@@ -324,7 +324,7 @@ os_status_t osi_dispatch(os_task_t *task) {
         OS_ASSERT(task->queue != NULL);
 
         #if defined(OS_CONFIG_DEBUG_QUEUES)
-        os_printf("%s: removed from queue %p\n", task->name, task->queue);
+        osi_printf("%s: removed from queue %p\n", task->name, task->queue);
         #endif
 
         if (task->queue->blocked.tasks == task) {
@@ -342,7 +342,7 @@ os_status_t osi_dispatch(os_task_t *task) {
         waitqueue_remove(&osg.waitqueue, task);
         runqueue_add(&osg.runqueue, task);
         #if defined(OS_CONFIG_DEBUG_SCHEDULE)
-        os_printf("%s: running\n", task->name);
+        osi_printf("%s: running\n", task->name);
         #endif
     }
 
@@ -359,7 +359,7 @@ os_status_t osi_dispatch(os_task_t *task) {
         runqueue_remove(&osg.runqueue, running);
         waitqueue_add(&osg.waitqueue, running);
         #if defined(OS_CONFIG_DEBUG_SCHEDULE)
-        os_printf("%s: waiting\n", running->name);
+        osi_printf("%s: waiting\n", running->name);
         #endif
         break;
     case OS_TASK_STATUS_SUSPENDED:
@@ -532,7 +532,7 @@ os_status_t osi_irs_systick() {
 
 #if defined(__SAMD21__) || defined(__SAMD51__)
 inline void osi_assert(const char *assertion, const char *file, int line) {
-    os_printf("Assertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
+    osi_printf("Assertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
     osi_error(OS_ERROR_ASSERTION);
 }
 #endif
@@ -590,7 +590,7 @@ static void task_finished() {
     OS_ASSERT(osg.running != osg.idle);
     OS_ASSERT(osg.running->status == OS_TASK_STATUS_ACTIVE);
 
-    os_printf("os: task '%s' finished\n", osg.running->name);
+    osi_printf("os: task '%s' finished\n", osg.running->name);
 
     osg.running->status = OS_TASK_STATUS_FINISHED;
 

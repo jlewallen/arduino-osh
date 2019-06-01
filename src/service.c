@@ -6,7 +6,7 @@
 #include "syscalls.h"
 
 uint32_t svc_example() {
-    os_printf("svc_example\n");
+    osi_printf("svc_example\n");
     return 0;
 }
 
@@ -35,7 +35,7 @@ uint32_t svc_block(uint32_t ms, uint32_t flags) {
 }
 
 uint32_t svc_pstr(const char *str) {
-    return os_printf(str);
+    return osi_printf(str);
 }
 
 os_status_t svc_queue_create(os_queue_t *queue, os_queue_definition_t *def) {

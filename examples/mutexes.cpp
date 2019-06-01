@@ -18,24 +18,24 @@ static void task_handler_idle(void *params) {
 }
 
 static void task_handler(void *params) {
-    os_printf("%s started\n", os_task_name());
+    osi_printf("%s started\n", os_task_name());
 
     while (true) {
         auto started = os_uptime();
         auto status = os_mutex_acquire(os_mutex(mutex), 500);
         if (status == OSS_SUCCESS) {
             auto elapsed = os_uptime() - started;
-            os_printf("%s acquire (%s) (%dms)\n", os_task_name(), os_status_str(status), elapsed);
+            osi_printf("%s acquire (%s) (%dms)\n", os_task_name(), os_status_str(status), elapsed);
 
             auto wms = random(100, 1000);
             os_delay(wms);
 
-            os_printf("%s releasing\n", os_task_name());
+            osi_printf("%s releasing\n", os_task_name());
             OS_CHECK(os_mutex_release(os_mutex(mutex)));
         }
         else {
             auto elapsed = os_uptime() - started;
-            os_printf("%s failed (%s) (after %lums)\n", os_task_name(), os_status_str(status), elapsed);
+            osi_printf("%s failed (%s) (after %lums)\n", os_task_name(), os_status_str(status), elapsed);
             os_delay(10);
         }
     }
@@ -53,9 +53,9 @@ void setup() {
     random(100, 1000);
 
     #if defined(HSRAM_ADDR)
-    os_printf("starting: %d (0x%p + %lu) (%lu used) (%d)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory(), __get_CONTROL());
+    osi_printf("starting: %d (0x%p + %lu) (%lu used) (%d)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory(), __get_CONTROL());
     #else
-    os_printf("starting: %d\n", os_free_memory());
+    osi_printf("starting: %d\n", os_free_memory());
     #endif
 
     OS_CHECK(os_initialize());

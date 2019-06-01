@@ -30,7 +30,7 @@ static void serial_putchar(char c, void *arg) {
     }
 }
 
-uint32_t os_printf(const char *f, ...) {
+uint32_t osi_printf(const char *f, ...) {
     va_list args;
     va_start(args, f);
     auto i = os_vfctprintf(serial_putchar, NULL, f, args);

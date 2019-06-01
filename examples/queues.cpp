@@ -37,7 +37,7 @@ static void task_handler_idle(void *params) {
 }
 
 static void task_handler_sender(void *params) {
-    os_printf("%s started (%d)\n", os_task_name(), __get_CONTROL());
+    osi_printf("%s started (%d)\n", os_task_name(), __get_CONTROL());
 
     uint32_t counter = 0;
     uint32_t memory_reported = os_uptime();
@@ -49,26 +49,26 @@ static void task_handler_sender(void *params) {
         auto status = tuple.status;
         if (status == OSS_SUCCESS) {
             auto wms = random(SENDER_DELAY_MINIMUM, SENDER_DELAY_MAXIMUM);
-            os_printf("%s: success (%dms)\n", os_task_name(), wms);
+            osi_printf("%s: success (%dms)\n", os_task_name(), wms);
             os_delay(wms);
         }
         else {
             auto elapsed = os_uptime() - started;
-            os_printf("%s: fail (%s) (after %lums)\n", os_task_name(), os_status_str(status), elapsed);
+            osi_printf("%s: fail (%s) (after %lums)\n", os_task_name(), os_status_str(status), elapsed);
             free(message);
             os_delay(100);
         }
 
         if (os_uptime() - memory_reported > 10000) {
             auto mi = mallinfo();
-            os_printf("memory: arena=%lu uordblks=%lu\n", mi.arena, mi.uordblks);
+            osi_printf("memory: arena=%lu uordblks=%lu\n", mi.arena, mi.uordblks);
             memory_reported = os_uptime();
         }
     }
 }
 
 static void task_handler_receiver(void *params) {
-    os_printf("%s started (%d)\n", os_task_name(), __get_CONTROL());
+    osi_printf("%s started (%d)\n", os_task_name(), __get_CONTROL());
 
     os_delay(500);
 
@@ -78,13 +78,13 @@ static void task_handler_receiver(void *params) {
         if (tuple.status == OSS_SUCCESS) {
             auto message = (const char *)tuple.value.ptr;
             auto wms = random(RECEIVER_PROCESSING_MINIMUM, RECEIVER_PROCESSING_MAXIMUM);
-            os_printf("%s: success ('%s') (%dms)\n", os_task_name(), message, wms);
+            osi_printf("%s: success ('%s') (%dms)\n", os_task_name(), message, wms);
             free((void *)message);
             os_delay(wms);
         }
         else {
             auto elapsed = os_uptime() - started;
-            os_printf("%s: fail (%s) (after %lums)\n", os_task_name(), os_status_str(tuple.status), elapsed);
+            osi_printf("%s: fail (%s) (after %lums)\n", os_task_name(), os_status_str(tuple.status), elapsed);
         }
     }
 }
@@ -102,15 +102,15 @@ void setup() {
     random(100, 1000);
 
     #if defined(HSRAM_ADDR)
-    os_printf("starting: %d (0x%p + %lu) (%lu used) (%d)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory(), __get_CONTROL());
+    osi_printf("starting: %d (0x%p + %lu) (%lu used) (%d)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory(), __get_CONTROL());
     #else
-    os_printf("starting: %d\n", os_free_memory());
+    osi_printf("starting: %d\n", os_free_memory());
     #endif
 
     #if defined(__SAMD51__)
-    os_printf("starting: DHCSR = %x\n", CoreDebug->DHCSR);
-    os_printf("starting: SystemCoreClock = %lu\n", SystemCoreClock);
-    os_printf("starting: SysTick=%lu CYCCNT = %lu\n", SysTick->VAL, DWT->CYCCNT);
+    osi_printf("starting: DHCSR = %x\n", CoreDebug->DHCSR);
+    osi_printf("starting: SystemCoreClock = %lu\n", SystemCoreClock);
+    osi_printf("starting: SysTick=%lu CYCCNT = %lu\n", SysTick->VAL, DWT->CYCCNT);
     #endif
 
     OS_CHECK(os_initialize());
