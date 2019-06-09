@@ -16,14 +16,14 @@ static os_task_t child_task;
 static uint32_t child_stack[256];
 
 static void task_handler_child(void *params) {
-    osi_printf("task started\n");
+    os_printf("task started\n");
 
     auto started = os_uptime();
     while (os_uptime() - started < 5000) {
         os_delay(100);
     }
 
-    osi_printf("task done\n");
+    os_printf("task done\n");
 }
 
 static os_task_t main_task;
@@ -55,9 +55,9 @@ void setup() {
     }
 
     #if defined(HSRAM_ADDR)
-    osi_printf("starting: %d (0x%p + %lu) (%lu used) (%d)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory(), __get_CONTROL());
+    os_printf("starting: %d (0x%p + %lu) (%lu used) (%d)\n", os_free_memory(), HSRAM_ADDR, HSRAM_SIZE, HSRAM_SIZE - os_free_memory(), __get_CONTROL());
     #else
-    osi_printf("starting: %d\n", os_free_memory());
+    os_printf("starting: %d\n", os_free_memory());
     #endif
 
     OS_CHECK(os_initialize());
