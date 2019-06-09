@@ -149,6 +149,11 @@ uint32_t osi_printf(const char *f, ...);
 /**
  *
  */
+uint32_t osi_vprintf(const char *f, va_list args);
+
+/**
+ *
+ */
 uint32_t os_free_memory();
 
 /**

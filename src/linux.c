@@ -22,9 +22,13 @@
 uint32_t osi_printf(const char *f, ...) {
     va_list args;
     va_start(args, f);
-    vfprintf(stderr, f, args);
+    uint32_t i = vfprintf(stderr, f, args);
     va_end(args);
-    return 0;
+    return i;
+}
+
+uint32_t osi_vprintf(const char *f, va_list args) {
+    return vfprintf(stderr, f, args);
 }
 
 os_status_t osi_platform_setup() {

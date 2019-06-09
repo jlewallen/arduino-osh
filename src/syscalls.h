@@ -171,12 +171,14 @@ static inline  t __##f (t1 a1, t2 a2, t3 a3) {                                 \
 uint32_t svc_example(void);
 uint32_t svc_delay(uint32_t ms);
 uint32_t svc_block(uint32_t ms, uint32_t flags);
+uint32_t svc_printf(const char *str, void *vargs);
 uint32_t svc_pstr(const char *str);
 
 SVC_0_1(svc_example, uint32_t, RET_uint32_t);
 SVC_1_1(svc_delay, uint32_t, uint32_t, RET_uint32_t);
 SVC_2_1(svc_block, uint32_t, uint32_t, uint32_t, RET_uint32_t);
 SVC_1_1(svc_pstr, uint32_t, const char*, RET_uint32_t);
+SVC_2_1(svc_printf, uint32_t, const char*, void*, RET_uint32_t);
 
 os_status_t svc_queue_create(os_queue_t *queue, os_queue_definition_t *def);
 os_tuple_return_type_t svc_queue_enqueue(os_queue_t *queue, void *message, uint32_t to);

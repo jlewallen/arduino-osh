@@ -29,13 +29,12 @@ uint32_t svc_delay(uint32_t ms) {
 
 uint32_t svc_block(uint32_t ms, uint32_t flags) {
     osg.running->flags |= flags;
-    uint32_t status = svc_delay(ms);
-
-    return status;
+    return svc_delay(ms);
 }
 
-uint32_t os_printf(const char *str, ...) {
-    return 0;
+uint32_t svc_printf(const char *f, void *vargs) {
+    va_list *args = (va_list *)vargs;
+    return osi_vprintf(f, *args);
 }
 
 uint32_t svc_pstr(const char *str) {
@@ -134,6 +133,20 @@ uint32_t os_pstr(const char *str) {
     else {
         return svc_pstr(str);
     }
+}
+
+uint32_t os_printf(const char *f, ...) {
+    uint32_t rval;
+    va_list args;
+    va_start(args, f);
+    if (osi_in_task()) {
+        rval = __svc_printf(f, &args);
+    }
+    else {
+        rval = svc_printf(f, &args);
+    }
+    va_end(args);
+    return rval;
 }
 
 os_status_t os_queue_create(os_queue_t *queue, os_queue_definition_t *def) {
