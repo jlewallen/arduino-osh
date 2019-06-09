@@ -41,11 +41,6 @@ uint32_t os_pstr(const char *str);
 /**
  *
  */
-uint32_t os_example();
-
-/**
- *
- */
 os_status_t os_queue_create(os_queue_t *queue, os_queue_definition_t *def);
 
 /**

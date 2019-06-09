@@ -1,14 +1,19 @@
 /**
+ * This software is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
  *
+ * This is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this source code. If not, see <http://www.gnu.org/licenses/>.
  */
 #include "os.h"
 #include "internal.h"
 #include "syscalls.h"
-
-uint32_t svc_example() {
-    osi_printf("svc_example\n");
-    return 0;
-}
 
 uint32_t svc_delay(uint32_t ms) {
     OS_ASSERT(osg.running != NULL);
@@ -76,35 +81,6 @@ os_status_t svc_mutex_release(os_mutex_t *mutex) {
 /**
  * Application facing service call wrappers.
  */
-
-#if !(defined(__SAMD21__) || defined(__SAMD51__))
-#define __get_CONTROL()  0x0
-#define __get_IPSR()     0
-#endif
-
-/**
- * Returns true if the current execution context is privileged.
- */
-inline static bool osi_is_privileged() {
-    return (__get_CONTROL() & 0x1) == 0x0;
-}
-
-/**
- * Returns true if the current execution context is using PSP.
- */
-inline static bool osi_in_task() {
-    return (__get_CONTROL() & 0x2) == 0x2;
-}
-
-uint32_t os_example() {
-    if (osi_in_task()) {
-        return __svc_example();
-    }
-    else {
-        return svc_example();
-    }
-}
-
 uint32_t os_delay(uint32_t ms) {
     if (osi_in_task()) {
         return __svc_delay(ms);

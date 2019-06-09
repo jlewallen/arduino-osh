@@ -11,25 +11,22 @@
  * You should have received a copy of the GNU General Public License along with
  * this source code. If not, see <http://www.gnu.org/licenses/>.
  */
-.file   "gcc.s"
-.syntax unified
-.thumb
+#include "os.h"
+#include "sysexample.h"
+#include "syscall_plumbing.h"
 
-.equ    OS_TASK_STACK_KIND, 12
-.equ    OS_TASK_SP, 0
+uint32_t svc_example(void) {
+    osi_printf("svc_example\n");
+    return 0;
+}
 
-.equ    OSG_RUNNING, 0
-.equ    OSG_SCHEDULED, 4
+SVC_0_1(svc_example, uint32_t, RET_uint32_t);
 
-.section ".text"
-.align  2
-
-#if defined(__SAMD21__)
-#include "arch/m0.s"
-#endif
-
-#if defined(__SAMD51__)
-#include "arch/m4.s"
-#endif
-
-.end
+uint32_t os_example() {
+    if (osi_in_task()) {
+        return __svc_example();
+    }
+    else {
+        return svc_example();
+    }
+}

@@ -168,4 +168,23 @@ static inline  t __##f (t1 a1, t2 a2, t3 a3) {                                 \
 
 #endif
 
+#if !(defined(__SAMD21__) || defined(__SAMD51__))
+#define __get_CONTROL()  0x0
+#define __get_IPSR()     0
+#endif
+
+/**
+ * Returns true if the current execution context is privileged.
+ */
+inline static bool osi_is_privileged() {
+    return (__get_CONTROL() & 0x1) == 0x0;
+}
+
+/**
+ * Returns true if the current execution context is using PSP.
+ */
+inline static bool osi_in_task() {
+    return (__get_CONTROL() & 0x2) == 0x2;
+}
+
 #endif // OS_SYSCALL_PLUMBING_H

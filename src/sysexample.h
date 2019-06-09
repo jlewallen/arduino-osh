@@ -11,25 +11,20 @@
  * You should have received a copy of the GNU General Public License along with
  * this source code. If not, see <http://www.gnu.org/licenses/>.
  */
-.file   "gcc.s"
-.syntax unified
-.thumb
+#ifndef OS_SYSEXAMPLE_H
+#define OS_SYSEXAMPLE_H
 
-.equ    OS_TASK_STACK_KIND, 12
-.equ    OS_TASK_SP, 0
-
-.equ    OSG_RUNNING, 0
-.equ    OSG_SCHEDULED, 4
-
-.section ".text"
-.align  2
-
-#if defined(__SAMD21__)
-#include "arch/m0.s"
+#if defined(__cplusplus)
+extern "C" {
 #endif
 
-#if defined(__SAMD51__)
-#include "arch/m4.s"
+/**
+ *
+ */
+uint32_t os_example();
+
+#if defined(__cplusplus)
+}
 #endif
 
-.end
+#endif

@@ -18,13 +18,11 @@
 
 #include "syscall_plumbing.h"
 
-uint32_t svc_example(void);
 uint32_t svc_delay(uint32_t ms);
 uint32_t svc_block(uint32_t ms, uint32_t flags);
 uint32_t svc_printf(const char *str, void *vargs);
 uint32_t svc_pstr(const char *str);
 
-SVC_0_1(svc_example, uint32_t, RET_uint32_t);
 SVC_1_1(svc_delay, uint32_t, uint32_t, RET_uint32_t);
 SVC_2_1(svc_block, uint32_t, uint32_t, uint32_t, RET_uint32_t);
 SVC_1_1(svc_pstr, uint32_t, const char*, RET_uint32_t);
