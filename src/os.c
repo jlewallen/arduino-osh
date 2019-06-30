@@ -275,7 +275,7 @@ os_status_t os_start(void) {
     /* Set PSP to the top of task's stack */
     __set_PSP((uint32_t)osg.running->sp + OS_STACK_BASIC_FRAME_SIZE);
     /* Switch to Unprivilleged Thread Mode with PSP */
-    __set_CONTROL(0x03);
+    __set_CONTROL(0x02);
     /* Execute DSB/ISB after changing CONTORL (recommended) */
     __DSB();
     __ISB();
