@@ -69,7 +69,7 @@ inline const char *os_task_status_str(os_task_status status) {
 /**
  * Return the currently executing task.
  */
-#define os_task_self()    (os_task_t *)osg.running
+#define os_task_self()    ((os_task_t *)osg.running)
 /*
 inline os_task_t *os_task_self() {
     return (os_task_t *)osg.running;

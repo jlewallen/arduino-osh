@@ -81,9 +81,19 @@ os_status_t svc_mutex_release(os_mutex_t *mutex) {
 /**
  * Application facing service call wrappers.
  */
+inline static bool osi_in_idle() {
+    return os_task_self()->priority == OS_PRIORITY_IDLE;
+}
+
 uint32_t os_delay(uint32_t ms) {
     if (osi_in_task()) {
-        return __svc_delay(ms);
+        if (osi_in_idle()) {
+            osi_platform_delay(ms);
+            return ms;
+        }
+        else {
+            return __svc_delay(ms);
+        }
     }
     else {
         return OSS_ERROR_INVALID;
