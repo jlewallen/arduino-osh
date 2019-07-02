@@ -291,7 +291,9 @@ os_status_t os_start(void) {
 
 os_status_t osi_dispatch(os_task_t *task) {
     OS_ASSERT(task != NULL);
+    OS_ASSERT(osg.scheduled == NULL);
     OS_ASSERT(osg.running != NULL);
+    OS_ASSERT(osg.running->status != OS_TASK_STATUS_IDLE);
 
     if (osg.running == task) {
         return OSS_ERROR_NOP;
@@ -447,6 +449,10 @@ static os_task_t *find_new_task(os_task_t *running) {
 os_status_t osi_schedule() {
     os_task_t *new_task = NULL;
 
+    OS_ASSERT(osg.scheduled == NULL);
+    OS_ASSERT(osg.running != NULL);
+    OS_ASSERT(osg.running->status != OS_TASK_STATUS_IDLE);
+
     // Check to see if anything in the waitqueue is free to go.
     uint32_t now = os_uptime();
     for (os_task_t *task = osg.waitqueue; task != NULL; task = task->nrp) {
@@ -532,7 +538,7 @@ os_status_t osi_irs_systick() {
 
 #if defined(__SAMD21__) || defined(__SAMD51__)
 inline void osi_assert(const char *assertion, const char *file, int line) {
-    osi_printf("Assertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
+    osi_printf("\n\nassertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
     osi_error(OS_ERROR_ASSERTION);
 }
 #endif
