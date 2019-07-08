@@ -14,6 +14,7 @@
 #if !defined(ARDUINO)
 
 #include <stdio.h>
+#include <unistd.h>
 
 #include "os.h"
 #include "printf.h"
@@ -46,6 +47,7 @@ uint32_t osi_platform_uptime() {
 }
 
 uint32_t osi_platform_delay(uint32_t ms) {
+    usleep(ms * 1000);
     return ms;
 }
 

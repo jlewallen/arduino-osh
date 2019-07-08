@@ -34,18 +34,12 @@ uint32_t osi_printf(const char *f, ...) {
     va_list args;
     va_start(args, f);
     auto i = os_vfctprintf(serial_putchar, NULL, f, args);
-    #if defined(__SAMD21__)
-    Serial.flush();
-    #endif
     va_end(args);
     return i;
 }
 
 uint32_t osi_vprintf(const char *f, va_list args) {
     auto i = os_vfctprintf(serial_putchar, NULL, f, args);
-    #if defined(__SAMD21__)
-    Serial.flush();
-    #endif
     return i;
 }
 

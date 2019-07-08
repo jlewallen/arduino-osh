@@ -14,6 +14,7 @@
 #include "os.h"
 #include "internal.h"
 #include "syscalls.h"
+#include "platform.h"
 
 uint32_t svc_delay(uint32_t ms) {
     OS_ASSERT(osg.running != NULL);
@@ -95,9 +96,7 @@ uint32_t os_delay(uint32_t ms) {
             return __svc_delay(ms);
         }
     }
-    else {
-        return OSS_ERROR_INVALID;
-    }
+    return osi_platform_delay(ms);
 }
 
 uint32_t os_block(uint32_t ms, uint32_t flags) {

@@ -21,6 +21,7 @@
 #include "syscalls.h"
 #include "faults.h"
 #include "utilities.h"
+#include "platform.h"
 
 #if defined(ARDUINO)
 #define OS_NORETURN  __attribute__ ((noreturn))
@@ -31,21 +32,6 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
-/**
- *
- */
-os_status_t osi_platform_setup();
-
-/**
- *
- */
-uint32_t osi_platform_uptime();
-
-/**
- *
- */
-uint32_t osi_platform_delay(uint32_t ms);
 
 /**
  *
