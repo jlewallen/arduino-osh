@@ -596,7 +596,9 @@ static void task_finished() {
     OS_ASSERT(osg.running != osg.idle);
     OS_ASSERT(osg.running->status == OS_TASK_STATUS_ACTIVE);
 
+    #if defined(OS_CONFIG_DEBUG_SCHEDULE)
     osi_printf("os: task '%s' finished\n", osg.running->name);
+    #endif
 
     osg.running->status = OS_TASK_STATUS_FINISHED;
 
