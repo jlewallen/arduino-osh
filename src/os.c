@@ -456,10 +456,12 @@ static os_task_t *find_new_task(os_task_t *running) {
     /* If we ended up looping around w/o finding somebody of equal or higher... */
     if (new_task == running) {
         /* If we're no longer running, then we can drop down in priority. */
-        if (!task_is_running(running)) {
+        if (!task_is_running(running) && lower_priority != NULL) {
             new_task = lower_priority;
         }
     }
+
+    OS_ASSERT(new_task != NULL);
 
     return new_task;
 }
@@ -476,6 +478,7 @@ os_status_t osi_schedule() {
     for (os_task_t *task = osg.waitqueue; task != NULL; task = task->nrp) {
         if (now >= task->delay) {
             new_task = task;
+            OS_ASSERT(new_task != NULL);
             break;
         }
     }
@@ -484,6 +487,7 @@ os_status_t osi_schedule() {
     if (new_task == NULL) {
         // Look for a task that's got the same priority or higher.
         new_task = find_new_task((os_task_t *)osg.running);
+        OS_ASSERT(new_task != NULL);
     }
 
     if (osg.running != new_task) {
