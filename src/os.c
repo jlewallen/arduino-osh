@@ -201,8 +201,8 @@ os_status_t os_task_start(os_task_t *task) {
 
     // Kind of a hack :)
     waitqueue_remove(&osg.waitqueue, task);
-    waitqueue_remove(&osg.runqueue, task);
-    waitqueue_add(&osg.runqueue, task);
+    runqueue_remove(&osg.runqueue, task);
+    runqueue_add(&osg.runqueue, task);
 
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
     osi_printf("%s: started\n", task->name);
