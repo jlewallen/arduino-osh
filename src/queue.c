@@ -46,6 +46,47 @@ os_status_t osi_queue_create(os_queue_t *queue, os_queue_definition_t *def) {
     return OSS_SUCCESS;
 }
 
+os_tuple_t osi_queue_enqueue_isr(os_queue_t *queue, void *message) {
+    os_tuple_t tuple;
+    tuple.status = OSS_SUCCESS;
+    tuple.value.u32 = 0;
+
+    /* If there's tasks waiting, we can send directly via their stack. */
+    if (queue->blocked.tasks != NULL && queue->status == OS_QUEUE_BLOCKED_RECEIVE) {
+        os_task_t *blocked_receiver = blocked_deq(queue);
+
+        os_tuple_t *receive_rv = osi_task_stacked_return_tuple(blocked_receiver);
+        receive_rv->status = OSS_SUCCESS;
+        receive_rv->value.ptr = message;
+
+        osi_dispatch(blocked_receiver);
+
+        // Manually trigger this since we're inside an arbitrary ISR this won't
+        // necessarily happen. Our SVC handler will check for scheduled/running
+        // changes and do the switch w/o the PendSV.
+        #if defined(__SAMD21__) || defined(__SAMD51__)
+        SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+        #endif
+
+        return tuple;
+    }
+
+    if (queue->number == queue->size) {
+        tuple.status = OSS_ERROR_MEM;
+        return tuple;
+    }
+
+    // There's room, so place the message into the end of the queue.
+    queue->status = OS_QUEUE_FINE;
+    queue->messages[queue->first] = message;
+    queue->number++;
+    if (++queue->first == queue->size) {
+        queue->first = 0U;
+    }
+
+    return tuple;
+}
+
 os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
     os_task_t *running = os_task_self();
 

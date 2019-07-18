@@ -557,7 +557,11 @@ uint32_t osi_task_get_stacked_return(os_task_t *task) {
 
 os_status_t osi_irs_systick() {
     if (osg.state == OS_STATE_STARTED) {
-        return osi_schedule();
+        // We could have beeen in another IRQ and scheduled something, then
+        // SysTick fired before we fell down to PendSV?
+        if (osg.scheduled == NULL) {
+            return osi_schedule();
+        }
     }
     return OSS_SUCCESS;
 }

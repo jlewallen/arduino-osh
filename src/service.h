@@ -88,6 +88,14 @@ os_status_t os_mutex_release(os_mutex_t *mutex);
 /**
  *
  */
+#define os_queue_external(name)                                                  \
+    extern os_queue_definition_t _os_queue_def_##name;                           \
+    extern uint32_t _os_queue_##name[];
+
+
+/**
+ *
+ */
 #define os_queue_def(name)            (os_queue_definition_t *)&_os_queue_def_##name
 
 /**

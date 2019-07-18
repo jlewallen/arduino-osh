@@ -145,6 +145,10 @@ os_status_t os_queue_create(os_queue_t *queue, os_queue_definition_t *def) {
 }
 
 os_tuple_t os_queue_enqueue(os_queue_t *queue, void *message, uint32_t to) {
+    if (__get_IPSR() != 0U) {
+        OS_ASSERT(to == 0);
+        return osi_queue_enqueue_isr(queue, message);
+    }
     return __svc_queue_enqueue(queue, message, to);
 }
 
