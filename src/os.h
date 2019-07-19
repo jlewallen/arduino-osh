@@ -125,12 +125,22 @@ os_status_t os_task_start(os_task_t *task);
 /**
  *
  */
+os_status_t os_task_start_options(os_task_t *task, void *params);
+
+/**
+ *
+ */
 os_status_t os_task_suspend(os_task_t *task);
 
 /**
  *
  */
 os_status_t os_task_resume(os_task_t *task);
+
+/**
+ *
+ */
+uint32_t os_task_is_running(os_task_t *task);
 
 /**
  *

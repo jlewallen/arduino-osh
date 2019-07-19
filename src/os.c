@@ -196,7 +196,23 @@ os_status_t os_task_initialize_options(os_task_t *task, os_task_options_t *optio
     return OSS_SUCCESS;
 }
 
+uint32_t os_task_is_running(os_task_t *task) {
+    switch (os_task_get_status(task)) {
+    case OS_TASK_STATUS_IDLE: return true;
+    case OS_TASK_STATUS_ACTIVE: return true;
+    case OS_TASK_STATUS_WAIT: return true;
+    case OS_TASK_STATUS_SUSPENDED: return false;
+    case OS_TASK_STATUS_FINISHED: return false;
+    case OS_TASK_STATUS_PANIC: return false;
+    default: return false;
+    }
+}
+
 os_status_t os_task_start(os_task_t *task) {
+    return os_task_start_options(task, NULL);
+}
+
+os_status_t os_task_start_options(os_task_t *task, void *params) {
     OS_ASSERT(task != NULL);
     OS_ASSERT(task->status != OS_TASK_STATUS_IDLE && task->status != OS_TASK_STATUS_ACTIVE);
 
@@ -206,6 +222,7 @@ os_status_t os_task_start(os_task_t *task) {
     task->queue = NULL;
     task->mutex = NULL;
     task->nblocked = NULL;
+    task->params = params;
     task->started = os_uptime();
     task->runtime = 0;
     task->scheduled = 0;
