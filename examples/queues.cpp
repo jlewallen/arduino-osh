@@ -17,7 +17,7 @@ static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];
 static os_task_t sender_tasks[NUMBER_OF_SENDERS];
 static os_task_t receiver_tasks[NUMBER_OF_RECEIVERS];
 
-os_queue_define(queue, 10);
+os_queue_define(queue, 10, OS_QUEUE_FLAGS_NONE);
 
 static const char *os_pstrdup(const char *f, ...) {
     char message[64];

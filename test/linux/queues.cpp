@@ -26,7 +26,7 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_SendReceiveOne) {
 
     three_tasks_setup(tasks, stacks);
 
-    os_queue_define(queue, 4);
+    os_queue_define(queue, 4, OS_QUEUE_FLAGS_NONE);
 
     ASSERT_EQ(os_queue_create(os_queue(queue), os_queue_def(queue)), OSS_SUCCESS);
 
@@ -54,7 +54,7 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_SendBlock) {
 
     three_tasks_setup(tasks, stacks);
 
-    os_queue_define(queue, 4);
+    os_queue_define(queue, 4, OS_QUEUE_FLAGS_NONE);
 
     ASSERT_EQ(os_queue_create(os_queue(queue), os_queue_def(queue)), OSS_SUCCESS);
 
@@ -90,7 +90,7 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_ReceiveBlock) {
 
     ASSERT_EQ(osg.running, &tasks[1]);
 
-    os_queue_define(queue, 4);
+    os_queue_define(queue, 4, OS_QUEUE_FLAGS_NONE);
 
     ASSERT_EQ(os_queue_create(os_queue(queue), os_queue_def(queue)), OSS_SUCCESS);
 
@@ -126,7 +126,7 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_TwoReceiveBlock) {
 
     ASSERT_EQ(osg.running, &tasks[1]);
 
-    os_queue_define(queue, 4);
+    os_queue_define(queue, 4, OS_QUEUE_FLAGS_NONE);
 
     ASSERT_EQ(os_queue_create(os_queue(queue), os_queue_def(queue)), OSS_SUCCESS);
 
@@ -189,7 +189,7 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_TwoSendBlock) {
 
     ASSERT_EQ(osg.running, &tasks[1]);
 
-    os_queue_define(queue, 2);
+    os_queue_define(queue, 2, OS_QUEUE_FLAGS_NONE);
 
     ASSERT_EQ(os_queue_create(os_queue(queue), os_queue_def(queue)), OSS_SUCCESS);
 
@@ -238,7 +238,7 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_SendBlockTimeOut) {
 
     three_tasks_setup(tasks, stacks);
 
-    os_queue_define(queue, 2);
+    os_queue_define(queue, 2, OS_QUEUE_FLAGS_NONE);
 
     ASSERT_EQ(os_queue_create(os_queue(queue), os_queue_def(queue)), OSS_SUCCESS);
 
@@ -276,7 +276,7 @@ TEST_F(QueuesSuite, ThreeTasks_Queue_ReceiveBlockTimeOut) {
 
     three_tasks_setup(tasks, stacks);
 
-    os_queue_define(queue, 2);
+    os_queue_define(queue, 2, OS_QUEUE_FLAGS_NONE);
 
     ASSERT_EQ(os_queue_create(os_queue(queue), os_queue_def(queue)), OSS_SUCCESS);
 

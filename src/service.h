@@ -81,8 +81,8 @@ os_status_t os_mutex_release(os_mutex_t *mutex);
 /**
  *
  */
-#define os_queue_define(name, size)                                              \
-    os_queue_definition_t _os_queue_def_##name = { #name, size };                \
+#define os_queue_define(name, size, flags)                                       \
+    os_queue_definition_t _os_queue_def_##name = { #name, size, flags };         \
     uint32_t _os_queue_##name[os_word_size(os_queue_t) + (size)];
 
 /**

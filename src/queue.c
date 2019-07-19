@@ -51,24 +51,26 @@ os_tuple_t osi_queue_enqueue_isr(os_queue_t *queue, void *message) {
     tuple.status = OSS_SUCCESS;
     tuple.value.u32 = 0;
 
-    /* If there's tasks waiting, we can send directly via their stack. */
-    if (queue->blocked.tasks != NULL && queue->status == OS_QUEUE_BLOCKED_RECEIVE) {
-        os_task_t *blocked_receiver = blocked_deq(queue);
+    /* If there's tasks waiting, we can send directly via their stack if allowed. */
+    if ((queue->def->flags & OS_QUEUE_FLAGS_QUEUE_ONLY) == 0) {
+        if (queue->blocked.tasks != NULL && queue->status == OS_QUEUE_BLOCKED_RECEIVE) {
+            os_task_t *blocked_receiver = blocked_deq(queue);
 
-        os_tuple_t *receive_rv = osi_task_stacked_return_tuple(blocked_receiver);
-        receive_rv->status = OSS_SUCCESS;
-        receive_rv->value.ptr = message;
+            os_tuple_t *receive_rv = osi_task_stacked_return_tuple(blocked_receiver);
+            receive_rv->status = OSS_SUCCESS;
+            receive_rv->value.ptr = message;
 
-        osi_dispatch(blocked_receiver);
+            osi_dispatch(blocked_receiver);
 
-        // Manually trigger this since we're inside an arbitrary ISR this won't
-        // necessarily happen. Our SVC handler will check for scheduled/running
-        // changes and do the switch w/o the PendSV.
-        #if defined(__SAMD21__) || defined(__SAMD51__)
-        SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-        #endif
+            // Manually trigger this since we're inside an arbitrary ISR this won't
+            // necessarily happen. Our SVC handler will check for scheduled/running
+            // changes and do the switch w/o the PendSV.
+            #if defined(__SAMD21__) || defined(__SAMD51__)
+            SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+            #endif
 
-        return tuple;
+            return tuple;
+        }
     }
 
     if (queue->number == queue->size) {
@@ -94,16 +96,18 @@ os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
     OS_ASSERT(running->nblocked == NULL);
 
     /* If there's tasks waiting, we can send directly via their stack. */
-    if (queue->blocked.tasks != NULL && queue->status == OS_QUEUE_BLOCKED_RECEIVE) {
-        os_task_t *blocked_receiver = blocked_deq(queue);
+    if ((queue->def->flags & OS_QUEUE_FLAGS_QUEUE_ONLY) == 0) {
+        if (queue->blocked.tasks != NULL && queue->status == OS_QUEUE_BLOCKED_RECEIVE) {
+            os_task_t *blocked_receiver = blocked_deq(queue);
 
-        os_tuple_t *receive_rv = osi_task_stacked_return_tuple(blocked_receiver);
-        receive_rv->status = OSS_SUCCESS;
-        receive_rv->value.ptr = message;
+            os_tuple_t *receive_rv = osi_task_stacked_return_tuple(blocked_receiver);
+            receive_rv->status = OSS_SUCCESS;
+            receive_rv->value.ptr = message;
 
-        osi_dispatch(blocked_receiver);
+            osi_dispatch(blocked_receiver);
 
-        return OSS_SUCCESS;
+            return OSS_SUCCESS;
+        }
     }
 
     if (queue->number == queue->size) {

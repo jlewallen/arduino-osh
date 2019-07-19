@@ -180,9 +180,16 @@ typedef struct os_blocked_t {
 /**
  *
  */
+#define OS_QUEUE_FLAGS_NONE                           0
+#define OS_QUEUE_FLAGS_QUEUE_ONLY                     1
+
+/**
+ *
+ */
 typedef struct os_queue_definition_t {
     const char *name;
     uint16_t size;
+    uint16_t flags;
 } os_queue_definition_t;
 
 /**
