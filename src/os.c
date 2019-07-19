@@ -391,9 +391,11 @@ os_status_t osi_dispatch(os_task_t *task) {
     task->status = OS_TASK_STATUS_ACTIVE;
 
     /* Update the time the task has been running and prepare the new task. */
-    uint32_t now = os_uptime();
+    // uint32_t now = os_uptime();
+    uint32_t now = os_micros();
     if (running->scheduled > 0) {
-        running->runtime += MIN(1, now - running->scheduled);
+        uint32_t elapsed = now - running->scheduled;
+        running->runtime += elapsed;
         running->scheduled = 0;
     }
     task->scheduled = now;
@@ -500,6 +502,10 @@ os_status_t osi_schedule() {
 
 inline uint32_t os_uptime() {
     return osi_platform_uptime();
+}
+
+inline uint32_t os_micros() {
+    return osi_platform_micros();
 }
 
 extern char *sbrk(int32_t i);

@@ -34,6 +34,8 @@ uint32_t osi_platform_uptime();
  */
 uint32_t osi_platform_delay(uint32_t ms);
 
+uint32_t osi_platform_micros();
+
 #if defined(__cplusplus)
 }
 #endif

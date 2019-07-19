@@ -149,6 +149,11 @@ uint32_t os_uptime();
 /**
  *
  */
+uint32_t os_micros();
+
+/**
+ *
+ */
 uint32_t osi_printf(const char *f, ...);
 
 /**

@@ -51,4 +51,8 @@ uint32_t osi_platform_delay(uint32_t ms) {
     return ms;
 }
 
+uint32_t osi_platform_micros() {
+    return 0;
+}
+
 #endif /* ARDUINO */

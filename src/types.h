@@ -149,6 +149,7 @@ typedef struct os_task_t {
     os_priority_t priority;
     void *message;
     uint32_t started;
+    uint32_t slice;
     uint32_t runtime;
     uint32_t scheduled;
     uint32_t delay;

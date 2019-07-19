@@ -56,6 +56,10 @@ uint32_t osi_platform_delay(uint32_t ms) {
     return ms;
 }
 
+uint32_t osi_platform_micros() {
+    return micros();
+}
+
 extern void SysTick_DefaultHandler(void);
 
 int32_t sysTickHook(void) {

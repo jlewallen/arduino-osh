@@ -12,6 +12,7 @@
 #define SENDER_DELAY_MAXIMUM           (500)
 
 static os_task_t idle_task;
+static os_task_t monitor_task;
 static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];
 static os_task_t sender_tasks[NUMBER_OF_SENDERS];
 static os_task_t receiver_tasks[NUMBER_OF_RECEIVERS];
@@ -89,13 +90,30 @@ static void task_handler_receiver(void *params) {
     }
 }
 
+static void task_handler_monitor(void *params) {
+    while (true) {
+        os_delay(5000);
+
+        os_printf("\n------------\n");
+        __disable_irq();
+        for (auto iter = osg.tasks; iter != nullptr; iter = iter->np) {
+            osi_printf("task: %s %d\n", iter->name, iter->runtime);
+        }
+        __enable_irq();
+        os_printf("\n------------\n");
+    }
+}
+
 void setup() {
     uint32_t sender_stacks[NUMBER_OF_SENDERS][256];
     uint32_t receiver_stacks[NUMBER_OF_RECEIVERS][256];
+    uint32_t monitor_stack[256];
 
+    /*
     Serial.begin(115200);
     while (!Serial && millis() < 2000) {
     }
+    */
 
     // Call this here because things go horribly if we call from within a task.
     // Something goes south with a malloc.
@@ -116,6 +134,8 @@ void setup() {
     OS_CHECK(os_initialize());
 
     OS_CHECK(os_task_initialize(&idle_task, "idle", OS_TASK_START_RUNNING, &task_handler_idle, NULL, idle_stack, sizeof(idle_stack)));
+
+    OS_CHECK(os_task_initialize(&monitor_task, "monitor", OS_TASK_START_RUNNING, &task_handler_monitor, NULL, monitor_stack, sizeof(monitor_stack)));
 
     for (auto i = 0; i < NUMBER_OF_RECEIVERS; ++i) {
         char temp[32];
