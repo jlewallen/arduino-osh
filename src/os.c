@@ -578,6 +578,7 @@ inline void osi_assert(const char *assertion, const char *file, int line) {
 #endif
 
 uint32_t osi_panic(os_panic_kind_t code) {
+    osi_printf("\n\npanic! (%s)\n", os_panic_kind_str(code));
     if (osg.running != NULL) {
         osg.running->status = OS_TASK_STATUS_PANIC;
     }

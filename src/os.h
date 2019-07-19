@@ -62,6 +62,7 @@ inline const char *os_task_status_str(os_task_status status) {
     case OS_TASK_STATUS_WAIT: return "OS_TASK_STATUS_WAIT";
     case OS_TASK_STATUS_SUSPENDED: return "OS_TASK_STATUS_SUSPENDED";
     case OS_TASK_STATUS_FINISHED: return "OS_TASK_STATUS_FINISHED";
+    case OS_TASK_STATUS_PANIC: return "OS_TASK_STATUS_PANIC";
     default: return "UNKNOWN";
     }
 }
