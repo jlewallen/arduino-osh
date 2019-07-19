@@ -99,6 +99,11 @@ os_status_t os_task_initialize(os_task_t *task, const char *name,
 /**
  *
  */
+os_status_t os_task_initialize_options(os_task_t *task, os_task_options_t *options);
+
+/**
+ *
+ */
 os_status_t os_start();
 
 /**

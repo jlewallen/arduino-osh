@@ -115,6 +115,16 @@ typedef uint32_t os_priority_t;
 #define OS_PRIORITY_NORMAL                            (os_priority_t)0x10
 #define OS_PRIORITY_HIGHEST                           (os_priority_t)0xff
 
+typedef struct os_task_options_t {
+    const char *name;
+    os_start_status status;
+    void (*handler)(void*);
+    void *params;
+    uint32_t *stack;
+    size_t stack_size;
+    os_priority_t priority;
+} os_task_options_t;
+
 /**
  *
  */

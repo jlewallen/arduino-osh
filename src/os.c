@@ -128,19 +128,35 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
     return stk;
 }
 
+/**
+ *
+ */
 os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_status status, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
+    os_task_options_t options = {
+        name,
+        status,
+        handler,
+        params,
+        stack,
+        stack_size,
+        OS_PRIORITY_NORMAL
+    };
+    return os_task_initialize_options(task, &options);
+}
+
+os_status_t os_task_initialize_options(os_task_t *task, os_task_options_t *options) {
     if (osg.state != OS_STATE_INITIALIZED && osg.state != OS_STATE_TASKS_INITIALIZED) {
         return OSS_ERROR_INVALID;
     }
 
     task->sp = NULL; /* This gets set correctly later. */
-    task->stack = stack;
-    task->stack_size = stack_size;
+    task->stack = options->stack;
+    task->stack_size = options->stack_size;
     task->stack_kind = 0;
-    task->params = params;
-    task->handler = handler;
-    task->status = status == OS_TASK_START_RUNNING ? OS_TASK_STATUS_IDLE : OS_TASK_STATUS_SUSPENDED;
-    task->name = name;
+    task->params = options->params;
+    task->handler = options->handler;
+    task->status = options->status == OS_TASK_START_RUNNING ? OS_TASK_STATUS_IDLE : OS_TASK_STATUS_SUSPENDED;
+    task->name = options->name;
     task->delay = 0;
     task->flags = 0;
     task->started = os_uptime();
@@ -151,12 +167,12 @@ os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_statu
     task->nblocked = NULL;
     task->message = NULL;
     task->nrp = NULL;
-    task->priority = OS_PRIORITY_NORMAL;
+    task->priority = options->priority;
     #if defined(OS_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif
 
-    task->sp = initialize_stack(task, stack, stack_size);
+    task->sp = initialize_stack(task, options->stack, options->stack_size);
 
     task->np = osg.tasks;
     osg.tasks = task;
