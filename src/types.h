@@ -95,7 +95,8 @@ typedef enum os_task_status {
     OS_TASK_STATUS_ACTIVE,
     OS_TASK_STATUS_WAIT,
     OS_TASK_STATUS_SUSPENDED,
-    OS_TASK_STATUS_FINISHED
+    OS_TASK_STATUS_FINISHED,
+    OS_TASK_STATUS_PANIC
 } os_task_status;
 
 #define OS_TASK_FLAG_NONE                             (0)

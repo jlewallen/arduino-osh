@@ -75,15 +75,16 @@ uint32_t osi_task_set_stacked_return(os_task_t *task, uint32_t v0);
 
 typedef enum {
     OS_ERROR_NONE,
-    OS_ERROR_ASSERTION,
-    OS_ERROR_STACK_OVERFLOW,
-    OS_ERROR_APP,
-} os_error_kind_t;
+    OS_PANIC_ASSERTION,
+    OS_PANIC_STACK_OVERFLOW,
+    OS_PANIC_APP,
+    OS_PANIC_UNKNOWN,
+} os_panic_kind_t;
 
 /**
  *
  */
-void osi_error(os_error_kind_t code) OS_NORETURN;
+uint32_t osi_panic(os_panic_kind_t code);
 
 #if defined(__cplusplus)
 }

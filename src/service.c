@@ -33,6 +33,19 @@ uint32_t svc_delay(uint32_t ms) {
     return OSS_ERROR_TO;
 }
 
+uint32_t svc_panic(uint32_t code) {
+    os_task_self()->status = OS_TASK_STATUS_PANIC;
+
+    if (osg.scheduled == NULL) {
+        osi_schedule();
+    }
+
+    OS_ASSERT(osg.scheduled != NULL);
+    OS_ASSERT(osg.scheduled != osg.running);
+
+    return OSS_SUCCESS;
+}
+
 uint32_t svc_block(uint32_t ms, uint32_t flags) {
     osg.running->flags |= flags;
     return svc_delay(ms);
@@ -92,9 +105,7 @@ uint32_t os_delay(uint32_t ms) {
             osi_platform_delay(ms);
             return ms;
         }
-        else {
-            return __svc_delay(ms);
-        }
+        return __svc_delay(ms);
     }
     return osi_platform_delay(ms);
 }
@@ -103,9 +114,7 @@ uint32_t os_block(uint32_t ms, uint32_t flags) {
     if (osi_in_task()) {
         return __svc_block(ms, flags);
     }
-    else {
-        return OSS_ERROR_INVALID;
-    }
+    return OSS_ERROR_INVALID;
 }
 
 uint32_t os_pstr(const char *str) {
@@ -115,9 +124,23 @@ uint32_t os_pstr(const char *str) {
     if (osi_in_task()) {
         return __svc_pstr(str);
     }
-    else {
-        return svc_pstr(str);
+    return svc_pstr(str);
+}
+
+uint32_t os_panic(uint32_t code) {
+    // If we're in a IRQ then this is pretty bad.
+    if (__get_IPSR() != 0U) {
+        osi_panic(code);
+        return OSS_SUCCESS;
     }
+    // In a task, we can call a SVC call and abandon the task.
+    if (osi_in_task()) {
+        __svc_panic(code);
+        return OSS_SUCCESS;
+    }
+    // We're in the master thread, likely before starting the OS.
+    osi_panic(code);
+    return OSS_SUCCESS;
 }
 
 uint32_t os_printf(const char *f, ...) {

@@ -384,6 +384,10 @@ os_status_t osi_dispatch(os_task_t *task) {
     case OS_TASK_STATUS_FINISHED:
         runqueue_remove(&osg.runqueue, running);
         break;
+    case OS_TASK_STATUS_PANIC:
+        runqueue_remove(&osg.runqueue, running);
+        osi_printf("%s: panic\n", running->name);
+        break;
     }
 
     task->delay = 0;
@@ -569,20 +573,24 @@ os_status_t osi_irs_systick() {
 #if defined(__SAMD21__) || defined(__SAMD51__)
 inline void osi_assert(const char *assertion, const char *file, int line) {
     osi_printf("\n\nassertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
-    osi_error(OS_ERROR_ASSERTION);
+    osi_panic(OS_PANIC_ASSERTION);
 }
 #endif
 
-void osi_error(os_error_kind_t code) {
+uint32_t osi_panic(os_panic_kind_t code) {
+    if (osg.running != NULL) {
+        osg.running->status = OS_TASK_STATUS_PANIC;
+    }
     #if defined(__SAMD21__) || defined(__SAMD51__)
     __asm__("BKPT");
     infinite_loop();
     #endif
+    return OSS_SUCCESS;
 }
 
 void osi_stack_check() {
     if ((osg.running->sp < osg.running->stack) || (((uint32_t *)osg.running->stack)[0] != OSH_STACK_MAGIC_WORD)) {
-        osi_error(OS_ERROR_STACK_OVERFLOW);
+        osi_panic(OS_PANIC_STACK_OVERFLOW);
     }
 }
 
