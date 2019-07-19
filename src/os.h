@@ -169,6 +169,13 @@ uint32_t os_free_memory();
 /**
  *
  */
+inline int32_t os_is_running() {
+    return osg.state == OS_STATE_STARTED;
+}
+
+/**
+ *
+ */
 void osi_assert(const char *assertion, const char *file, int line);
 
 #if defined(__cplusplus)
