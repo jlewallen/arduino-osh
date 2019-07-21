@@ -594,6 +594,41 @@ inline void osi_assert(const char *assertion, const char *file, int line) {
 }
 #endif
 
+const char *os_status_str(os_status_t status) {
+    switch (status) {
+    case OSS_SUCCESS: return "OSS_SUCCESS";
+    case OSS_ERROR_TO: return "OSS_ERROR_TO";
+    case OSS_ERROR_MEM: return "OSS_ERROR_MEM";
+    case OSS_ERROR_INT: return "OSS_ERROR_INT";
+    case OSS_ERROR_INVALID: return "OSS_ERROR_INVALID";
+    default: return "UNKNOWN";
+    }
+}
+
+const char *os_task_status_str(os_task_status status) {
+    switch (status) {
+    case OS_TASK_STATUS_IDLE: return "OS_TASK_STATUS_IDLE";
+    case OS_TASK_STATUS_ACTIVE: return "OS_TASK_STATUS_ACTIVE";
+    case OS_TASK_STATUS_WAIT: return "OS_TASK_STATUS_WAIT";
+    case OS_TASK_STATUS_SUSPENDED: return "OS_TASK_STATUS_SUSPENDED";
+    case OS_TASK_STATUS_FINISHED: return "OS_TASK_STATUS_FINISHED";
+    case OS_TASK_STATUS_PANIC: return "OS_TASK_STATUS_PANIC";
+    default: return "UNKNOWN";
+    }
+}
+
+const char *os_panic_kind_str(os_panic_kind_t kind) {
+    switch (kind) {
+    case OS_PANIC_NONE: return "OS_PANIC_NONE";
+    case OS_PANIC_ASSERTION: return "OS_PANIC_ASSERTION";
+    case OS_PANIC_STACK_OVERFLOW: return "OS_PANIC_STACK_OVERFLOW";
+    case OS_PANIC_APP: return "OS_PANIC_APP";
+    case OS_PANIC_UNKNOWN: return "OS_PANIC_UNKNOWN";
+    default: return "UNKNOWN";
+    }
+}
+
+
 uint32_t osi_panic(os_panic_kind_t code) {
     osi_printf("\n\npanic! (%s)\n", os_panic_kind_str(code));
     if (osg.running != NULL) {

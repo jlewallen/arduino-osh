@@ -73,28 +73,6 @@ uint32_t osi_task_get_stacked_return(os_task_t *task);
  */
 uint32_t osi_task_set_stacked_return(os_task_t *task, uint32_t v0);
 
-typedef enum {
-    OS_PANIC_NONE,
-    OS_PANIC_ASSERTION,
-    OS_PANIC_STACK_OVERFLOW,
-    OS_PANIC_APP,
-    OS_PANIC_UNKNOWN,
-} os_panic_kind_t;
-
-/**
- * Map an os_panic_kind_t to a string for display/logging.
- */
-inline const char *os_panic_kind_str(os_panic_kind_t kind) {
-    switch (kind) {
-    case OS_PANIC_NONE: return "OS_PANIC_NONE";
-    case OS_PANIC_ASSERTION: return "OS_PANIC_ASSERTION";
-    case OS_PANIC_STACK_OVERFLOW: return "OS_PANIC_STACK_OVERFLOW";
-    case OS_PANIC_APP: return "OS_PANIC_APP";
-    case OS_PANIC_UNKNOWN: return "OS_PANIC_UNKNOWN";
-    default: return "UNKNOWN";
-    }
-}
-
 /**
  *
  */
