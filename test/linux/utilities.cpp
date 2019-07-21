@@ -51,7 +51,7 @@ os_task_t *tests_schedule_task_and_switch() {
 }
 
 os_task_t *tests_sleep_task(os_task_t &task) {
-    task.status = OS_TASK_STATUS_WAIT;
+    osi_task_status_set(&task, OS_TASK_STATUS_WAIT);
     task.delay = os_uptime() + 1000;
     return &task;
 }

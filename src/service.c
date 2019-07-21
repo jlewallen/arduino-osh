@@ -20,8 +20,11 @@ uint32_t svc_delay(uint32_t ms) {
     OS_ASSERT(osg.running != NULL);
     OS_ASSERT(osg.scheduled != osg.running);
 
-    osg.running->status = OS_TASK_STATUS_WAIT;
+    // NOTE: It's possible that something has already been scheduled, but we ned
+    // to ensure that osg.running gets removed from the runqueue and added to
+    // the waitqueue.
     osg.running->delay = os_uptime() + ms;
+    osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_WAIT);
 
     if (osg.scheduled == NULL) {
         osi_schedule();

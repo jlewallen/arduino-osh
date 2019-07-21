@@ -107,6 +107,8 @@ TEST_F(ScheduleSuite, TwoTasks_Schedule) {
     ASSERT_EQ(osi_schedule(), OSS_SUCCESS);
     ASSERT_EQ(osg.scheduled, nullptr);
 
+    ASSERT_EQ(&tasks[1], osg.running);
+
     /* Current task is waiting, idle can be scheduled now. */
     tests_sleep_task(tasks[1]);
 
@@ -173,15 +175,15 @@ TEST_F(ScheduleSuite, ManyTasks_ScheduleAsTasksGraduallySleep) {
     ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[2]);
 
     /* Gradually sleep tasks... */
-    ASSERT_EQ(tests_sleep_running_task(), &tasks[3]);
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[1]);
 
-    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[4]);;
+    ASSERT_EQ(tests_schedule_task_and_switch(), &tasks[3]);;
 
     /* Gradually sleep tasks... */
     ASSERT_EQ(tests_sleep_running_task(), &tasks[1]);
 
     /* Gradually sleep tasks... */
-    ASSERT_EQ(tests_sleep_running_task(), &tasks[3]);
+    ASSERT_EQ(tests_sleep_running_task(), &tasks[4]);
 
     /* Gradually sleep tasks... */
     ASSERT_EQ(tests_sleep_running_task(), &tasks[0]);

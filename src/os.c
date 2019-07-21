@@ -128,9 +128,6 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
     return stk;
 }
 
-/**
- *
- */
 os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_status status, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
     os_task_options_t options = {
         name,
@@ -252,10 +249,7 @@ os_status_t os_task_suspend(os_task_t *task) {
     osi_printf("%s: suspended\n", task->name);
     #endif
 
-    task->status = OS_TASK_STATUS_SUSPENDED;
-
-    waitqueue_remove(&osg.waitqueue, task);
-    runqueue_remove(&osg.runqueue, task);
+    osi_task_status_set(task, OS_TASK_STATUS_SUSPENDED);
 
     return OSS_SUCCESS;
 }
@@ -268,9 +262,7 @@ os_status_t os_task_resume(os_task_t *task) {
     osi_printf("%s: resumed\n", task->name);
     #endif
 
-    task->status = OS_TASK_STATUS_IDLE;
-
-    runqueue_add(&osg.runqueue, task);
+    osi_task_status_set(task, OS_TASK_STATUS_IDLE);
 
     return OSS_SUCCESS;
 }
@@ -320,6 +312,35 @@ os_status_t os_start(void) {
     #endif
 
     return OSS_SUCCESS;
+}
+
+os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
+    uint8_t old_status = task->status;
+
+    task->status = new_status;
+
+    if (new_status == OS_TASK_STATUS_WAIT) {
+        runqueue_remove(&osg.runqueue, task);
+        waitqueue_add(&osg.waitqueue, task);
+    }
+    else if (new_status == OS_TASK_STATUS_FINISHED) {
+        runqueue_remove(&osg.runqueue, task);
+    }
+    else if (new_status == OS_TASK_STATUS_PANIC) {
+        runqueue_remove(&osg.runqueue, task);
+    }
+    else if (new_status == OS_TASK_STATUS_SUSPENDED) {
+        waitqueue_remove(&osg.waitqueue, task);
+        runqueue_remove(&osg.runqueue, task);
+    }
+    else if (new_status == OS_TASK_STATUS_IDLE) {
+        if (old_status == OS_TASK_STATUS_WAIT) {
+            waitqueue_remove(&osg.waitqueue, task);
+        }
+        runqueue_add(&osg.runqueue, task);
+    }
+
+    return new_status;
 }
 
 os_status_t osi_dispatch(os_task_t *task) {
@@ -372,15 +393,6 @@ os_status_t osi_dispatch(os_task_t *task) {
         task->flags = 0;
     }
 
-    // If this task was waiting and is being given a chance, change queues.
-    if (task->status == OS_TASK_STATUS_WAIT) {
-        waitqueue_remove(&osg.waitqueue, task);
-        runqueue_add(&osg.runqueue, task);
-        #if defined(OS_CONFIG_DEBUG_SCHEDULE)
-        osi_printf("%s: running\n", task->name);
-        #endif
-    }
-
     // NOTE: Should the status update happen when we actually switch?
     os_task_t *running = (os_task_t *)osg.running;
     switch (running->status) {
@@ -391,8 +403,9 @@ os_status_t osi_dispatch(os_task_t *task) {
         OS_ASSERT(running->status != OS_TASK_STATUS_IDLE);
         break;
     case OS_TASK_STATUS_WAIT:
-        runqueue_remove(&osg.runqueue, running);
-        waitqueue_add(&osg.waitqueue, running);
+        // NOTE: This is done when we change the status.
+        // runqueue_remove(&osg.runqueue, running);
+        // waitqueue_add(&osg.waitqueue, running);
         #if defined(OS_CONFIG_DEBUG_SCHEDULE)
         osi_printf("%s: waiting\n", running->name);
         #endif
@@ -407,9 +420,20 @@ os_status_t osi_dispatch(os_task_t *task) {
         break;
     }
 
+    uint8_t old_status = task->status;
+
     task->delay = 0;
     task->flags = 0;
     task->status = OS_TASK_STATUS_ACTIVE;
+
+    // If this task was waiting and is being given a chance, change queues.
+    if (old_status == OS_TASK_STATUS_WAIT) {
+        waitqueue_remove(&osg.waitqueue, task);
+        runqueue_add(&osg.runqueue, task);
+        #if defined(OS_CONFIG_DEBUG_SCHEDULE)
+        osi_printf("%s: running\n", task->name);
+        #endif
+    }
 
     /* Update the time the task has been running and prepare the new task. */
     // uint32_t now = os_uptime();
@@ -429,6 +453,8 @@ os_status_t osi_dispatch(os_task_t *task) {
 
     osg.scheduled = task;
 
+    osi_priority_check(task); // TODO: SLOW/PARANOID
+
     return OSS_SUCCESS;
 }
 
@@ -439,24 +465,35 @@ static bool task_is_running(os_task_t *task) {
     return task->status == OS_TASK_STATUS_ACTIVE || task->status == OS_TASK_STATUS_IDLE;
 }
 
-static bool is_equal_or_higher_priority(os_priority_t a, os_priority_t b) {
-    return a >= b;
+static bool is_higher_priority(os_priority_t a, os_priority_t b) {
+    return a > b;
+}
+
+static bool is_equal_priority(os_priority_t a, os_priority_t b) {
+    return a == b;
 }
 
 static os_task_t *find_new_task(os_task_t *running) {
     // Default to the running task just in case we don't go through the loop
     // or we're the only task, etc...
-    os_task_t *new_task = running;
+    os_task_t *new_task = NULL;
 
     // Look for a task that's higher priority than us (lower number)
-    os_task_t *task = OS_RUNQUEUE_NEXT_WRAPPED(running);
+    os_task_t *first = OS_RUNQUEUE_NEXT_WRAPPED(running);
+    os_task_t *task = first;
     os_task_t *lower_priority = NULL;
     os_priority_t ours = running->priority;
-    for ( ; task != running && task != lower_priority; ) {
+    for ( ; task != lower_priority; ) {
         if (task_is_running(task)) {
-            if (is_equal_or_higher_priority(task->priority, ours)) {
+            if (is_higher_priority(task->priority, ours)) {
                 new_task = task;
                 break;
+            }
+            else if (is_equal_priority(task->priority, ours)) {
+                if (new_task == NULL) {
+                    new_task = task;
+                }
+                task = OS_RUNQUEUE_NEXT_WRAPPED(task);
             }
             else {
                 OS_ASSERT(lower_priority == NULL);
@@ -472,17 +509,24 @@ static os_task_t *find_new_task(os_task_t *running) {
         else {
             task = OS_RUNQUEUE_NEXT_WRAPPED(task);
         }
-    }
 
-    /* If we ended up looping around w/o finding somebody of equal or higher... */
-    if (new_task == running) {
-        /* If we're no longer running, then we can drop down in priority. */
-        if (!task_is_running(running) && lower_priority != NULL) {
-            new_task = lower_priority;
+        if (task == first) {
+            break;
         }
     }
 
-    OS_ASSERT(new_task != NULL);
+    if (new_task != NULL) {
+        osi_priority_check(new_task); // TODO: SLOW/PARANOID
+    }
+
+    /* If we ended up looping around w/o finding somebody of equal or higher... */
+    if (new_task == NULL) {
+        /* If we're no longer running, then we can drop down in priority. */
+        if (!task_is_running(running) && lower_priority != NULL) {
+            new_task = lower_priority;
+            osi_priority_check(new_task); // TODO: SLOW/PARANOID
+        }
+    }
 
     return new_task;
 }
@@ -498,20 +542,15 @@ os_status_t osi_schedule() {
     uint32_t now = os_uptime();
     for (os_task_t *task = osg.waitqueue; task != NULL; task = task->nrp) {
         if (now >= task->delay) {
-            new_task = task;
-            OS_ASSERT(new_task != NULL);
+            osi_task_status_set(task, OS_TASK_STATUS_IDLE);
             break;
         }
     }
 
-    // We always give just awoken tasks an immediate chance, for now.
-    if (new_task == NULL) {
-        // Look for a task that's got the same priority or higher.
-        new_task = find_new_task((os_task_t *)osg.running);
-        OS_ASSERT(new_task != NULL);
-    }
+    // Look for a task that's got the same priority or higher.
+    new_task = find_new_task((os_task_t *)osg.running);
 
-    if (osg.running != new_task) {
+    if (new_task != NULL && osg.running != new_task) {
         osi_dispatch(new_task);
     }
 
@@ -632,7 +671,7 @@ const char *os_panic_kind_str(os_panic_kind_t kind) {
 uint32_t osi_panic(os_panic_kind_t code) {
     osi_printf("\n\npanic! (%s)\n", os_panic_kind_str(code));
     if (osg.running != NULL) {
-        osg.running->status = OS_TASK_STATUS_PANIC;
+        osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_PANIC);
     }
     #if defined(__SAMD21__) || defined(__SAMD51__)
     __asm__("BKPT");
@@ -641,10 +680,33 @@ uint32_t osi_panic(os_panic_kind_t code) {
     return OSS_SUCCESS;
 }
 
+void osi_priority_check(os_task_t *scheduled) {
+    if (scheduled != NULL) {
+        uint8_t scheduled_priority = scheduled->priority;
+        for (os_task_t *iter = osg.runqueue; iter != NULL; iter = iter->nrp) {
+            if (iter->status == OS_TASK_STATUS_ACTIVE || iter->status == OS_TASK_STATUS_IDLE) {
+                if (scheduled_priority < iter->priority) {
+                    osi_printf("scheduler panic: '%s' (%d) < '%s' (%d)", scheduled->name, scheduled_priority, iter->name, iter->priority);
+                }
+                OS_ASSERT(scheduled_priority >= iter->priority);
+            }
+        }
+    }
+
+    uint8_t priority = 0xff;
+    for (os_task_t *iter = osg.runqueue; iter != NULL; iter = iter->nrp) {
+        OS_ASSERT(iter->status == OS_TASK_STATUS_ACTIVE || iter->status == OS_TASK_STATUS_IDLE);
+        OS_ASSERT(priority >= iter->priority);
+        priority = iter->priority;
+    }
+}
+
 void osi_stack_check() {
     if ((osg.running->sp < osg.running->stack) || (((uint32_t *)osg.running->stack)[0] != OSH_STACK_MAGIC_WORD)) {
         osi_panic(OS_PANIC_STACK_OVERFLOW);
     }
+
+    osi_priority_check((os_task_t *)osg.scheduled); // TODO: SLOW/PARANOID
 }
 
 void osi_hard_fault_report(uintptr_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {
@@ -691,7 +753,7 @@ static void task_finished() {
     osi_printf("os: task '%s' finished\n", osg.running->name);
     #endif
 
-    osg.running->status = OS_TASK_STATUS_FINISHED;
+    osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_FINISHED);
 
     infinite_loop();
 }
@@ -732,10 +794,12 @@ static void runqueue_add(os_task_t **head, os_task_t *task) {
             else {
                 previous->nrp = task;
             }
+            osi_priority_check(NULL); // TODO: SLOW/PARANOID
             return;
         }
         if (iter->nrp == NULL) {
             iter->nrp = task;
+            osi_priority_check(NULL); // TODO: SLOW/PARANOID
             return;
         }
         previous  = iter;

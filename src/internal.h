@@ -46,12 +46,22 @@ os_status_t osi_schedule();
 /**
  *
  */
+os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status);
+
+/**
+ *
+ */
 os_status_t osi_irs_systick();
 
 /**
  *
  */
 void osi_stack_check();
+
+/**
+ *
+ */
+void osi_priority_check();
 
 /**
  *
