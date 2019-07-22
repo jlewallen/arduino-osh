@@ -291,7 +291,7 @@ os_status_t os_start(void) {
     OS_ASSERT(osg.runqueue != NULL);
 
     /* Running task is the first task in the runqueue. */
-    osg.running = osg.runqueue;
+    osg.running = osg.idle;
     osg.running->status = OS_TASK_STATUS_ACTIVE;
 
     #if defined(__SAMD21__) || defined(__SAMD51__)
