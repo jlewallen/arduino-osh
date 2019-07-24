@@ -40,6 +40,13 @@ os_status_t osi_mutex_create(os_mutex_t *mutex, os_mutex_definition_t *def) {
     return OSS_SUCCESS;
 }
 
+os_status_t os_mutex_is_owner(os_mutex_t *mutex) {
+    if (mutex->owner == os_task_self()) {
+        return OSS_SUCCESS;
+    }
+    return OSS_ERROR;
+}
+
 os_status_t osi_mutex_acquire(os_mutex_t *mutex, uint16_t to) {
     os_task_t *task = os_task_self();
 

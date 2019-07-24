@@ -71,6 +71,11 @@ os_status_t os_mutex_acquire(os_mutex_t *mutex, uint32_t to);
 /**
  *
  */
+os_status_t os_mutex_is_owner(os_mutex_t *mutex);
+
+/**
+ *
+ */
 os_status_t os_mutex_release(os_mutex_t *mutex);
 
 /**
