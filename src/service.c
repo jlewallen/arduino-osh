@@ -213,7 +213,13 @@ os_status_t os_mutex_create(os_mutex_t *mutex, os_mutex_definition_t *def) {
 }
 
 os_status_t os_mutex_acquire(os_mutex_t *mutex, uint32_t to) {
-    return __svc_mutex_acquire(mutex, to);
+    os_status_t status = __svc_mutex_acquire(mutex, to);
+    if (mutex->flags & OS_MUTEX_FLAG_ABORT_ON_TIMEOUT) {
+        if (status == OSS_ERROR_TO) {
+            __svc_abort(0);
+        }
+    }
+    return status;
 }
 
 os_status_t os_mutex_release(os_mutex_t *mutex) {

@@ -207,11 +207,15 @@ typedef struct os_queue_t {
     void *messages[1];
 } os_queue_t;
 
+#define OS_MUTEX_FLAG_NONE                            (0)
+#define OS_MUTEX_FLAG_ABORT_ON_TIMEOUT                (1)
+
 /**
  *
  */
 typedef struct os_mutex_definition_t {
     const char *name;
+    uint32_t flags;
 } os_mutex_definition_t;
 
 
@@ -223,6 +227,7 @@ typedef struct os_mutex_t {
     os_blocked_t blocked;
     os_task_t *owner;
     uint16_t level;
+    uint32_t flags;
 } os_mutex_t;
 
 /**

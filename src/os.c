@@ -375,6 +375,9 @@ os_status_t osi_dispatch(os_task_t *task) {
             task->nblocked = NULL;
         }
 
+        // NOTE: If we can see if they got the mutex we can decide to end the
+        // task here if not and the right flags are set.
+
         task->queue = NULL;
         task->mutex = NULL;
         task->flags = 0;

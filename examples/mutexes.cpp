@@ -5,7 +5,7 @@
 
 #define NUMBER_OF_TASKS         (4)
 
-static os_mutex_define(mutex);
+static os_mutex_define(mutex, OS_MUTEX_FLAG_NONE);
 static os_task_t idle_task;
 static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];
 static os_task_t tasks[NUMBER_OF_TASKS];

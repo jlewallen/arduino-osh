@@ -116,8 +116,8 @@ os_status_t os_mutex_release(os_mutex_t *mutex);
 /**
  *
  */
-#define os_mutex_define(name)                               \
-    os_mutex_definition_t _os_mutex_def_##name = { #name }; \
+#define os_mutex_define(name, flags)                                \
+    os_mutex_definition_t _os_mutex_def_##name = { #name, flags };  \
     os_mutex_t _os_mutex_##name;
 
 /**

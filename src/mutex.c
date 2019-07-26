@@ -37,6 +37,7 @@ os_status_t osi_mutex_create(os_mutex_t *mutex, os_mutex_definition_t *def) {
     mutex->blocked.type = 0;
     mutex->blocked.tasks = NULL;
     mutex->level = 0;
+    mutex->flags = def->flags;
     return OSS_SUCCESS;
 }
 
