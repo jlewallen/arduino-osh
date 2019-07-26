@@ -201,6 +201,7 @@ uint32_t os_task_is_running(os_task_t *task) {
     case OS_TASK_STATUS_SUSPENDED: return false;
     case OS_TASK_STATUS_FINISHED: return false;
     case OS_TASK_STATUS_PANIC: return false;
+    case OS_TASK_STATUS_ABORTED: return false;
     default: return false;
     }
 }
@@ -329,6 +330,9 @@ os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
     else if (new_status == OS_TASK_STATUS_PANIC) {
         runqueue_remove(&osg.runqueue, task);
     }
+    else if (new_status == OS_TASK_STATUS_ABORTED) {
+        runqueue_remove(&osg.runqueue, task);
+    }
     else if (new_status == OS_TASK_STATUS_SUSPENDED) {
         waitqueue_remove(&osg.waitqueue, task);
         runqueue_remove(&osg.runqueue, task);
@@ -415,8 +419,9 @@ os_status_t osi_dispatch(os_task_t *task) {
         runqueue_remove(&osg.runqueue, running);
         break;
     case OS_TASK_STATUS_PANIC:
-        runqueue_remove(&osg.runqueue, running);
         osi_printf("%s: panic\n", running->name);
+    case OS_TASK_STATUS_ABORTED:
+        runqueue_remove(&osg.runqueue, running);
         break;
     }
 
@@ -652,6 +657,7 @@ const char *os_task_status_str(os_task_status status) {
     case OS_TASK_STATUS_SUSPENDED: return "OS_TASK_STATUS_SUSPENDED";
     case OS_TASK_STATUS_FINISHED: return "OS_TASK_STATUS_FINISHED";
     case OS_TASK_STATUS_PANIC: return "OS_TASK_STATUS_PANIC";
+    case OS_TASK_STATUS_ABORTED: return "OS_TASK_STATUS_ABORTED";
     default: return "UNKNOWN";
     }
 }

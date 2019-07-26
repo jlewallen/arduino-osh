@@ -36,6 +36,11 @@ uint32_t os_panic(uint32_t code);
 /**
  *
  */
+uint32_t os_abort(uint32_t code);
+
+/**
+ *
+ */
 uint32_t os_printf(const char *str, ...);
 
 /**

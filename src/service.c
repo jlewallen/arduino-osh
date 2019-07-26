@@ -37,7 +37,20 @@ uint32_t svc_delay(uint32_t ms) {
 }
 
 uint32_t svc_panic(uint32_t code) {
-    os_task_self()->status = OS_TASK_STATUS_PANIC;
+    osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_PANIC);
+
+    if (osg.scheduled == NULL) {
+        osi_schedule();
+    }
+
+    OS_ASSERT(osg.scheduled != NULL);
+    OS_ASSERT(osg.scheduled != osg.running);
+
+    return OSS_SUCCESS;
+}
+
+uint32_t svc_abort(uint32_t code) {
+    osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_ABORTED);
 
     if (osg.scheduled == NULL) {
         osi_schedule();
@@ -144,6 +157,13 @@ uint32_t os_panic(uint32_t code) {
     // We're in the master thread, likely before starting the OS.
     osi_panic(code);
     return OSS_SUCCESS;
+}
+
+uint32_t os_abort(uint32_t code) {
+    if (__get_IPSR() != 0U || !osi_in_task()) {
+        return OSS_ERROR_INVALID;
+    }
+    return __svc_abort(code);
 }
 
 uint32_t os_printf(const char *f, ...) {

@@ -44,4 +44,10 @@ target_compile_options(osh-mutexes PRIVATE -Wall -Werror)
 target_include_directories(osh-mutexes PUBLIC ./ ../src)
 add_arduino_firmware(osh-mutexes)
 
+file(GLOB panic_sources panic.cpp)
+add_arduino_library(osh-panic "${osh_sources};${panic_sources}")
+target_compile_options(osh-panic PRIVATE -Wall -Werror)
+target_include_directories(osh-panic PUBLIC ./ ../src)
+add_arduino_firmware(osh-panic)
+
 endif()
