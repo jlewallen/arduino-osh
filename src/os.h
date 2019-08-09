@@ -75,6 +75,9 @@ inline os_task_t *os_task_self() {
  * Return the name of the currently executing task.
  */
 inline const char *os_task_name() {
+    if (osg.running == NULL) {
+        return NULL;
+    }
     return osg.running->name;
 }
 
