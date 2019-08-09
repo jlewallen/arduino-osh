@@ -349,9 +349,7 @@ os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
 
 os_status_t osi_dispatch(os_task_t *task) {
     OS_ASSERT(task != NULL);
-    OS_ASSERT(osg.scheduled == NULL);
     OS_ASSERT(osg.running != NULL);
-    OS_ASSERT(osg.running->status != OS_TASK_STATUS_IDLE);
 
     if (osg.running == task) {
         return OSS_ERROR_NOP;
@@ -407,7 +405,6 @@ os_status_t osi_dispatch(os_task_t *task) {
         running->status = OS_TASK_STATUS_IDLE;
         break;
     case OS_TASK_STATUS_IDLE:
-        OS_ASSERT(running->status != OS_TASK_STATUS_IDLE);
         break;
     case OS_TASK_STATUS_WAIT:
         // NOTE: This is done when we change the status.
