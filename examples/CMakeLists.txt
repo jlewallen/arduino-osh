@@ -50,4 +50,10 @@ target_compile_options(osh-panic PRIVATE -Wall -Werror)
 target_include_directories(osh-panic PUBLIC ./ ../src)
 add_arduino_firmware(osh-panic)
 
+file(GLOB everything_sources everything.cpp)
+add_arduino_library(osh-everything "${osh_sources};${everything_sources}")
+target_compile_options(osh-everything PRIVATE -Wall -Werror)
+target_include_directories(osh-everything PUBLIC ./ ../src)
+add_arduino_firmware(osh-everything)
+
 endif()
