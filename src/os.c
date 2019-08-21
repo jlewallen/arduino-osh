@@ -18,6 +18,7 @@
  */
 #include "os.h"
 #include "internal.h"
+#include "utilities.h"
 
 os_globals_t osg = {
     NULL,  /* running */
@@ -373,6 +374,8 @@ os_status_t osi_dispatch(os_task_t *task) {
             task->nblocked = NULL;
         }
 
+        blocked_remove(&task->mutex->blocked, task);
+
         // NOTE: If we can see if they got the mutex we can decide to end the
         // task here if not and the right flags are set.
 
@@ -392,6 +395,8 @@ os_status_t osi_dispatch(os_task_t *task) {
             task->queue->blocked.tasks = task->nblocked;
             task->nblocked = NULL;
         }
+
+        blocked_remove(&task->queue->blocked, task);
 
         task->queue = NULL;
         task->mutex = NULL;
