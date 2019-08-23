@@ -20,10 +20,18 @@ uint32_t svc_delay(uint32_t ms) {
     OS_ASSERT(osg.running != NULL);
     OS_ASSERT(osg.scheduled != osg.running);
 
+    // Don't overflow delay in this case.
+    if (ms == UINT32_MAX) {
+        osg.running->delay = UINT32_MAX;
+    }
+    else {
+        osg.running->delay = os_uptime() + ms;
+        OS_ASSERT(osg.running->delay != UINT32_MAX);
+    }
+
     // NOTE: It's possible that something has already been scheduled, but we ned
     // to ensure that osg.running gets removed from the runqueue and added to
     // the waitqueue.
-    osg.running->delay = os_uptime() + ms;
     osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_WAIT);
 
     if (osg.scheduled == NULL) {
@@ -83,7 +91,7 @@ os_status_t svc_queue_create(os_queue_t *queue, os_queue_definition_t *def) {
 os_tuple_return_type_t svc_queue_enqueue(os_queue_t *queue, void *message, uint32_t to) {
     os_tuple_t rtuple = { OSS_ERROR_TO, { 0 } };
 
-    rtuple.status = osi_queue_enqueue(queue, message, (uint16_t)to);
+    rtuple.status = osi_queue_enqueue(queue, message, to);
 
     return os_tuple_return_value(rtuple);
 }
@@ -91,7 +99,7 @@ os_tuple_return_type_t svc_queue_enqueue(os_queue_t *queue, void *message, uint3
 os_tuple_return_type_t svc_queue_dequeue(os_queue_t *queue, uint32_t to) {
     os_tuple_t rtuple = { OSS_ERROR_TO, { 0 } };
 
-    rtuple.status = osi_queue_dequeue(queue, &rtuple.value.ptr, (uint16_t)to);
+    rtuple.status = osi_queue_dequeue(queue, &rtuple.value.ptr, to);
 
     return os_tuple_return_value(rtuple);
 }
@@ -101,7 +109,7 @@ os_status_t svc_mutex_create(os_mutex_t *mutex, os_mutex_definition_t *def) {
 }
 
 os_status_t svc_mutex_acquire(os_mutex_t *mutex, uint32_t to) {
-    return osi_mutex_acquire(mutex, (uint16_t)to);
+    return osi_mutex_acquire(mutex, to);
 }
 
 os_status_t svc_mutex_release(os_mutex_t *mutex) {

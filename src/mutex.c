@@ -48,7 +48,7 @@ os_status_t os_mutex_is_owner(os_mutex_t *mutex) {
     return OSS_ERROR;
 }
 
-os_status_t osi_mutex_acquire(os_mutex_t *mutex, uint16_t to) {
+os_status_t osi_mutex_acquire(os_mutex_t *mutex, uint32_t to) {
     os_task_t *task = os_task_self();
 
     // TODO: Allow tasks to have more than one mutex.

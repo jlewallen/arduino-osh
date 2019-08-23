@@ -89,7 +89,7 @@ os_tuple_t osi_queue_enqueue_isr(os_queue_t *queue, void *message) {
     return tuple;
 }
 
-os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
+os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint32_t to) {
     os_task_t *running = os_task_self();
 
     OS_ASSERT(running != NULL); // TODO: Relax this?
@@ -138,7 +138,7 @@ os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint16_t to) {
     return OSS_SUCCESS;
 }
 
-os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint16_t to) {
+os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint32_t to) {
     OS_ASSERT(osg.running != NULL); // TODO: Relax this?
     OS_ASSERT(osg.running->nblocked == NULL);
 
