@@ -551,9 +551,11 @@ os_status_t osi_schedule() {
     // Check to see if anything in the waitqueue is free to go.
     uint32_t now = os_uptime();
     for (os_task_t *task = osg.waitqueue; task != NULL; task = task->nrp) {
-        if (now >= task->delay) {
-            osi_task_status_set(task, OS_TASK_STATUS_IDLE);
-            break;
+        if (task->delay != UINT32_MAX) {
+            if (now >= task->delay) {
+                osi_task_status_set(task, OS_TASK_STATUS_IDLE);
+                break;
+            }
         }
     }
 
