@@ -83,6 +83,17 @@ os_status_t os_mutex_is_owner(os_mutex_t *mutex);
  */
 os_status_t os_mutex_release(os_mutex_t *mutex);
 
+os_status_t os_semaphore_create(os_semaphore_t *semaphore, os_semaphore_definition_t *def);
+
+os_status_t os_semaphore_acquire(os_semaphore_t *semaphore, uint32_t to);
+
+os_status_t os_semaphore_release(os_semaphore_t *semaphore);
+
+os_status_t os_rwlock_create(os_rwlock_t *rwlock, os_rwlock_definition_t *def);
+os_status_t os_rwlock_acquire_read(os_rwlock_t *rwlock, uint32_t to);
+os_status_t os_rwlock_acquire_write(os_rwlock_t *rwlock, uint32_t to);
+os_status_t os_rwlock_release(os_rwlock_t *rwlock);
+
 /**
  *
  */
@@ -129,6 +140,23 @@ os_status_t os_mutex_release(os_mutex_t *mutex);
  *
  */
 #define os_mutex_def(name)            (os_mutex_definition_t *)&_os_mutex_def_##name
+
+/**
+ *
+ */
+#define os_semaphore_define(name, size, flags)                                   \
+    os_semaphore_definition_t _os_semaphore_def_##name = { #name, size, flags }; \
+    os_semaphore_t _os_semaphore_##name;
+
+/**
+ *
+ */
+#define os_semaphore(name)            (os_semaphore_t *)&_os_semaphore_##name
+
+/**
+ *
+ */
+#define os_semaphore_def(name)        (os_semaphore_definition_t *)&_os_semaphore_def_##name
 
 #if defined(__cplusplus)
 }

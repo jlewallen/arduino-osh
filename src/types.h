@@ -103,9 +103,11 @@ typedef enum os_task_status {
 #define OS_TASK_FLAG_NONE                             (0)
 #define OS_TASK_FLAG_MUTEX                            (1)
 #define OS_TASK_FLAG_QUEUE                            (2)
+#define OS_TASK_FLAG_SEMAPHORE                        (3)
 
 struct os_queue_t;
 struct os_mutex_t;
+struct os_semaphore_t;
 
 typedef uint32_t os_priority_t;
 
@@ -148,6 +150,7 @@ typedef struct os_task_t {
     struct os_task_t *nblocked;
     struct os_queue_t *queue;
     struct os_mutex_t *mutex;
+    struct os_semaphore_t *semaphore;
     os_priority_t priority;
     void *message;
     uint32_t started;
@@ -229,6 +232,26 @@ typedef struct os_mutex_t {
     uint16_t level;
     uint32_t flags;
 } os_mutex_t;
+
+/**
+ *
+ */
+typedef struct os_semaphore_definition_t {
+    const char *name;
+    uint32_t tokens;
+    uint32_t flags;
+} os_semaphore_definition_t;
+
+
+/**
+ *
+ */
+typedef struct os_semaphore_t {
+    os_semaphore_definition_t *def;
+    os_blocked_t blocked;
+    uint32_t tokens;
+    uint32_t flags;
+} os_semaphore_t;
 
 /**
  *

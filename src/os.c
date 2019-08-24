@@ -364,6 +364,7 @@ os_status_t osi_dispatch(os_task_t *task) {
     if ((task->flags & OS_TASK_FLAG_MUTEX) == OS_TASK_FLAG_MUTEX) {
         OS_ASSERT(task->queue == NULL);
         OS_ASSERT(task->mutex != NULL);
+        OS_ASSERT(task->semaphore == NULL);
 
         #if defined(OS_CONFIG_DEBUG_MUTEXES)
         osi_printf("%s: removed from mutex %p\n", task->name, task->mutex);
@@ -379,13 +380,13 @@ os_status_t osi_dispatch(os_task_t *task) {
         // NOTE: If we can see if they got the mutex we can decide to end the
         // task here if not and the right flags are set.
 
-        task->queue = NULL;
         task->mutex = NULL;
         task->flags = 0;
     }
     if ((task->flags & OS_TASK_FLAG_QUEUE) == OS_TASK_FLAG_QUEUE) {
         OS_ASSERT(task->mutex == NULL);
         OS_ASSERT(task->queue != NULL);
+        OS_ASSERT(task->semaphore == NULL);
 
         #if defined(OS_CONFIG_DEBUG_QUEUES)
         osi_printf("%s: removed from queue %p\n", task->name, task->queue);
@@ -399,7 +400,21 @@ os_status_t osi_dispatch(os_task_t *task) {
         blocked_remove(&task->queue->blocked, task);
 
         task->queue = NULL;
-        task->mutex = NULL;
+        task->flags = 0;
+    }
+    if ((task->flags & OS_TASK_FLAG_SEMAPHORE) == OS_TASK_FLAG_SEMAPHORE) {
+        OS_ASSERT(task->mutex == NULL);
+        OS_ASSERT(task->queue == NULL);
+        OS_ASSERT(task->semaphore != NULL);
+
+        if (task->semaphore->blocked.tasks == task) {
+            task->semaphore->blocked.tasks = task->nblocked;
+            task->nblocked = NULL;
+        }
+
+        blocked_remove(&task->semaphore->blocked, task);
+
+        task->semaphore = NULL;
         task->flags = 0;
     }
 

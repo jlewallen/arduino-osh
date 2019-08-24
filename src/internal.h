@@ -17,6 +17,7 @@
 #include "segger/SEGGER_RTT.h"
 #include "mutex.h"
 #include "queue.h"
+#include "semaphore.h"
 #include "arduino.h"
 #include "syscalls.h"
 #include "faults.h"

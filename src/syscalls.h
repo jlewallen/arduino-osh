@@ -48,4 +48,12 @@ SVC_2_1(svc_mutex_create, os_status_t, os_mutex_t*, os_mutex_definition_t*, RET_
 SVC_2_1(svc_mutex_acquire, os_status_t, os_mutex_t*, uint32_t, RET_os_status_t);
 SVC_1_1(svc_mutex_release, os_status_t, os_mutex_t*, RET_os_status_t);
 
+os_status_t svc_semaphore_create(os_semaphore_t *semaphore, os_semaphore_definition_t *def);
+os_status_t svc_semaphore_acquire(os_semaphore_t *semaphore, uint32_t to);
+os_status_t svc_semaphore_release(os_semaphore_t *semaphore);
+
+SVC_2_1(svc_semaphore_create, os_status_t, os_semaphore_t*, os_semaphore_definition_t*, RET_os_status_t);
+SVC_2_1(svc_semaphore_acquire, os_status_t, os_semaphore_t*, uint32_t, RET_os_status_t);
+SVC_1_1(svc_semaphore_release, os_status_t, os_semaphore_t*, RET_os_status_t);
+
 #endif // OS_SYSCALLS_H

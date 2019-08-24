@@ -116,6 +116,18 @@ os_status_t svc_mutex_release(os_mutex_t *mutex) {
     return osi_mutex_release(mutex);
 }
 
+os_status_t svc_semaphore_create(os_semaphore_t *semaphore, os_semaphore_definition_t *def) {
+    return osi_semaphore_create(semaphore, def);
+}
+
+os_status_t svc_semaphore_acquire(os_semaphore_t *semaphore, uint32_t to) {
+    return osi_semaphore_acquire(semaphore, to);
+}
+
+os_status_t svc_semaphore_release(os_semaphore_t *semaphore) {
+    return osi_semaphore_release(semaphore);
+}
+
 /**
  * Application facing service call wrappers.
  */
@@ -232,4 +244,12 @@ os_status_t os_mutex_acquire(os_mutex_t *mutex, uint32_t to) {
 
 os_status_t os_mutex_release(os_mutex_t *mutex) {
     return __svc_mutex_release(mutex);
+}
+
+os_status_t os_semaphore_acquire(os_semaphore_t *semaphore, uint32_t to) {
+    return __svc_semaphore_acquire(semaphore, to);
+}
+
+os_status_t os_semaphore_release(os_semaphore_t *semaphore) {
+    return __svc_semaphore_release(semaphore);
 }
