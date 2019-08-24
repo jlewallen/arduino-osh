@@ -285,7 +285,11 @@ os_status_t os_rwlock_acquire_read(os_rwlock_t *rwlock, uint32_t to) {
 }
 
 os_status_t os_rwlock_acquire_write(os_rwlock_t *rwlock, uint32_t to) {
-    return __svc_rwlock_acquire_write(rwlock, to);
+    os_status_t rv = __svc_rwlock_acquire_write(rwlock, to);
+    if (rv == OSS_SUCCESS) {
+        OS_ASSERT(rwlock->readers == 0 && rwlock->writers == 1);
+    }
+    return rv;
 }
 
 os_status_t os_rwlock_release(os_rwlock_t *rwlock) {

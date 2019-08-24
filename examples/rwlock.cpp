@@ -92,8 +92,8 @@ static void task_handler_monitor(void *params) {
 }
 
 void setup() {
-    uint32_t reader_stacks[NUMBER_OF_READERS][256];
-    uint32_t writer_stacks[NUMBER_OF_WRITERS][256];
+    uint32_t reader_stacks[NUMBER_OF_READERS][512];
+    uint32_t writer_stacks[NUMBER_OF_WRITERS][512];
     uint32_t monitor_stack[256];
 
     // Call this here because things go horribly if we call from within a task.

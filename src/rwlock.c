@@ -95,11 +95,11 @@ os_status_t osi_rwlock_release(os_rwlock_t *rwlock) {
     if (rwlock->blocked.tasks != NULL) {
         os_task_t *task = rwlock->blocked.tasks;
         if (rwlock->readers == 0 && task->c.desired == OS_RWLOCK_DESIRED_WRITE) {
-            rwlock->writers++;
-            osi_task_set_stacked_return(task, OSS_SUCCESS);
             rwlock->blocked.tasks = task->nblocked;
             task->nblocked = NULL;
             task->c.desired = OS_RWLOCK_DESIRED_NONE;
+            rwlock->writers++;
+            osi_task_set_stacked_return(task, OSS_SUCCESS);
             osi_dispatch(task);
         }
         else {
