@@ -56,4 +56,10 @@ target_compile_options(osh-everything PRIVATE -Wall -Werror)
 target_include_directories(osh-everything PUBLIC ./ ../src)
 add_arduino_firmware(osh-everything)
 
+file(GLOB rwlock_sources rwlock.cpp)
+add_arduino_library(osh-rwlock "${osh_sources};${rwlock_sources}")
+target_compile_options(osh-rwlock PRIVATE -Wall -Werror)
+target_include_directories(osh-rwlock PUBLIC ./ ../src)
+add_arduino_firmware(osh-rwlock)
+
 endif()

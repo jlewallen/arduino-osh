@@ -45,7 +45,7 @@ TEST_F(ScheduleSuite, OneTask_Initialize) {
     ASSERT_EQ(tasks[0].delay, 0);
     ASSERT_EQ(tasks[0].queue, nullptr);
     ASSERT_EQ(tasks[0].mutex, nullptr);
-    ASSERT_EQ(tasks[0].message, nullptr);
+    ASSERT_EQ(tasks[0].c.message, nullptr);
     ASSERT_EQ(tasks[0].nblocked, nullptr);
     ASSERT_EQ(tasks[0].nrp, nullptr);
     ASSERT_EQ(tasks[0].np, nullptr);

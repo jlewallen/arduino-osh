@@ -163,7 +163,7 @@ os_status_t os_task_initialize_options(os_task_t *task, os_task_options_t *optio
     task->queue = NULL;
     task->mutex = NULL;
     task->nblocked = NULL;
-    task->message = NULL;
+    task->c.message = NULL;
     task->nrp = NULL;
     task->priority = options->priority;
     #if defined(OS_CONFIG_DEBUG)
@@ -365,6 +365,7 @@ os_status_t osi_dispatch(os_task_t *task) {
         OS_ASSERT(task->queue == NULL);
         OS_ASSERT(task->mutex != NULL);
         OS_ASSERT(task->semaphore == NULL);
+        OS_ASSERT(task->rwlock == NULL);
 
         #if defined(OS_CONFIG_DEBUG_MUTEXES)
         osi_printf("%s: removed from mutex %p\n", task->name, task->mutex);
@@ -387,15 +388,11 @@ os_status_t osi_dispatch(os_task_t *task) {
         OS_ASSERT(task->mutex == NULL);
         OS_ASSERT(task->queue != NULL);
         OS_ASSERT(task->semaphore == NULL);
+        OS_ASSERT(task->rwlock == NULL);
 
         #if defined(OS_CONFIG_DEBUG_QUEUES)
         osi_printf("%s: removed from queue %p\n", task->name, task->queue);
         #endif
-
-        if (task->queue->blocked.tasks == task) {
-            task->queue->blocked.tasks = task->nblocked;
-            task->nblocked = NULL;
-        }
 
         blocked_remove(&task->queue->blocked, task);
 
@@ -406,15 +403,23 @@ os_status_t osi_dispatch(os_task_t *task) {
         OS_ASSERT(task->mutex == NULL);
         OS_ASSERT(task->queue == NULL);
         OS_ASSERT(task->semaphore != NULL);
-
-        if (task->semaphore->blocked.tasks == task) {
-            task->semaphore->blocked.tasks = task->nblocked;
-            task->nblocked = NULL;
-        }
+        OS_ASSERT(task->rwlock == NULL);
 
         blocked_remove(&task->semaphore->blocked, task);
 
         task->semaphore = NULL;
+        task->flags = 0;
+    }
+    if ((task->flags & OS_TASK_FLAG_RWLOCK) == OS_TASK_FLAG_RWLOCK) {
+        OS_ASSERT(task->mutex == NULL);
+        OS_ASSERT(task->queue == NULL);
+        OS_ASSERT(task->semaphore == NULL);
+        OS_ASSERT(task->rwlock != NULL);
+
+        blocked_remove(&task->rwlock->blocked, task);
+
+        task->c.desired = 0;
+        task->rwlock = NULL;
         task->flags = 0;
     }
 

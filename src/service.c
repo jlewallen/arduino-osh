@@ -128,6 +128,22 @@ os_status_t svc_semaphore_release(os_semaphore_t *semaphore) {
     return osi_semaphore_release(semaphore);
 }
 
+os_status_t svc_rwlock_create(os_rwlock_t *rwlock, os_rwlock_definition_t *def) {
+    return osi_rwlock_create(rwlock, def);
+}
+
+os_status_t svc_rwlock_acquire_read(os_rwlock_t *rwlock, uint32_t to) {
+    return osi_rwlock_acquire_read(rwlock, to);
+}
+
+os_status_t svc_rwlock_acquire_write(os_rwlock_t *rwlock, uint32_t to) {
+    return osi_rwlock_acquire_write(rwlock, to);
+}
+
+os_status_t svc_rwlock_release(os_rwlock_t *rwlock) {
+    return osi_rwlock_release(rwlock);
+}
+
 /**
  * Application facing service call wrappers.
  */
@@ -252,4 +268,26 @@ os_status_t os_semaphore_acquire(os_semaphore_t *semaphore, uint32_t to) {
 
 os_status_t os_semaphore_release(os_semaphore_t *semaphore) {
     return __svc_semaphore_release(semaphore);
+}
+
+os_status_t os_rwlock_create(os_rwlock_t *rwlock, os_rwlock_definition_t *def) {
+    if (__get_IPSR() != 0U) {
+        return OSS_ERROR_INVALID;
+    }
+    if (osi_in_task()) {
+        return __svc_rwlock_create(rwlock, def);
+    }
+    return svc_rwlock_create(rwlock, def);
+}
+
+os_status_t os_rwlock_acquire_read(os_rwlock_t *rwlock, uint32_t to) {
+    return __svc_rwlock_acquire_read(rwlock, to);
+}
+
+os_status_t os_rwlock_acquire_write(os_rwlock_t *rwlock, uint32_t to) {
+    return __svc_rwlock_acquire_write(rwlock, to);
+}
+
+os_status_t os_rwlock_release(os_rwlock_t *rwlock) {
+    return __svc_rwlock_release(rwlock);
 }

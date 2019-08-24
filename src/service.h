@@ -134,12 +134,12 @@ os_status_t os_rwlock_release(os_rwlock_t *rwlock);
 /**
  *
  */
-#define os_mutex(name)                (os_mutex_t *)&_os_mutex_##name
+#define os_mutex(name)                ((os_mutex_t *)&_os_mutex_##name)
 
 /**
  *
  */
-#define os_mutex_def(name)            (os_mutex_definition_t *)&_os_mutex_def_##name
+#define os_mutex_def(name)            ((os_mutex_definition_t *)&_os_mutex_def_##name)
 
 /**
  *
@@ -151,12 +151,29 @@ os_status_t os_rwlock_release(os_rwlock_t *rwlock);
 /**
  *
  */
-#define os_semaphore(name)            (os_semaphore_t *)&_os_semaphore_##name
+#define os_semaphore(name)            ((os_semaphore_t *)&_os_semaphore_##name)
 
 /**
  *
  */
-#define os_semaphore_def(name)        (os_semaphore_definition_t *)&_os_semaphore_def_##name
+#define os_semaphore_def(name)        ((os_semaphore_definition_t *)&_os_semaphore_def_##name)
+
+/**
+ *
+ */
+#define os_rwlock_define(name, flags)                                \
+    os_rwlock_definition_t _os_rwlock_def_##name = { #name, flags }; \
+    os_rwlock_t _os_rwlock_##name;
+
+/**
+ *
+ */
+#define os_rwlock(name)               ((os_rwlock_t *)&_os_rwlock_##name)
+
+/**
+ *
+ */
+#define os_rwlock_def(name)           ((os_rwlock_definition_t *)&_os_rwlock_def_##name)
 
 #if defined(__cplusplus)
 }

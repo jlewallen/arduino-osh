@@ -117,7 +117,7 @@ os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint32_t to) {
 
         // Store the message we're trying to queue, it'll be queued when space
         // becomes available.
-        running->message = message;
+        running->c.message = message;
 
         // Block until somebody takes one, freeing space.
         queue->status = OS_QUEUE_BLOCKED_SEND;
@@ -153,12 +153,12 @@ os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint32_t to) {
         if (queue->blocked.tasks != NULL && queue->status == OS_QUEUE_BLOCKED_SEND) {
             os_task_t *blocked_sender = blocked_deq(queue);
 
-            queue->messages[queue->first] = blocked_sender->message;
+            queue->messages[queue->first] = blocked_sender->c.message;
             if (++queue->first == queue->size) {
                 queue->first = 0U;
             }
             queue->number++;
-            blocked_sender->message = NULL;
+            blocked_sender->c.message = NULL;
 
             os_tuple_t *send_rv = osi_task_stacked_return_tuple(blocked_sender);
             send_rv->status = OSS_SUCCESS;

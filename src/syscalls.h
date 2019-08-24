@@ -56,4 +56,14 @@ SVC_2_1(svc_semaphore_create, os_status_t, os_semaphore_t*, os_semaphore_definit
 SVC_2_1(svc_semaphore_acquire, os_status_t, os_semaphore_t*, uint32_t, RET_os_status_t);
 SVC_1_1(svc_semaphore_release, os_status_t, os_semaphore_t*, RET_os_status_t);
 
+os_status_t svc_rwlock_create(os_rwlock_t *rwlock, os_rwlock_definition_t *def);
+os_status_t svc_rwlock_acquire_read(os_rwlock_t *rwlock, uint32_t to);
+os_status_t svc_rwlock_acquire_write(os_rwlock_t *rwlock, uint32_t to);
+os_status_t svc_rwlock_release(os_rwlock_t *rwlock);
+
+SVC_2_1(svc_rwlock_create, os_status_t, os_rwlock_t*, os_rwlock_definition_t*, RET_os_status_t);
+SVC_2_1(svc_rwlock_acquire_read, os_status_t, os_rwlock_t*, uint32_t, RET_os_status_t);
+SVC_2_1(svc_rwlock_acquire_write, os_status_t, os_rwlock_t*, uint32_t, RET_os_status_t);
+SVC_1_1(svc_rwlock_release, os_status_t, os_rwlock_t*, RET_os_status_t);
+
 #endif // OS_SYSCALLS_H

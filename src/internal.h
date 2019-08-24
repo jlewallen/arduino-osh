@@ -18,6 +18,7 @@
 #include "mutex.h"
 #include "queue.h"
 #include "semaphore.h"
+#include "rwlock.h"
 #include "arduino.h"
 #include "syscalls.h"
 #include "faults.h"
