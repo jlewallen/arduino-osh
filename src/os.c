@@ -667,7 +667,7 @@ inline void osi_assert(const char *assertion, const char *file, int line) {
 }
 #endif
 
-#if defined(linux)
+#if 0
 inline void osi_assert(const char *assertion, const char *file, int line) {
     osi_printf("\n\nassertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
     exit(2);
