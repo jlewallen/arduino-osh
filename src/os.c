@@ -667,6 +667,13 @@ inline void osi_assert(const char *assertion, const char *file, int line) {
 }
 #endif
 
+#if defined(linux)
+inline void osi_assert(const char *assertion, const char *file, int line) {
+    osi_printf("\n\nassertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
+    exit(2);
+}
+#endif
+
 const char *os_status_str(os_status_t status) {
     switch (status) {
     case OSS_SUCCESS: return "OSS_SUCCESS";
