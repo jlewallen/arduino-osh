@@ -163,6 +163,8 @@ os_status_t os_task_initialize_options(os_task_t *task, os_task_options_t *optio
     task->queue = NULL;
     task->mutex = NULL;
     task->nblocked = NULL;
+    task->semaphore = NULL;
+    task->rwlock = NULL;
     task->c.message = NULL;
     task->nrp = NULL;
     task->priority = options->priority;
