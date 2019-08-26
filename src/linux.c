@@ -55,4 +55,10 @@ uint32_t osi_platform_micros() {
     return 0;
 }
 
+void __disable_irq() {
+}
+
+void __enable_irq() {
+}
+
 #endif /* ARDUINO */

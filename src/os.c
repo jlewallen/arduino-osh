@@ -319,6 +319,8 @@ os_status_t os_start(void) {
 }
 
 os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
+    __disable_irq();
+
     uint8_t old_status = task->status;
 
     task->status = new_status;
@@ -346,6 +348,8 @@ os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
         }
         runqueue_add(&osg.runqueue, task);
     }
+
+    __enable_irq();
 
     return new_status;
 }

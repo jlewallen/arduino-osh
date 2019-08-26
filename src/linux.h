@@ -25,6 +25,10 @@ extern "C" {
  */
 uint32_t tests_platform_time(uint32_t time);
 
+void __disable_irq();
+
+void __enable_irq();
+
 #if defined(__cplusplus)
 }
 #endif
