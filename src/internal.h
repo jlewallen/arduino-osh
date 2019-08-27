@@ -14,6 +14,9 @@
 #ifndef OS_INTERNAL_H
 #define OS_INTERNAL_H
 
+#include <stdint.h>
+
+#include "os.h"
 #include "segger/SEGGER_RTT.h"
 #include "mutex.h"
 #include "queue.h"
