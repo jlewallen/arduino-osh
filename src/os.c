@@ -355,7 +355,7 @@ os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
 }
 
 os_status_t osi_dispatch_or_queue(os_task_t *task) {
-    if (osg.running->priority < task->priority) {
+    if (osg.running->priority <= task->priority) {
         return osi_dispatch(task);
     }
     else {
