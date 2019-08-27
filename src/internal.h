@@ -43,6 +43,8 @@ extern "C" {
  */
 os_status_t osi_dispatch(os_task_t *task);
 
+os_status_t osi_dispatch_or_queue(os_task_t *task);
+
 /**
  *
  */

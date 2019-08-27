@@ -67,7 +67,7 @@ os_status_t osi_semaphore_release(os_semaphore_t *semaphore) {
     if (semaphore->blocked.tasks != NULL) {
         os_task_t *blocked_task = blocked_deq(semaphore);
         osi_task_set_stacked_return(blocked_task, OSS_SUCCESS);
-        osi_dispatch(blocked_task);
+        osi_dispatch_or_queue(blocked_task);
         return OSS_SUCCESS;
     }
 

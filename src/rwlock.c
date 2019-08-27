@@ -100,7 +100,7 @@ os_status_t osi_rwlock_release(os_rwlock_t *rwlock) {
             task->c.desired = OS_RWLOCK_DESIRED_NONE;
             rwlock->writers++;
             osi_task_set_stacked_return(task, OSS_SUCCESS);
-            osi_dispatch(task);
+            osi_dispatch_or_queue(task);
         }
         else {
             os_task_t *previous = NULL;

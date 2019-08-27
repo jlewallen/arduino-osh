@@ -60,7 +60,7 @@ os_tuple_t osi_queue_enqueue_isr(os_queue_t *queue, void *message) {
             receive_rv->status = OSS_SUCCESS;
             receive_rv->value.ptr = message;
 
-            osi_dispatch(blocked_receiver);
+            osi_dispatch_or_queue(blocked_receiver);
 
             // Manually trigger this since we're inside an arbitrary ISR this won't
             // necessarily happen. Our SVC handler will check for scheduled/running
@@ -104,7 +104,7 @@ os_status_t osi_queue_enqueue(os_queue_t *queue, void *message, uint32_t to) {
             receive_rv->status = OSS_SUCCESS;
             receive_rv->value.ptr = message;
 
-            osi_dispatch(blocked_receiver);
+            osi_dispatch_or_queue(blocked_receiver);
 
             return OSS_SUCCESS;
         }
@@ -164,7 +164,7 @@ os_status_t osi_queue_dequeue(os_queue_t *queue, void **message, uint32_t to) {
             send_rv->status = OSS_SUCCESS;
             send_rv->value.ptr = NULL;
 
-            osi_dispatch(blocked_sender);
+            osi_dispatch_or_queue(blocked_sender);
         }
         return OSS_SUCCESS;
     }

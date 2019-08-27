@@ -354,6 +354,16 @@ os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
     return new_status;
 }
 
+os_status_t osi_dispatch_or_queue(os_task_t *task) {
+    if (osg.running->priority < task->priority) {
+        return osi_dispatch(task);
+    }
+    else {
+        osi_task_status_set(task, OS_TASK_STATUS_IDLE);
+    }
+    return OSS_SUCCESS;
+}
+
 os_status_t osi_dispatch(os_task_t *task) {
     OS_ASSERT(task != NULL);
     OS_ASSERT(osg.running != NULL);
