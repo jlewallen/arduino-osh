@@ -359,7 +359,7 @@ os_status_t osi_dispatch(os_task_t *task) {
     OS_ASSERT(osg.running != NULL);
 
     if (osg.running == task) {
-        return OSS_ERROR_NOP;
+        return OSS_SUCCESS;
     }
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
     else {
@@ -491,6 +491,13 @@ os_status_t osi_dispatch(os_task_t *task) {
 
     osi_priority_check(task); // TODO: SLOW/PARANOID
 
+    // If we didn't schedule anything, don't bother with PendSV IRQ.
+    #if defined(__SAMD21__) || defined(__SAMD51__)
+    if (osg.scheduled != NULL) {
+        SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+    }
+    #endif
+
     return OSS_SUCCESS;
 }
 
@@ -593,11 +600,11 @@ os_status_t osi_schedule() {
     }
 
     // If we didn't schedule anything, don't bother with PendSV IRQ.
+    #if defined(__SAMD21__) || defined(__SAMD51__)
     if (osg.scheduled != NULL) {
-        #if defined(__SAMD21__) || defined(__SAMD51__)
         SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-        #endif
     }
+    #endif
 
     return OSS_SUCCESS;
 }
