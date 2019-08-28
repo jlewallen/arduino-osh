@@ -42,6 +42,8 @@ static void infinite_loop() __attribute__ ((noreturn));
 
 static void task_finished() __attribute__ ((noreturn));
 
+static bool task_is_running(os_task_t *task);
+
 static uint32_t runqueue_length(os_task_t *head);
 
 static void runqueue_add(os_task_t **head, os_task_t *task);
@@ -359,7 +361,9 @@ os_status_t osi_dispatch_or_queue(os_task_t *task) {
         return osi_dispatch(task);
     }
     else {
-        osi_task_status_set(task, OS_TASK_STATUS_IDLE);
+        if (!task_is_running(task)) {
+            osi_task_status_set(task, OS_TASK_STATUS_IDLE);
+        }
     }
     return OSS_SUCCESS;
 }
