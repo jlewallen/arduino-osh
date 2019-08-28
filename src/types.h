@@ -165,6 +165,7 @@ typedef struct os_task_t {
     uint32_t scheduled;
     uint32_t delay;
     uint32_t flags;
+    uint32_t signal;
     #if defined(OS_CONFIG_DEBUG)
     uint32_t debug_stack_max;
     #endif

@@ -144,6 +144,14 @@ os_status_t svc_rwlock_release(os_rwlock_t *rwlock) {
     return osi_rwlock_release(rwlock);
 }
 
+os_status_t svc_signal(os_task_t *task, uint32_t signal) {
+    return osi_signal(task, signal);
+}
+
+os_status_t svc_signal_check(uint32_t *signal) {
+    return osi_signal_check(signal);
+}
+
 /**
  * Application facing service call wrappers.
  */
@@ -294,4 +302,12 @@ os_status_t os_rwlock_acquire_write(os_rwlock_t *rwlock, uint32_t to) {
 
 os_status_t os_rwlock_release(os_rwlock_t *rwlock) {
     return __svc_rwlock_release(rwlock);
+}
+
+os_status_t os_signal(os_task_t *task, uint32_t signal) {
+    return __svc_signal(task, signal);
+}
+
+os_status_t os_signal_check(uint32_t *signal) {
+    return __svc_signal_check(signal);
 }

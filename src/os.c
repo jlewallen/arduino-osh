@@ -170,6 +170,7 @@ os_status_t os_task_initialize_options(os_task_t *task, os_task_options_t *optio
     task->c.message = NULL;
     task->nrp = NULL;
     task->priority = options->priority;
+    task->signal = 0;
     #if defined(OS_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif

@@ -22,6 +22,7 @@
 #include "queue.h"
 #include "semaphore.h"
 #include "rwlock.h"
+#include "signals.h"
 #include "arduino.h"
 #include "syscalls.h"
 #include "faults.h"

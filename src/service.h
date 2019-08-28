@@ -94,6 +94,9 @@ os_status_t os_rwlock_acquire_read(os_rwlock_t *rwlock, uint32_t to);
 os_status_t os_rwlock_acquire_write(os_rwlock_t *rwlock, uint32_t to);
 os_status_t os_rwlock_release(os_rwlock_t *rwlock);
 
+os_status_t os_signal(os_task_t *task, uint32_t signal);
+os_status_t os_signal_check(uint32_t *signal);
+
 /**
  *
  */

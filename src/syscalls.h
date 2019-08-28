@@ -66,4 +66,10 @@ SVC_2_1(svc_rwlock_acquire_read, os_status_t, os_rwlock_t*, uint32_t, RET_os_sta
 SVC_2_1(svc_rwlock_acquire_write, os_status_t, os_rwlock_t*, uint32_t, RET_os_status_t);
 SVC_1_1(svc_rwlock_release, os_status_t, os_rwlock_t*, RET_os_status_t);
 
+os_status_t svc_signal(os_task_t *task, uint32_t signal);
+os_status_t svc_signal_check(uint32_t *signal);
+
+SVC_2_1(svc_signal, os_status_t, os_task_t*, uint32_t, RET_os_status_t);
+SVC_1_1(svc_signal_check, os_status_t, uint32_t*, RET_os_status_t);
+
 #endif // OS_SYSCALLS_H
