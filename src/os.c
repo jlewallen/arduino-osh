@@ -50,6 +50,8 @@ static void runqueue_add(os_task_t **head, os_task_t *task);
 
 static void runqueue_remove(os_task_t **head, os_task_t *task);
 
+static bool runqueue_has_higher_priority(os_task_t *task);
+
 static void waitqueue_add(os_task_t **head, os_task_t *task);
 
 static void waitqueue_remove(os_task_t **head, os_task_t *task);
@@ -358,13 +360,16 @@ os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
 }
 
 os_status_t osi_dispatch_or_queue(os_task_t *task) {
-    if (osg.running->priority <= task->priority) {
-        return osi_dispatch(task);
-    }
-    else {
+    if (runqueue_has_higher_priority(task)) {
         if (!task_is_running(task)) {
             osi_task_status_set(task, OS_TASK_STATUS_IDLE);
         }
+        if (osg.scheduled == NULL) {
+            return osi_schedule();
+        }
+    }
+    else {
+        return osi_dispatch(task);
     }
     return OSS_SUCCESS;
 }
@@ -891,6 +896,17 @@ static void runqueue_remove(os_task_t **head, os_task_t *task) {
         }
         previous = iter;
     }
+}
+
+static bool runqueue_has_higher_priority(os_task_t *task) {
+    for (os_task_t *iter = osg.runqueue; iter != NULL; iter = iter->nrp) {
+        if (iter->status == OS_TASK_STATUS_ACTIVE || iter->status == OS_TASK_STATUS_IDLE) {
+            if (iter->priority > task->priority) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 static void waitqueue_add(os_task_t **head, os_task_t *task) {
