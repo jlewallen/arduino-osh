@@ -215,10 +215,10 @@ uint32_t os_task_is_running(os_task_t *task) {
 }
 
 os_status_t os_task_start(os_task_t *task) {
-    return os_task_start_options(task, NULL);
+    return os_task_start_options(task, task->priority, NULL);
 }
 
-os_status_t os_task_start_options(os_task_t *task, void *params) {
+os_status_t os_task_start_options(os_task_t *task, uint8_t priority, void *params) {
     OS_ASSERT(task != NULL);
     OS_ASSERT(task->status != OS_TASK_STATUS_IDLE && task->status != OS_TASK_STATUS_ACTIVE);
 
@@ -227,11 +227,15 @@ os_status_t os_task_start_options(os_task_t *task, void *params) {
     task->flags = 0;
     task->queue = NULL;
     task->mutex = NULL;
+    task->rwlock = NULL;
+    task->c.message = NULL;
     task->nblocked = NULL;
     task->params = params;
     task->started = os_uptime();
     task->runtime = 0;
     task->scheduled = 0;
+    task->priority = priority;
+    task->signal = 0;
     #if defined(OS_CONFIG_DEBUG)
     task->debug_stack_max = 0;
     #endif

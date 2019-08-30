@@ -122,7 +122,7 @@ os_status_t os_task_start(os_task_t *task);
 /**
  *
  */
-os_status_t os_task_start_options(os_task_t *task, void *params);
+os_status_t os_task_start_options(os_task_t *task, uint8_t priority, void *params);
 
 /**
  *
