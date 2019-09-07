@@ -913,6 +913,36 @@ static bool runqueue_has_higher_priority(os_task_t *task) {
     return false;
 }
 
+static bool has_cycles(os_task_t *head) {
+    os_task_t *f = head;
+    os_task_t *s = head;
+
+    if (head == NULL) {
+        return false;
+    }
+
+    while (true) {
+        s = s->nrp;
+
+        if (f->nrp != NULL) {
+            f = f->nrp->nrp;
+        }
+        else {
+            return false;
+        }
+
+        if (s == NULL || f == NULL) {
+            return false;
+        }
+
+        if (s == f) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static void waitqueue_add(os_task_t **head, os_task_t *task) {
     task->nrp = NULL;
 
@@ -936,6 +966,7 @@ static void waitqueue_add(os_task_t **head, os_task_t *task) {
         }
         if (iter->nrp == NULL) {
             iter->nrp = task;
+            OS_ASSERT(!has_cycles(*head));
             return;
         }
         previous  = iter;
