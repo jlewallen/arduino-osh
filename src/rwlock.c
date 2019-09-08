@@ -31,6 +31,7 @@ os_status_t osi_rwlock_create(os_rwlock_t *rwlock, os_rwlock_definition_t *def) 
     rwlock->readers = 0;
     rwlock->writers = 0;
     rwlock->flags = def->flags;
+    rwlock->writer = NULL;
     return OSS_SUCCESS;
 }
 
@@ -66,6 +67,7 @@ os_status_t osi_rwlock_acquire_write(os_rwlock_t *rwlock, uint32_t to) {
     // Check for an easy acquire.
     if (rwlock->readers == 0 && rwlock->writers == 0) {
         rwlock->writers++;
+        rwlock->writer = task;
         return OSS_SUCCESS;
     }
 
@@ -81,6 +83,8 @@ os_status_t osi_rwlock_acquire_write(os_rwlock_t *rwlock, uint32_t to) {
 }
 
 os_status_t osi_rwlock_release(os_rwlock_t *rwlock) {
+    os_task_t *task = os_task_self();
+
     OS_ASSERT(rwlock->readers > 0 || rwlock->writers == 1);
 
     if (rwlock->readers > 0) {
@@ -88,6 +92,8 @@ os_status_t osi_rwlock_release(os_rwlock_t *rwlock) {
     }
 
     if (rwlock->writers > 0) {
+        OS_ASSERT(rwlock->writer == task);
+        rwlock->writer = NULL;
         rwlock->writers--;
     }
 
@@ -99,6 +105,7 @@ os_status_t osi_rwlock_release(os_rwlock_t *rwlock) {
             task->nblocked = NULL;
             task->c.desired = OS_RWLOCK_DESIRED_NONE;
             rwlock->writers++;
+            rwlock->writer = task;
             osi_task_set_stacked_return(task, OSS_SUCCESS);
             osi_dispatch_or_queue(task);
         }

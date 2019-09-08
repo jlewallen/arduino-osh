@@ -280,6 +280,11 @@ os_status_t os_task_resume(os_task_t *task) {
     return OSS_SUCCESS;
 }
 
+uint32_t os_task_is_stop(os_task_t *task) {
+    OS_ASSERT(task != NULL);
+    return OSS_SUCCESS;
+}
+
 uint32_t os_task_uptime(os_task_t *task) {
     OS_ASSERT(task != NULL);
     return os_uptime() - task->started;

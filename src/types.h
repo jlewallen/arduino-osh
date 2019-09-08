@@ -278,6 +278,7 @@ typedef struct os_rwlock_t {
     uint16_t readers;
     uint16_t writers;
     uint32_t flags;
+    os_task_t *writer;
 } os_rwlock_t;
 
 /**

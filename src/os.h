@@ -137,6 +137,11 @@ os_status_t os_task_resume(os_task_t *task);
 /**
  *
  */
+uint32_t os_task_is_stop(os_task_t *task);
+
+/**
+ *
+ */
 uint32_t os_task_is_running(os_task_t *task);
 
 /**
