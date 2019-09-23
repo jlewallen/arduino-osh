@@ -749,6 +749,7 @@ const char *os_panic_kind_str(os_panic_kind_t kind) {
     }
 }
 
+extern void NVIC_SystemReset(void);
 
 uint32_t osi_panic(os_panic_kind_t code) {
     osi_printf("\n\npanic! (%s)\n", os_panic_kind_str(code));
@@ -757,7 +758,7 @@ uint32_t osi_panic(os_panic_kind_t code) {
     }
     #if defined(__SAMD21__) || defined(__SAMD51__)
     __asm__("BKPT");
-    infinite_loop();
+    NVIC_SystemReset();
     #endif
     return OSS_SUCCESS;
 }
@@ -792,9 +793,10 @@ void osi_stack_check() {
 }
 
 void osi_hard_fault_report(uintptr_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {
-    volatile uint32_t looping = 1;
-    while (looping) {
-    }
+    #if defined(__SAMD21__) || defined(__SAMD51__)
+    __asm__("BKPT");
+    NVIC_SystemReset();
+    #endif
 }
 
 void osi_hard_fault_handler(uintptr_t *stack, uint32_t lr) {
