@@ -753,6 +753,17 @@ extern void NVIC_SystemReset(void);
 
 uint32_t osi_panic(os_panic_kind_t code) {
     osi_printf("\n\npanic! (%s)\n", os_panic_kind_str(code));
+
+    osi_printf("\nrunning:\n");
+    for (os_task_t *iter = osg.runqueue; iter != NULL; iter = iter->nrp) {
+        osi_printf("  '%s' s'tatus(%s) (0x%x)\n", iter->name, os_task_status_str(iter->status), iter->priority);
+    }
+
+    osi_printf("\nwaiting:\n");
+    for (os_task_t *iter = osg.waitqueue; iter != NULL; iter = iter->nrp) {
+        osi_printf("  '%s' status(%s) (0x%x)\n", iter->name, os_task_status_str(iter->status), iter->priority);
+    }
+
     if (osg.running != NULL) {
         osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_PANIC);
     }
