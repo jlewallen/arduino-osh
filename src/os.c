@@ -68,7 +68,13 @@ os_status_t os_initialize() {
     #endif
 
     osg.state = OS_STATE_INITIALIZED;
+    osg.hook = NULL;
 
+    return OSS_SUCCESS;
+}
+
+os_status_t os_configure_hook(os_task_status_hook_fn_t hook) {
+    osg.hook = hook;
     return OSS_SUCCESS;
 }
 
@@ -251,6 +257,10 @@ os_status_t os_task_start_options(os_task_t *task, uint8_t priority, void *param
     osi_printf("%s: started\n", task->name);
     #endif
 
+    if (osg.hook != NULL) {
+        osg.hook(task);
+    }
+
     return OSS_SUCCESS;
 }
 
@@ -361,6 +371,10 @@ os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
             waitqueue_remove(&osg.waitqueue, task);
         }
         runqueue_add(&osg.runqueue, task);
+    }
+
+    if (osg.hook != NULL) {
+        osg.hook(task);
     }
 
     __enable_irq();

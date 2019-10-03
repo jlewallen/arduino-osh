@@ -291,6 +291,8 @@ typedef enum {
     OS_STATE_STARTED,
 } os_state_t;
 
+typedef void (*os_task_status_hook_fn_t)(os_task_t *task);
+
 /**
  * Struct with global operating system state.
  */
@@ -303,6 +305,7 @@ typedef struct os_globals_t {
     os_task_t *tasks;                //! Immutable, every task in order of creation. */
     os_task_t *runqueue;             //! Queue of tasks waiting for a turn to run. */
     os_task_t *waitqueue;            //! Tasks waiting for something. */
+    os_task_status_hook_fn_t hook;
 } os_globals_t;
 
 /**

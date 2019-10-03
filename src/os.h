@@ -89,6 +89,11 @@ os_status_t os_initialize();
 /**
  *
  */
+os_status_t os_configure_hook(os_task_status_hook_fn_t hook);
+
+/**
+ *
+ */
 os_status_t os_task_initialize(os_task_t *task, const char *name,
                                os_start_status status,
                                void (*handler)(void *params), void *params,
