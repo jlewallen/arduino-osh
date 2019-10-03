@@ -807,6 +807,9 @@ void osi_priority_check(os_task_t *scheduled) {
 
     uint8_t priority = 0xff;
     for (os_task_t *iter = osg.runqueue; iter != NULL; iter = iter->nrp) {
+        if (!(iter->status == OS_TASK_STATUS_ACTIVE || iter->status == OS_TASK_STATUS_IDLE)) {
+            osi_printf("scheduler panic: %s status(%s)", iter->name, os_task_status_str(iter->status));
+        }
         OS_ASSERT(iter->status == OS_TASK_STATUS_ACTIVE || iter->status == OS_TASK_STATUS_IDLE);
         OS_ASSERT(priority >= iter->priority);
         priority = iter->priority;
