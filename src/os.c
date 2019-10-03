@@ -774,7 +774,7 @@ uint32_t osi_panic(os_panic_kind_t code) {
 
     osi_printf("\nrunning:\n");
     for (os_task_t *iter = osg.runqueue; iter != NULL; iter = iter->nrp) {
-        osi_printf("  '%s' s'tatus(%s) (0x%x)\n", iter->name, os_task_status_str(iter->status), iter->priority);
+        osi_printf("  '%s' status(%s) (0x%x)\n", iter->name, os_task_status_str(iter->status), iter->priority);
     }
 
     osi_printf("\nwaiting:\n");
