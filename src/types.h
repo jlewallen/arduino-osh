@@ -100,6 +100,14 @@ typedef enum os_task_status {
     OS_TASK_STATUS_ABORTED,
 } os_task_status;
 
+static inline bool os_task_status_is_running(os_task_status status) {
+    return status == OS_TASK_STATUS_ACTIVE || status == OS_TASK_STATUS_IDLE;
+}
+
+static inline bool os_task_status_is_alive(os_task_status status) {
+    return status == OS_TASK_STATUS_ACTIVE || status == OS_TASK_STATUS_IDLE || status == OS_TASK_STATUS_WAIT;
+}
+
 #define OS_TASK_FLAG_NONE                             (0)
 #define OS_TASK_FLAG_MUTEX                            (1)
 #define OS_TASK_FLAG_QUEUE                            (2)
@@ -291,7 +299,7 @@ typedef enum {
     OS_STATE_STARTED,
 } os_state_t;
 
-typedef void (*os_task_status_hook_fn_t)(os_task_t *task);
+typedef void (*os_task_status_hook_fn_t)(os_task_t *task, os_task_status previous_status);
 
 /**
  * Struct with global operating system state.

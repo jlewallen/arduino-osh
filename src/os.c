@@ -258,7 +258,7 @@ os_status_t os_task_start_options(os_task_t *task, uint8_t priority, void *param
     #endif
 
     if (osg.hook != NULL) {
-        osg.hook(task);
+        osg.hook(task, OS_TASK_STATUS_FINISHED);
     }
 
     return OSS_SUCCESS;
@@ -374,7 +374,7 @@ os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
     }
 
     if (osg.hook != NULL) {
-        osg.hook(task);
+        osg.hook(task, old_status);
     }
 
     __enable_irq();
@@ -548,7 +548,7 @@ os_status_t osi_dispatch(os_task_t *task) {
 #define OS_RUNQUEUE_NEXT_WRAPPED(n)    (((n)->nrp == NULL) ? osg.runqueue : (n)->nrp)
 
 static bool task_is_running(os_task_t *task) {
-    return task->status == OS_TASK_STATUS_ACTIVE || task->status == OS_TASK_STATUS_IDLE;
+    return os_task_status_is_running(task->status);
 }
 
 static bool is_higher_priority(os_priority_t a, os_priority_t b) {
