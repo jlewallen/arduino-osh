@@ -204,6 +204,10 @@ os_status_t os_task_initialize_options(os_task_t *task, os_task_options_t *optio
 
     osg.state = OS_STATE_TASKS_INITIALIZED;
 
+    if (osg.hook != NULL) {
+        osg.hook(task, OS_TASK_STATUS_FINISHED);
+    }
+
     return OSS_SUCCESS;
 }
 
