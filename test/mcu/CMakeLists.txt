@@ -16,7 +16,7 @@ if(TARGET_M0)
   enable_m0()
 endif()
 
-if(TARGET_M0 OR TARGET_M4)
+if(TARGET_M4)
 
 file(GLOB osh_sources ../../src/*.cpp ../../src/*.s ../../src/*.c ../../src/*.h ../../src/segger/*.c)
 
