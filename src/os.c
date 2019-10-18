@@ -927,6 +927,8 @@ static void runqueue_add(os_task_t **head, os_task_t *task) {
         return;
     }
 
+    OS_ASSERT(task->status != OS_TASK_STATUS_WAIT);
+
     os_task_t *previous = NULL;
     for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {
         OS_ASSERT(iter != task);
