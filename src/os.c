@@ -92,6 +92,8 @@ os_status_t os_teardown() {
 }
 
 uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) {
+    register uint32_t got_r9 asm("r9");
+
     OS_ASSERT((stack_size % sizeof(uint32_t)) == 0);
     OS_ASSERT(stack_size >= OS_STACK_MINIMUM_SIZE);
 
@@ -112,26 +114,36 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
        - PC: Point to the handler function
        - LR: Point to a function to be called when the handler returns
        - R0: Point to the handler function's parameter */
+    uint32_t base = 0x1000; // * (osg.ntasks + 1);
     stk[15] = 0x01000000;
     stk[14] = (uintptr_t)task->handler & ~0x01UL;
     stk[13] = (uintptr_t)&task_finished;
-    stk[ 8] = (uintptr_t)task->params;
-    #if defined(OS_CONFIG_DEBUG)
-    uint32_t base = 1000 * (osg.ntasks + 1);
     stk[12] = base + 12; /* R12 */
     stk[11] = base + 3;  /* R3  */
     stk[10] = base + 2;  /* R2  */
     stk[ 9] = base + 1;  /* R1  */
-    /* stk[ 8] is R0 */
-    stk[ 7] = base + 7;  /* R7  */
-    stk[ 6] = base + 6;  /* R6  */
-    stk[ 5] = base + 5;  /* R5  */
-    stk[ 4] = base + 4;  /* R4  */
-    stk[ 3] = base + 11; /* R11 */
-    stk[ 2] = base + 10; /* R10 */
-    stk[ 1] = base + 9;  /* R9  */
-    stk[ 0] = base + 8;  /* R8  */
-    #endif /* OS_CONFIG_DEBUG */
+    stk[ 8] = (uintptr_t)task->params;
+
+    #if defined(__SAMD21__)
+    stk[ 7] = base + 7;  // r7
+    stk[ 6] = base + 6;  // r6
+    stk[ 5] = base + 5;  // r5
+    stk[ 4] = base + 4;  // r4
+    stk[ 3] = base + 11; // r11
+    stk[ 2] = base + 10; // r10
+    stk[ 1] = got_r9;    // r9
+    stk[ 0] = base + 8;  // r8
+    #endif
+    #if defined(__SAMD51__)
+    stk[ 7] = base + 11; // r11
+    stk[ 6] = base + 10; // r10
+    stk[ 5] = got_r9;    // r9
+    stk[ 4] = base + 8;  // r8
+    stk[ 3] = base + 7;  // r7
+    stk[ 2] = base + 6;  // r6
+    stk[ 1] = base + 5;  // r5
+    stk[ 0] = base + 4;  // r4
+    #endif
 
     // Magic word to check for overflows.
     stack[0] = OSH_STACK_MAGIC_WORD;
