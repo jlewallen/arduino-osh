@@ -92,7 +92,9 @@ os_status_t os_teardown() {
 }
 
 uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) {
+    #if defined(__SAMD21__) || defined(__SAMD51__)
     register uint32_t got_r9 asm("r9");
+    #endif
 
     OS_ASSERT((stack_size % sizeof(uint32_t)) == 0);
     OS_ASSERT(stack_size >= OS_STACK_MINIMUM_SIZE);
