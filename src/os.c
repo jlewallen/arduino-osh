@@ -92,7 +92,7 @@ os_status_t os_teardown() {
 }
 
 uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) {
-    #if defined(__SAMD21__) || defined(__SAMD51__)
+    #if __pic__ && (defined(__SAMD21__) || defined(__SAMD51__))
     register uint32_t got_r9 asm("r9");
     #endif
 
@@ -133,13 +133,21 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
     stk[ 4] = base + 4;  // r4
     stk[ 3] = base + 11; // r11
     stk[ 2] = base + 10; // r10
+    #if defined(__pic__)
     stk[ 1] = got_r9;    // r9
+    #else
+    stk[ 1] = base + 9;  // r9
+    #endif
     stk[ 0] = base + 8;  // r8
     #endif
     #if defined(__SAMD51__)
     stk[ 7] = base + 11; // r11
     stk[ 6] = base + 10; // r10
+    #if defined(__pic__)
     stk[ 5] = got_r9;    // r9
+    #else
+    stk[ 5] = base + 9;  // r9
+    #endif
     stk[ 4] = base + 8;  // r8
     stk[ 3] = base + 7;  // r7
     stk[ 2] = base + 6;  // r6
@@ -834,6 +842,12 @@ void osi_stack_check() {
     if ((osg.running->sp < osg.running->stack) || (((uint32_t *)osg.running->stack)[0] != OSH_STACK_MAGIC_WORD)) {
         osi_panic(OS_PANIC_STACK_OVERFLOW);
     }
+
+    #if __pic__ && defined(__SAMD51__)
+    register uint32_t got_r9 asm("r9");
+    OS_ASSERT(got_r9 == ((uint32_t *)osg.running->sp)[5]);
+    OS_ASSERT(got_r9 == ((uint32_t *)osg.scheduled->sp)[5]);
+    #endif
 
     osi_priority_check((os_task_t *)osg.scheduled); // TODO: SLOW/PARANOID
 }
