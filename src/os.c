@@ -369,7 +369,7 @@ os_status_t os_start(void) {
 }
 
 os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
-    __disable_irq();
+    OS_LOCK();
 
     uint8_t old_status = task->status;
 
@@ -403,7 +403,7 @@ os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
         osg.hook(task, old_status);
     }
 
-    __enable_irq();
+    OS_UNLOCK();
 
     return new_status;
 }
@@ -519,7 +519,9 @@ os_status_t osi_dispatch(os_task_t *task) {
         runqueue_remove(&osg.runqueue, running);
         break;
     case OS_TASK_STATUS_PANIC:
-        osi_printf("%s: panic\n", running->name);
+        osi_printf("[0x%p] %s: panic\n", running, running->name);
+        runqueue_remove(&osg.runqueue, running);
+        break;
     case OS_TASK_STATUS_ABORTED:
         runqueue_remove(&osg.runqueue, running);
         break;
@@ -815,12 +817,15 @@ uint32_t osi_panic(os_panic_kind_t code) {
 }
 
 void osi_priority_check(os_task_t *scheduled) {
+    OS_LOCK();
     if (scheduled != NULL) {
         uint8_t scheduled_priority = scheduled->priority;
         for (os_task_t *iter = osg.runqueue; iter != NULL; iter = iter->nrp) {
             if (iter->status == OS_TASK_STATUS_ACTIVE || iter->status == OS_TASK_STATUS_IDLE) {
                 if (scheduled_priority < iter->priority) {
-                    osi_printf("scheduler panic: '%s' (%d) < '%s' (%d)", scheduled->name, scheduled_priority, iter->name, iter->priority);
+                    osi_printf("scheduler panic: [0x%p] '%s' (%d) < [0x%p] '%s' (%d)",
+                               scheduled, scheduled->name, scheduled_priority,
+                               iter, iter->name, iter->priority);
                 }
                 OS_ASSERT(scheduled_priority >= iter->priority);
             }
@@ -830,12 +835,13 @@ void osi_priority_check(os_task_t *scheduled) {
     uint8_t priority = 0xff;
     for (os_task_t *iter = osg.runqueue; iter != NULL; iter = iter->nrp) {
         if (!(iter->status == OS_TASK_STATUS_ACTIVE || iter->status == OS_TASK_STATUS_IDLE)) {
-            osi_printf("scheduler panic: %s status(%s)", iter->name, os_task_status_str(iter->status));
+            osi_printf("scheduler panic: [0x%p] '%s' status = %s", iter, iter->name, os_task_status_str(iter->status));
         }
         OS_ASSERT(iter->status == OS_TASK_STATUS_ACTIVE || iter->status == OS_TASK_STATUS_IDLE);
         OS_ASSERT(priority >= iter->priority);
         priority = iter->priority;
     }
+    OS_UNLOCK();
 }
 
 void osi_stack_check() {
@@ -927,7 +933,7 @@ static void runqueue_add(os_task_t **head, os_task_t *task) {
         return;
     }
 
-    OS_ASSERT(task->status != OS_TASK_STATUS_WAIT);
+    OS_ASSERT(task->status != OS_TASK_STATUS_WAIT && task->status != OS_TASK_STATUS_FINISHED);
 
     os_task_t *previous = NULL;
     for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {

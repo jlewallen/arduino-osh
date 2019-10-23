@@ -96,6 +96,37 @@ uint32_t osi_task_set_stacked_return(os_task_t *task, uint32_t v0);
  */
 uint32_t osi_panic(os_panic_kind_t code);
 
+#if defined(__SAMD51__)
+
+#define OS_MAX_INTERRUPT_PRIORITY         (1 << 5)
+
+#define OS_LOCK()   {                                                                   \
+                        unsigned int LockState;                                         \
+                      __asm volatile ("mrs   %0, basepri  \n\t"                         \
+                                      "mov   r1, %1       \n\t"                         \
+                                      "msr   basepri, r1  \n\t"                         \
+                                      : "=r" (LockState)                                \
+                                      : "i"(OS_MAX_INTERRUPT_PRIORITY)                  \
+                                      : "r1"                                            \
+                                        );
+
+#define OS_UNLOCK()   __asm volatile ("msr   basepri, %0  \n\t"                         \
+                                      :                                                 \
+                                      : "r" (LockState)                                 \
+                                      :                                                 \
+                                      );                                                \
+                  }
+
+#endif
+
+#if !defined(OS_LOCK)
+#define OS_LOCK()
+#endif
+
+#if !defined(OS_UNLOCK)
+#define OS_UNLOCK()
+#endif
+
 #if defined(__cplusplus)
 }
 #endif
