@@ -903,7 +903,9 @@ static void task_finished() {
     osi_printf("os: task '%s' finished\n", osg.running->name);
     #endif
 
+    OS_LOCK();
     osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_FINISHED);
+    OS_UNLOCK();
 
     infinite_loop();
 }
