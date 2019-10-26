@@ -903,9 +903,10 @@ static void task_finished() {
     osi_printf("os: task '%s' finished\n", osg.running->name);
     #endif
 
-    OS_LOCK();
     osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_FINISHED);
-    OS_UNLOCK();
+
+    // We're removed from the runqueue but still running until we get preempted
+    // by the scheduler tick.
 
     infinite_loop();
 }
