@@ -348,8 +348,8 @@ os_status_t os_start(void) {
     osg.running->status = OS_TASK_STATUS_ACTIVE;
 
     #if defined(__SAMD21__) || defined(__SAMD51__)
-    NVIC_SetPriority(PendSV_IRQn, 0xff);
-    NVIC_SetPriority(SysTick_IRQn, 0x30);
+    NVIC_SetPriority(PendSV_IRQn, 0x7);
+    NVIC_SetPriority(SysTick_IRQn, 0x2);
 
     /* Set PSP to the top of task's stack */
     __set_PSP((uint32_t)osg.running->sp + OS_STACK_BASIC_FRAME_SIZE);
