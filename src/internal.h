@@ -98,7 +98,7 @@ uint32_t osi_panic(os_panic_kind_t code);
 
 #if defined(__SAMD51__)
 
-#define OS_MAX_INTERRUPT_PRIORITY         (1 << 5)
+#define OS_MAX_INTERRUPT_PRIORITY         (1 << (8 - __NVIC_PRIO_BITS))
 
 #define OS_LOCK()   {                                                                   \
                         unsigned int LockState;                                         \
@@ -115,7 +115,7 @@ uint32_t osi_panic(os_panic_kind_t code);
                                       : "r" (LockState)                                 \
                                       :                                                 \
                                       );                                                \
-                  }
+                    }
 
 #endif
 
