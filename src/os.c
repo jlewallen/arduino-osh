@@ -19,6 +19,7 @@
 #include "os.h"
 #include "internal.h"
 #include "utilities.h"
+#include "hooks.h"
 
 os_globals_t osg = {
     NULL,  /* running */
@@ -34,7 +35,7 @@ os_globals_t osg = {
 #define MIN(x, y)   (x < y) ? (x) : (y)
 #define MAX(x, y)   (x > y) ? (x) : (y)
 
-#if defined(OSH_MTB)
+#if defined(OS_MTB)
 __attribute__((__aligned__(DEBUG_MTB_SIZE_BYTES))) uint32_t mtb[DEBUG_MTB_SIZE];
 #endif
 
@@ -61,7 +62,7 @@ os_status_t os_initialize() {
         return OSS_ERROR_INVALID;
     }
 
-    #if defined(OSH_MTB)
+    #if defined(OS_MTB)
     REG_MTB_POSITION = ((uint32_t)(mtb - REG_MTB_BASE)) & 0xFFFFFFF8;
     REG_MTB_FLOW = (((uint32_t)mtb - REG_MTB_BASE) + DEBUG_MTB_SIZE_BYTES) & 0xFFFFFFF8;
     REG_MTB_MASTER = 0x80000000 + (DEBUG_MTB_MAGNITUDE_PACKETS - 1);
@@ -742,20 +743,6 @@ os_status_t osi_irs_systick() {
     return OSS_SUCCESS;
 }
 
-#if defined(__SAMD21__) || defined(__SAMD51__)
-inline void osi_assert(const char *assertion, const char *file, int line) {
-    osi_printf("\n\nassertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
-    osi_panic(OS_PANIC_ASSERTION);
-}
-#endif
-
-#if 0
-inline void osi_assert(const char *assertion, const char *file, int line) {
-    osi_printf("\n\nassertion \"%s\" failed: file \"%s\", line %d\n", assertion, file, line);
-    exit(2);
-}
-#endif
-
 const char *os_status_str(os_status_t status) {
     switch (status) {
     case OSS_SUCCESS: return "OSS_SUCCESS";
@@ -789,31 +776,6 @@ const char *os_panic_kind_str(os_panic_kind_t kind) {
     case OS_PANIC_UNKNOWN: return "OS_PANIC_UNKNOWN";
     default: return "UNKNOWN";
     }
-}
-
-extern void NVIC_SystemReset(void);
-
-uint32_t osi_panic(os_panic_kind_t code) {
-    osi_printf("\n\npanic! (%s)\n", os_panic_kind_str(code));
-
-    osi_printf("\nrunning:\n");
-    for (os_task_t *iter = osg.runqueue; iter != NULL; iter = iter->nrp) {
-        osi_printf("  '%s' status(%s) (0x%x)\n", iter->name, os_task_status_str(iter->status), iter->priority);
-    }
-
-    osi_printf("\nwaiting:\n");
-    for (os_task_t *iter = osg.waitqueue; iter != NULL; iter = iter->nrp) {
-        osi_printf("  '%s' status(%s) (0x%x)\n", iter->name, os_task_status_str(iter->status), iter->priority);
-    }
-
-    if (osg.running != NULL) {
-        osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_PANIC);
-    }
-    #if defined(__SAMD21__) || defined(__SAMD51__)
-    __asm__("BKPT");
-    NVIC_SystemReset();
-    #endif
-    return OSS_SUCCESS;
 }
 
 void osi_priority_check(os_task_t *scheduled) {
@@ -856,13 +818,6 @@ void osi_stack_check() {
     #endif
 
     osi_priority_check((os_task_t *)osg.scheduled); // TODO: SLOW/PARANOID
-}
-
-void osi_hard_fault_report(uintptr_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {
-    #if defined(__SAMD21__) || defined(__SAMD51__)
-    __asm__("BKPT");
-    NVIC_SystemReset();
-    #endif
 }
 
 void osi_hard_fault_handler(uintptr_t *stack, uint32_t lr) {

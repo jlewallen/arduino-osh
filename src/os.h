@@ -20,6 +20,8 @@
 #ifndef OS_H
 #define OS_H
 
+#include "faults.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>

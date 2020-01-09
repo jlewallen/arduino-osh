@@ -1,5 +1,6 @@
-#include <Arduino.h>
 #include <os.h>
+
+#include <Arduino.h>
 
 void setup() {
     Serial.begin(115200);
@@ -11,4 +12,3 @@ void setup() {
 
 void loop() {
 }
-

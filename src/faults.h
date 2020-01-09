@@ -14,6 +14,8 @@
 #ifndef OS_FAULTS_H
 #define OS_FAULTS_H
 
+#include <stdint.h>
+
 #define SYSHND_CTRL (*(volatile unsigned int*)  (0xE000ED24u)) // System Handler Control and State Register
 #define NVIC_MFSR   (*(volatile unsigned char*) (0xE000ED28u)) // Memory Management Fault Status Register
 #define NVIC_BFSR   (*(volatile unsigned char*) (0xE000ED29u)) // Bus Fault Status Register

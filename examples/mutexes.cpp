@@ -1,7 +1,7 @@
+#include <os.h>
+
 #include <Arduino.h>
 #include <errno.h>
-
-#include <os.h>
 
 #define NUMBER_OF_TASKS         (4)
 

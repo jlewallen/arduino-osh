@@ -1,6 +1,6 @@
-#include <Arduino.h>
-
 #include <os.h>
+
+#include <Arduino.h>
 
 static os_task_t idle_task;
 static uint32_t idle_stack[OS_STACK_MINIMUM_SIZE_WORDS];

@@ -1,5 +1,6 @@
-#include <Arduino.h>
 #include <os.h>
+
+#include <Arduino.h>
 #include <malloc.h>
 #include <sam.h>
 

@@ -42,6 +42,21 @@ extern "C" {
 /**
  *
  */
+void osi_panic(os_panic_kind_t code);
+
+/**
+ *
+ */
+void osi_stack_check();
+
+/**
+ *
+ */
+void osi_priority_check();
+
+/**
+ *
+ */
 os_status_t osi_dispatch(os_task_t *task);
 
 os_status_t osi_dispatch_or_queue(os_task_t *task);
@@ -64,16 +79,6 @@ os_status_t osi_irs_systick();
 /**
  *
  */
-void osi_stack_check();
-
-/**
- *
- */
-void osi_priority_check();
-
-/**
- *
- */
 uint32_t *osi_task_return_regs(os_task_t *task);
 
 /**
@@ -90,11 +95,6 @@ uint32_t osi_task_get_stacked_return(os_task_t *task);
  *
  */
 uint32_t osi_task_set_stacked_return(os_task_t *task, uint32_t v0);
-
-/**
- *
- */
-uint32_t osi_panic(os_panic_kind_t code);
 
 #if defined(__SAMD51__)
 

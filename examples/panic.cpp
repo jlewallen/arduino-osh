@@ -1,6 +1,6 @@
-#include <Arduino.h>
-
 #include <os.h>
+
+#include <Arduino.h>
 
 static os_task_t idle_task;
 static os_task_t tasks[3];
