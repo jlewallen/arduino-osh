@@ -161,6 +161,8 @@ uint32_t os_task_uptime(os_task_t *task);
  */
 uint32_t os_task_runtime(os_task_t *task);
 
+uint32_t os_task_highwater(os_task_t *task);
+
 /**
  *
  */

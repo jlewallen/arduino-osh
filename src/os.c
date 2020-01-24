@@ -39,6 +39,10 @@ os_globals_t osg = {
 __attribute__((__aligned__(DEBUG_MTB_SIZE_BYTES))) uint32_t mtb[DEBUG_MTB_SIZE];
 #endif
 
+static int32_t stack_paint(uint32_t *stack, size_t size);
+
+static int32_t stack_highwater(uint32_t *stack, size_t size);
+
 static void infinite_loop() __attribute__ ((noreturn));
 
 static void task_finished() __attribute__ ((noreturn));
@@ -100,6 +104,8 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
     OS_ASSERT((stack_size % sizeof(uint32_t)) == 0);
     OS_ASSERT(stack_size >= OS_STACK_MINIMUM_SIZE);
 
+    stack_paint(stack, stack_size);
+
     uint32_t stack_offset = (stack_size / sizeof(uint32_t));
     for (uint32_t i = 0; i < stack_offset; ++i) {
         stack[i] = OSH_STACK_MAGIC_PATTERN;
@@ -160,6 +166,12 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
     stack[0] = OSH_STACK_MAGIC_WORD;
 
     return stk;
+}
+
+uint32_t os_task_highwater(os_task_t *task) {
+    task->highwater = stack_highwater((uint32_t *)task->stack, task->stack_size);
+
+    return task->highwater;
 }
 
 os_status_t os_task_initialize(os_task_t *task, const char *name, os_start_status status, void (*handler)(void *params), void *params, uint32_t *stack, size_t stack_size) {
@@ -858,6 +870,7 @@ static void task_finished() {
     osi_printf("os: task '%s' finished\n", osg.running->name);
     #endif
 
+
     osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_FINISHED);
 
     // We're removed from the runqueue but still running until we get preempted
@@ -1024,4 +1037,22 @@ static void waitqueue_remove(os_task_t **head, os_task_t *task) {
         }
         previous = iter;
     }
+}
+
+static int32_t stack_paint(uint32_t *stack, size_t size) {
+    for (size_t i = 0u; i < size; ++i) {
+        *stack = OSH_STACK_MAGIC_WORD;
+        stack++;
+    }
+    return 0;
+}
+
+static int32_t stack_highwater(uint32_t *stack, size_t size) {
+    for (size_t i = 0u; i < size; ++i) {
+        if (*stack != OSH_STACK_MAGIC_WORD) {
+            return i;
+        }
+        stack++;
+    }
+    return size;
 }
