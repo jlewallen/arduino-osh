@@ -104,12 +104,8 @@ uint32_t *initialize_stack(os_task_t *task, uint32_t *stack, size_t stack_size) 
     OS_ASSERT((stack_size % sizeof(uint32_t)) == 0);
     OS_ASSERT(stack_size >= OS_STACK_MINIMUM_SIZE);
 
-    stack_paint(stack, stack_size);
-
     uint32_t stack_offset = (stack_size / sizeof(uint32_t));
-    for (uint32_t i = 0; i < stack_offset; ++i) {
-        stack[i] = OSH_STACK_MAGIC_PATTERN;
-    }
+    stack_paint(stack, stack_offset);
 
     // Check alignment. May not be necessary?
     uint32_t *stk = stack + stack_offset;
