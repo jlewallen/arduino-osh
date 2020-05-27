@@ -1,6 +1,6 @@
 BUILD ?= $(abspath build)
 
-default: m0 m4 linux
+default: m4 linux
 
 m0:
 	mkdir -p $(BUILD)/m0
