@@ -29,7 +29,6 @@ os_status_t osi_signal_check(uint32_t *signal) {
     os_task_t *self = os_task_self();
 
     *signal = self->signal;
-    self->signal = 0;
 
     return OSS_SUCCESS;
 }
