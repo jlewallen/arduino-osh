@@ -91,7 +91,7 @@ os_status_t os_initialize();
 /**
  *
  */
-os_status_t os_configure_hook(os_task_status_hook_fn_t hook);
+os_status_t os_configure_hooks(os_task_status_hook_fn_t status_hook, os_logging_hook_fn_t logging_hook);
 
 /**
  *

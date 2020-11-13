@@ -73,13 +73,15 @@ os_status_t os_initialize() {
     #endif
 
     osg.state = OS_STATE_INITIALIZED;
-    osg.hook = NULL;
+    osg.status_hook = NULL;
+    osg.logging_hook = NULL;
 
     return OSS_SUCCESS;
 }
 
-os_status_t os_configure_hook(os_task_status_hook_fn_t hook) {
-    osg.hook = hook;
+os_status_t os_configure_hooks(os_task_status_hook_fn_t status_hook, os_logging_hook_fn_t logging_hook) {
+    osg.status_hook = status_hook;
+    osg.logging_hook = logging_hook;
     return OSS_SUCCESS;
 }
 
@@ -235,8 +237,8 @@ os_status_t os_task_initialize_options(os_task_t *task, os_task_options_t *optio
 
     osg.state = OS_STATE_TASKS_INITIALIZED;
 
-    if (osg.hook != NULL) {
-        osg.hook(task, OS_TASK_STATUS_FINISHED);
+    if (osg.status_hook != NULL) {
+        osg.status_hook(task, OS_TASK_STATUS_FINISHED);
     }
 
     return OSS_SUCCESS;
@@ -292,8 +294,8 @@ os_status_t os_task_start_options(os_task_t *task, uint8_t priority, void *param
     osi_printf("%s: started\n", task->name);
     #endif
 
-    if (osg.hook != NULL) {
-        osg.hook(task, OS_TASK_STATUS_FINISHED);
+    if (osg.status_hook != NULL) {
+        osg.status_hook(task, OS_TASK_STATUS_FINISHED);
     }
 
     return OSS_SUCCESS;
@@ -408,8 +410,8 @@ os_status_t osi_task_status_set(os_task_t *task, os_task_status new_status) {
         runqueue_add(&osg.runqueue, task);
     }
 
-    if (osg.hook != NULL) {
-        osg.hook(task, old_status);
+    if (osg.status_hook != NULL) {
+        osg.status_hook(task, old_status);
     }
 
     OS_UNLOCK();
