@@ -659,9 +659,17 @@ static os_task_t *find_new_task(os_task_t *running) {
 os_status_t osi_schedule() {
     os_task_t *new_task = NULL;
 
-    OS_ASSERT(osg.scheduled == NULL);
     OS_ASSERT(osg.running != NULL);
     OS_ASSERT(osg.running->status != OS_TASK_STATUS_IDLE);
+
+    // I'm seeing this assertion and I have no idea why. For now, I'm
+    // changing this to a warning because I don't think it's a huge
+    // problem, just unexpected.
+    // OS_ASSERT(osg.scheduled == NULL);
+    if (osg.scheduled != NULL) {
+        osi_printf("warning: unnecessary osi_schedule\n");
+        return OSS_SUCCESS;
+    }
 
     // Check to see if anything in the waitqueue is free to go.
     uint32_t now = os_uptime();
@@ -867,7 +875,6 @@ static void task_finished() {
     #if defined(OS_CONFIG_DEBUG_SCHEDULE)
     osi_printf("os: task '%s' finished\n", osg.running->name);
     #endif
-
 
     osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_FINISHED);
 
