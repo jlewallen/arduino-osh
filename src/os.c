@@ -913,7 +913,11 @@ static void runqueue_add(os_task_t **head, os_task_t *task) {
 
     os_task_t *previous = NULL;
     for (os_task_t *iter = *head; iter != NULL; iter = iter->nrp) {
-        OS_ASSERT(iter != task);
+        // OS_ASSERT(iter != task);
+        if (iter == task) {
+            osi_printf("warning: unnecessary runqueue_add\n");
+            return;
+        }
         if (task->priority > iter->priority) {
             task->nrp = iter;
             if (previous == NULL) {
