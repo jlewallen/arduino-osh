@@ -45,6 +45,9 @@ uint32_t svc_delay(uint32_t ms) {
 }
 
 uint32_t svc_panic(uint32_t code) {
+    // Invoke the hook. This may hup the MCU.
+    osi_panic((os_panic_kind_t)code);
+
     osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_PANIC);
 
     if (osg.scheduled == NULL) {
