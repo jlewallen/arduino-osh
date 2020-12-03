@@ -42,13 +42,13 @@ void osi_panic(os_panic_kind_t code) {
         osi_printf("  '%s' status(%s) (0x%x)\n", iter->name, os_task_status_str(iter->status), iter->priority);
     }
 
-    if (osg.running != NULL) {
-        osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_PANIC);
-    }
-
     #if defined(__SAMD21__) || defined(__SAMD51__)
     NVIC_SystemReset();
     #endif // defined(__SAMD21__) || defined(__SAMD51__)
+
+    if (osg.running != NULL) {
+        osi_task_status_set((os_task_t *)osg.running, OS_TASK_STATUS_PANIC);
+    }
 }
 
 void osi_hard_fault_report(uintptr_t *stack, uint32_t lr, cortex_hard_fault_t *hfr) {
