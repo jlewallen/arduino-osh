@@ -18,7 +18,14 @@
 
 os_status_t osi_signal(os_task_t *task, uint32_t signal) {
     OS_ASSERT(signal > 0);
-    OS_ASSERT(task->signal == 0);
+
+    if (task->signal == signal) {
+        return OSS_SUCCESS;
+    }
+
+    if (task->signal != 0) {
+        return OSS_ERROR_INVALID;
+    }
 
     task->signal = signal;
 
