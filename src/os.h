@@ -205,5 +205,6 @@ void osi_assert(const char *assertion, const char *file, int line);
 #endif
 
 #include "service.h"
+#include "syscall_plumbing.h"
 
 #endif /* OS_H */
