@@ -169,7 +169,10 @@ static inline  t __##f (t1 a1, t2 a2, t3 a3) {                                 \
 #endif
 
 #if !(defined(__SAMD21__) || defined(__SAMD51__))
-#define __get_CONTROL()  0x0
+inline static int32_t __get_CONTROL() {
+    return 0;
+}
+
 #define __get_IPSR()     0
 #endif
 
