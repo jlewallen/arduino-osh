@@ -346,6 +346,13 @@ os_task_status os_task_get_status(os_task_t *task) {
     return task->status;
 }
 
+#if defined(__SAMD51__)
+__attribute__((always_inline)) __STATIC_INLINE
+void __set_PSP_noclobber_sp(uint32_t topOfProcStack) {
+    __ASM volatile ("MSR psp, %0\n" : : "r" (topOfProcStack) : );
+}
+#endif
+
 os_status_t os_start(void) {
     if (osg.state != OS_STATE_TASKS_INITIALIZED) {
         return OSS_ERROR_INVALID;
@@ -363,7 +370,13 @@ os_status_t os_start(void) {
     NVIC_SetPriority(SysTick_IRQn, 0x2);
 
     /* Set PSP to the top of task's stack */
+    #if defined(__SAMD51__)
+    __set_PSP_noclobber_sp((uint32_t)osg.running->sp + OS_STACK_BASIC_FRAME_SIZE);
+    #else
+    #if !defined(__linux__)
     __set_PSP((uint32_t)osg.running->sp + OS_STACK_BASIC_FRAME_SIZE);
+    #endif
+    #endif
     /* Switch to Unprivilleged Thread Mode with PSP */
     __set_CONTROL(0x02);
     /* Execute DSB/ISB after changing CONTORL (recommended) */
