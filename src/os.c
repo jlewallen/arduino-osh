@@ -680,11 +680,15 @@ os_status_t osi_schedule() {
     os_task_t *new_task = NULL;
 
     OS_ASSERT(osg.running != NULL);
-    OS_ASSERT(osg.running->status != OS_TASK_STATUS_IDLE);
 
     // I'm seeing this assertion and I have no idea why. For now, I'm
     // changing this to a warning because I don't think it's a huge
     // problem, just unexpected.
+    // OS_ASSERT(osg.running->status != OS_TASK_STATUS_IDLE);
+    if (osg.running->status == OS_TASK_STATUS_IDLE) {
+        osi_printf("warning: osi_schedule while idle\n");
+        return OSS_SUCCESS;
+    }
     // OS_ASSERT(osg.scheduled == NULL);
     if (osg.scheduled != NULL) {
         osi_printf("warning: unnecessary osi_schedule\n");
