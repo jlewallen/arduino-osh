@@ -617,7 +617,10 @@ static os_task_t *find_new_task(os_task_t *running) {
     // or we're the only task, etc...
     os_task_t *new_task = NULL;
 
-    // Look for a task that's higher priority than us (lower number)
+    // Look for a task that's higher priority than us (~lower~ HIGHER number)
+    // I'm confused because is_higher_priority is checking for a priority
+    // greater than "ours" and things definitely fail with that set. Yes this
+    // seems to be a bad comment.
     os_task_t *first = OS_RUNQUEUE_NEXT_WRAPPED(running);
     os_task_t *task = first;
     os_task_t *lower_priority = NULL;
@@ -631,17 +634,12 @@ static os_task_t *find_new_task(os_task_t *running) {
                 if (new_task == NULL) {
                     new_task = task;
                 }
-                task = OS_RUNQUEUE_NEXT_WRAPPED(task);
             } else {
-                OS_ASSERT(lower_priority == NULL);
                 if (lower_priority == NULL) {
                     lower_priority = task;
                 }
-                // Go back to the beginning, which either has tasks of higher
-                // priority that should run or has more tasks of our own
-                // priority or we will find ourselves.
-                task = osg.runqueue;
             }
+            task = OS_RUNQUEUE_NEXT_WRAPPED(task);
         } else {
             task = OS_RUNQUEUE_NEXT_WRAPPED(task);
         }
